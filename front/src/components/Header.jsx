@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { scrollToSection } from "../utils/scrollToSection";
 
 const navItems = [
+  { label: "About Us", targetId: "hero" },
   { label: "Services", targetId: "services" },
   { label: "Waste Streams", targetId: "waste-streams" },
   { label: "Process", targetId: "process" },
@@ -18,7 +19,13 @@ const Header = () => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
 
-      const sections = ["services", "waste-streams", "process", "contact"];
+      const sections = [
+        "hero",
+        "services",
+        "waste-streams",
+        "process",
+        "contact",
+      ];
       const current = sections.find((section) => {
         const element = document.getElementById(section);
         if (!element) return false;
@@ -26,7 +33,7 @@ const Header = () => {
         return rect.top <= 150 && rect.bottom >= 150;
       });
 
-      setActiveSection(current || "");
+      setActiveSection(current || "hero");
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -69,16 +76,19 @@ const Header = () => {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
+      className={`group fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
         scrolled
           ? "border-b border-white/10 bg-black/60 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
           : "border-b border-white/5 bg-black/40 py-5"
       } backdrop-blur-xl`}
     >
-      <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-8 px-6 lg:px-12">
-        {/* Animated gradient line */}
-        <div className="absolute bottom-0 left-1/2 h-px w-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-[#15803d] to-transparent transition-all duration-700 group-hover:w-full" />
+      {/* Animated gradient line at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#15803d] to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+        <div className="absolute inset-0 -translate-x-full animate-slide-right bg-gradient-to-r from-transparent via-[#15803d]/60 to-transparent" />
+      </div>
 
+      <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-8 px-6 lg:px-12">
         {/* Logo with 3D effect */}
         <div
           className="group relative flex cursor-pointer items-center gap-4 transition-transform duration-300 hover:scale-105"
@@ -130,17 +140,17 @@ const Header = () => {
         </div>
 
         {/* Futuristic nav with animated background */}
-        <nav className="hidden items-center gap-2 lg:flex">
-          <div className="relative flex items-center rounded-full border border-white/10 bg-white/5 p-2 backdrop-blur-xl">
+        <nav className="hidden items-center gap-3 lg:flex">
+          <div className="group/nav relative flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-2.5 shadow-[0_0_20px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:shadow-[0_0_30px_rgba(21,128,61,0.2)]">
             {/* Sliding active indicator - only show when section is active */}
             {activeSection && indicatorStyle.width && (
               <div
-                className="pointer-events-none absolute rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] shadow-[0_0_20px_rgba(21,128,61,0.6)] transition-all duration-500 ease-out"
+                className="pointer-events-none absolute rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] shadow-[0_0_20px_rgba(21,128,61,0.6),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all duration-500 ease-out"
                 style={{
                   left: `${indicatorStyle.left}px`,
                   width: `${indicatorStyle.width}px`,
-                  height: "calc(100% - 16px)",
-                  top: "8px",
+                  height: "calc(100% - 20px)",
+                  top: "10px",
                 }}
               />
             )}
@@ -152,31 +162,38 @@ const Header = () => {
                   key={item.targetId}
                   ref={(el) => (navRefs.current[item.targetId] = el)}
                   type="button"
-                  className={`relative z-10 flex items-center justify-center whitespace-nowrap rounded-full px-6 py-3 text-xs font-bold uppercase tracking-[0.25em] transition-all duration-300 focus-visible:outline-none ${
+                  className={`group/item relative z-10 flex items-center justify-center whitespace-nowrap rounded-full px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.2em] transition-all duration-300 focus-visible:outline-none ${
                     isActive
                       ? "text-white"
-                      : "text-white/60 hover:text-white/90"
+                      : "text-white/60 hover:scale-105 hover:text-white/90"
                   }`}
                   onClick={() => handleNavClick(item.targetId)}
                   onKeyDown={(event) => handleNavKeyDown(event, item.targetId)}
                 >
-                  {item.label}
+                  {/* Hover glow effect */}
+                  {!isActive && (
+                    <div className="absolute inset-0 rounded-full bg-white/5 opacity-0 transition-opacity duration-300 group-hover/item:opacity-100" />
+                  )}
+                  <span className="relative">{item.label}</span>
                 </button>
               );
             })}
           </div>
         </nav>
 
-        {/* 3D CTA button */}
+        {/* 3D CTA button with pulse effect */}
         <button
           type="button"
-          className="group relative overflow-hidden rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] px-8 py-4 text-xs font-black uppercase tracking-[0.35em] text-white shadow-[0_0_40px_rgba(21,128,61,0.5),0_4px_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:scale-[1.08] hover:shadow-[0_0_60px_rgba(21,128,61,0.8),0_0_100px_rgba(22,163,74,0.4),0_6px_30px_rgba(0,0,0,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          className="group/cta relative overflow-hidden rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] px-8 py-4 text-xs font-black uppercase tracking-[0.35em] text-white shadow-[0_0_40px_rgba(21,128,61,0.5),0_4px_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:scale-[1.08] hover:shadow-[0_0_60px_rgba(21,128,61,0.8),0_0_100px_rgba(22,163,74,0.4),0_6px_30px_rgba(0,0,0,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           onClick={() => handleNavClick("contact")}
           onKeyDown={(event) => handleNavKeyDown(event, "contact")}
           style={{ transform: "translateZ(0)" }}
         >
+          {/* Animated pulse ring */}
+          <div className="absolute -inset-1 animate-pulse-glow rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] opacity-0 blur-xl transition-opacity duration-300 group-hover/cta:opacity-75" />
+
           {/* Animated gradient overlay */}
-          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/cta:translate-x-full" />
 
           {/* Inner glow */}
           <div className="absolute inset-[1px] rounded-full bg-gradient-to-b from-white/10 to-transparent opacity-50" />
@@ -184,7 +201,7 @@ const Header = () => {
           <span className="relative z-10 flex items-center gap-3">
             Contact Us
             <svg
-              className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-2"
+              className="h-4 w-4 transition-transform duration-300 group-hover/cta:translate-x-2 group-hover/cta:scale-110"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
