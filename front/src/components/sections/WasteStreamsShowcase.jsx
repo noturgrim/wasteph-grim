@@ -39,7 +39,7 @@ const WasteStreamsShowcase = () => {
   return (
     <section
       id="waste-streams"
-      className="relative snap-start border-y border-white/10 py-24 md:py-32 lg:py-40"
+      className="relative snap-start border-y border-white/10 py-32 md:py-40 lg:py-52"
       aria-labelledby="waste-streams-title"
       style={{
         background:

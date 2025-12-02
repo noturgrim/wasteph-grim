@@ -259,10 +259,10 @@ const Header = () => {
 
       {/* Mobile Menu - Floating Island Style */}
       <div
-        className={`absolute left-6 right-6 top-full mt-2 overflow-hidden rounded-3xl border border-white/10 backdrop-blur-xl transition-all duration-300 lg:hidden ${
+        className={`absolute left-6 right-6 top-full mt-2 overflow-hidden rounded-3xl backdrop-blur-xl transition-all duration-300 lg:hidden ${
           mobileMenuOpen
-            ? "max-h-screen bg-black/90 shadow-[0_12px_48px_rgba(0,0,0,0.5)]"
-            : "max-h-0 border-transparent"
+            ? "max-h-screen border border-white/10 bg-black/90 shadow-[0_12px_48px_rgba(0,0,0,0.5)]"
+            : "max-h-0 border-0"
         }`}
       >
         <nav className="flex flex-col gap-1 p-4">

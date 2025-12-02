@@ -17,7 +17,7 @@ const ClientsSection = () => {
   const duplicatedClients = [...clients, ...clients, ...clients];
 
   return (
-    <section className="relative overflow-hidden border-y border-white/5 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent py-16">
+    <section className="relative overflow-hidden border-y border-white/5 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent py-24 md:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
         {/* Section title */}
         <div className="mb-12 text-center">

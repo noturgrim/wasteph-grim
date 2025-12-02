@@ -62,7 +62,7 @@ const HeroSection = () => {
     <section
       ref={heroRef}
       id="hero"
-      className="relative flex min-h-screen snap-start items-center overflow-hidden pb-20 pt-32 md:pt-40"
+      className="relative flex min-h-screen snap-start items-center overflow-hidden pb-32 pt-32 md:pb-40 md:pt-40"
       aria-labelledby="hero-title"
     >
       {/* Subtle ambient lighting orbs - pointer-events-none */}
@@ -132,12 +132,8 @@ const HeroSection = () => {
                     Waste
                   </span>
                   <span
-                    className="text-[clamp(4rem,15vw,12rem)] font-black uppercase leading-[0.85] tracking-tighter text-transparent"
-                    style={{
-                      letterSpacing: "-0.03em",
-                      WebkitTextStroke: "4px #15803d",
-                      textStroke: "4px #15803d",
-                    }}
+                    className="bg-gradient-to-br from-[#15803d] to-[#16a34a] bg-clip-text text-[clamp(4rem,15vw,12rem)] font-black uppercase leading-[0.85] tracking-tighter text-transparent"
+                    style={{ letterSpacing: "-0.03em" }}
                   >
                     PH
                   </span>

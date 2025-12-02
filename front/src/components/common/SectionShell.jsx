@@ -24,7 +24,7 @@ const SectionShell = ({
   fullHeight = false,
   children,
 }) => {
-  const sectionHeight = fullHeight ? "min-h-screen" : "py-24 md:py-32 lg:py-40";
+  const sectionHeight = fullHeight ? "min-h-screen" : "py-32 md:py-40 lg:py-52";
   const variantClasses = getVariantClasses(variant);
   const titleId = id ? `${id}-title` : undefined;
 
@@ -34,7 +34,7 @@ const SectionShell = ({
       className={`snap-start ${sectionHeight} ${variantClasses}`}
       aria-labelledby={titleId}
     >
-      <div className="mx-auto flex h-full max-w-7xl flex-col gap-16 px-6 lg:gap-20 lg:px-12">
+      <div className="mx-auto flex h-full max-w-7xl flex-col gap-20 px-6 lg:gap-24 lg:px-12">
         {(label || headline || subheadline) && (
           <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             <div className="max-w-4xl">
