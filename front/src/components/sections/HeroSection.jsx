@@ -62,7 +62,7 @@ const HeroSection = () => {
     <section
       ref={heroRef}
       id="hero"
-      className="relative flex min-h-screen snap-start items-center overflow-hidden pb-32 pt-32 md:pb-40 md:pt-40"
+      className="relative flex snap-start items-center overflow-visible pb-56 pt-32 md:min-h-screen md:pb-48 md:pt-40 lg:pb-40"
       aria-labelledby="hero-title"
     >
       {/* Subtle ambient lighting orbs - pointer-events-none */}
@@ -92,8 +92,8 @@ const HeroSection = () => {
       <div
         className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-col gap-16 px-6 lg:gap-20 lg:px-12 xl:px-16"
         style={{
-          transform: `translateY(${scrollY * 0.3}px)`,
-          opacity: Math.max(0, 1 - scrollY / 600),
+          transform: `translateY(${scrollY * 0.15}px)`,
+          opacity: Math.max(0, 1 - Math.max(0, scrollY - 800) / 2000),
           transition: "transform 0.1s ease-out, opacity 0.1s ease-out",
         }}
       >
@@ -244,7 +244,7 @@ const HeroSection = () => {
           </div>
 
           {/* Stats & Visual Cards */}
-          <div className="relative">
+          <div className="relative mb-8">
             <RevealOnScroll delayClass="delay-200">
               {/* Stats Grid */}
               <div className="mb-8 grid grid-cols-2 gap-4">

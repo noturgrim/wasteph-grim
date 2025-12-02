@@ -17,7 +17,7 @@ const ClientsSection = () => {
   const duplicatedClients = [...clients, ...clients, ...clients];
 
   return (
-    <section className="relative overflow-hidden border-y border-white/5 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent py-24 md:py-32">
+    <section className="relative border-y border-white/5 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent py-40 md:py-48 lg:py-56">
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
         {/* Section title */}
         <div className="mb-12 text-center">
@@ -33,7 +33,7 @@ const ClientsSection = () => {
           <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-32 bg-gradient-to-l from-[#0a1f0f] to-transparent" />
 
           {/* Scrolling track */}
-          <div className="flex overflow-hidden">
+          <div className="flex overflow-x-clip overflow-y-visible">
             <div className="flex animate-scroll-infinite gap-12">
               {duplicatedClients.map((client, index) => (
                 <div
