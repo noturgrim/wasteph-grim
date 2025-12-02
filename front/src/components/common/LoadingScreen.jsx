@@ -6,7 +6,7 @@ const LoadingScreen = ({ onLoadingComplete }) => {
 
   useEffect(() => {
     // Simulate loading progress
-    const duration = 2500; // 2.5 seconds
+    const duration = 1500; // 1.5 seconds (faster)
     const steps = 60;
     const increment = 100 / steps;
     const stepDuration = duration / steps;

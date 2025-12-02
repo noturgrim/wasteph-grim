@@ -1,9 +1,36 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ParallaxLayer from "../common/ParallaxLayer";
 import RevealOnScroll from "../common/RevealOnScroll";
+import TopographicCanvas from "../common/TopographicCanvas";
 import { scrollToSection } from "../../utils/scrollToSection";
 
 const HeroSection = () => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!heroRef.current) return;
+
+      const rect = heroRef.current.getBoundingClientRect();
+      const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
+      const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
+
+      setMousePosition({ x, y });
+    };
+
+    const heroElement = heroRef.current;
+    if (heroElement) {
+      heroElement.addEventListener("mousemove", handleMouseMove);
+    }
+
+    return () => {
+      if (heroElement) {
+        heroElement.removeEventListener("mousemove", handleMouseMove);
+      }
+    };
+  }, []);
+
   const handlePrimaryClick = () => {
     scrollToSection("contact");
   };
@@ -26,37 +53,41 @@ const HeroSection = () => {
 
   return (
     <section
+      ref={heroRef}
       id="hero"
       className="relative flex min-h-screen snap-start items-center overflow-hidden pb-20 pt-32 md:pt-40"
       aria-labelledby="hero-title"
     >
-      {/* Multiple layered parallax backgrounds */}
-      <ParallaxLayer
-        speed={0.2}
-        className="pointer-events-none absolute -left-80 top-0 -z-10 h-[800px] w-[800px] animate-pulse-glow rounded-full bg-[#15803d]/40 blur-[160px]"
-      />
-      <ParallaxLayer
-        speed={-0.15}
-        className="pointer-events-none absolute -right-80 bottom-10 -z-10 h-[700px] w-[700px] animate-pulse-glow rounded-full bg-[#16a34a]/35 blur-[140px]"
-      />
-      <ParallaxLayer
-        speed={0.25}
-        className="pointer-events-none absolute left-1/3 top-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-[#15803d]/25 blur-[120px]"
-      />
+      {/* Topographic Map Background */}
+      <div className="absolute inset-0 z-0">
+        <TopographicCanvas />
 
-      {/* Animated grid pattern */}
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-10">
-        <div
-          className="h-full w-full"
-          style={{
-            backgroundImage: `linear-gradient(rgba(21, 128, 61, 0.3) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(21, 128, 61, 0.3) 1px, transparent 1px)`,
-            backgroundSize: "100px 100px",
-          }}
-        />
+        {/* Subtle ambient lighting orbs on top - with pointer-events-none */}
+        <div className="pointer-events-none absolute inset-0">
+          <ParallaxLayer speed={0.1}>
+            <div
+              className="absolute -left-40 top-0 h-[600px] w-[600px] animate-pulse-glow rounded-full bg-[#15803d]/10 blur-[120px] transition-transform duration-700 ease-out"
+              style={{
+                transform: `translate(${mousePosition.x * 15}px, ${
+                  mousePosition.y * 15
+                }px)`,
+              }}
+            />
+          </ParallaxLayer>
+          <ParallaxLayer speed={-0.1}>
+            <div
+              className="absolute -right-40 bottom-10 h-[500px] w-[500px] animate-pulse-glow rounded-full bg-[#16a34a]/8 blur-[100px] transition-transform duration-1000 ease-out"
+              style={{
+                transform: `translate(${mousePosition.x * -20}px, ${
+                  mousePosition.y * -20
+                }px)`,
+              }}
+            />
+          </ParallaxLayer>
+        </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-16 px-6 lg:gap-20 lg:px-12 xl:px-16">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-col gap-16 px-6 lg:gap-20 lg:px-12 xl:px-16">
         {/* Hero Content */}
         <div className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:gap-16">
           <div className="flex flex-col justify-center">
