@@ -202,15 +202,12 @@ const HeroSection = () => {
             {/* Hero Title - Bold & Compact */}
             <RevealOnScroll delayClass="delay-100">
               <h1 id="hero-title" className="space-y-1 sm:space-y-2">
-                <div className="text-[clamp(2.5rem,10vw,6rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] text-white">
-                  Waste
-                </div>
                 <div className="relative inline-block">
-                  <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-[clamp(2.5rem,10vw,6rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] text-transparent">
-                    Management
+                  <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-[clamp(3rem,12vw,8rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] text-transparent">
+                    WASTEPH
                   </span>
                   {/* Subtle underline accent */}
-                  <div className="absolute -bottom-1 left-0 h-1 w-20 bg-gradient-to-r from-[#15803d] to-transparent sm:-bottom-2 sm:h-1.5 sm:w-32" />
+                  <div className="absolute -bottom-1 left-0 h-1 w-24 bg-gradient-to-r from-[#15803d] to-transparent sm:-bottom-2 sm:h-1.5 sm:w-40" />
                 </div>
                 <div className="text-[clamp(1rem,3vw,2rem)] font-bold uppercase tracking-wide text-white/60">
                   Philippines
