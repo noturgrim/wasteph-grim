@@ -235,7 +235,7 @@ const Header = () => {
             } ${
               navExpanded
                 ? "border-white/10 bg-black/60 hover:border-white/20 hover:bg-black/70"
-                : "border-[#15803d]/30 bg-gradient-to-r from-[#15803d]/10 to-[#16a34a]/10"
+                : "border-[#15803d]/50 bg-gradient-to-r from-[#15803d]/20 to-[#16a34a]/20"
             }`}
             style={{
               width: navExpanded ? "750px" : `${collapsedWidth}px`,
