@@ -17,9 +17,12 @@ const ClientsSection = () => {
   const duplicatedClients = [...clients, ...clients, ...clients];
 
   return (
-    <section className="relative w-full border-y border-white/5 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent py-16 md:py-20 lg:py-24">
-      {/* Section title - centered with max-width */}
-      <div className="mb-8 text-center md:mb-10">
+    <section
+      id="clients"
+      className="relative flex w-full min-h-[40vh] snap-start flex-col items-center justify-center border-y border-white/5 py-12 md:py-16"
+    >
+      {/* Section title - centered */}
+      <div className="mb-8 text-center md:mb-12">
         <p className="text-xs font-bold uppercase tracking-[0.35em] text-white/40">
           Trusted By Leading Organizations
         </p>

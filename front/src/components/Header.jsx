@@ -20,68 +20,106 @@ const Header = () => {
   const expandedRef = useRef(null);
 
   useEffect(() => {
+    let scrollTimeout = null;
+
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+      // Get scroll position from the scrollable container
+      const scrollContainer = document.querySelector(".snap-y");
+      const scrollY = scrollContainer
+        ? scrollContainer.scrollTop
+        : window.scrollY;
 
-      const sections = [
-        "hero",
-        "services",
-        "waste-streams",
-        "process",
-        "contact",
-      ];
+      setScrolled(scrollY > 50);
 
-      const headerHeight = 120;
-      const triggerPoint = headerHeight + 100;
-
-      // Check if we're at the bottom of the page
-      const isAtBottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 100;
-
-      if (isAtBottom) {
-        // Force to last section when at bottom
-        setActiveSection("contact");
-        return;
+      // Clear any pending scroll detection
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
       }
 
-      let closestSection = "hero";
-      let closestDistance = Infinity;
+      // Debounce scroll detection to avoid conflicts with click
+      scrollTimeout = setTimeout(() => {
+        // Define main sections that correspond to nav items
+        const mainSections = [
+          { id: "hero", navId: "hero" },
+          { id: "message", navId: "hero" }, // Message is part of About Us
+          { id: "services", navId: "services" },
+          { id: "waste-streams", navId: "waste-streams" },
+          { id: "process", navId: "process" },
+          { id: "contact", navId: "contact" },
+          { id: "clients", navId: "contact" }, // Clients flows with contact area
+        ];
 
-      sections.forEach((section) => {
-        const element = document.getElementById(section);
-        if (!element) return;
+        // Find which section is most visible in viewport
+        let mostVisibleNavId = "hero";
+        let maxVisibleArea = 0;
 
-        const rect = element.getBoundingClientRect();
-        const distance = Math.abs(rect.top - triggerPoint);
+        mainSections.forEach((section) => {
+          const element = document.getElementById(section.id);
+          if (!element) return;
 
-        if (
-          rect.top <= triggerPoint &&
-          rect.bottom >= 0 &&
-          distance < closestDistance
-        ) {
-          closestDistance = distance;
-          closestSection = section;
-        }
-      });
+          const rect = element.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
 
-      setActiveSection(closestSection);
+          // Calculate visible area of this section
+          const visibleTop = Math.max(0, rect.top);
+          const visibleBottom = Math.min(viewportHeight, rect.bottom);
+          const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+
+          // If this section has more visible area, it's the active one
+          if (visibleHeight > maxVisibleArea) {
+            maxVisibleArea = visibleHeight;
+            mostVisibleNavId = section.navId;
+          }
+        });
+
+        setActiveSection(mostVisibleNavId);
+      }, 150); // 150ms debounce
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Find the scrollable container
+    const scrollContainer = document.querySelector(".snap-y");
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", handleScroll, {
+        passive: true,
+      });
+    } else {
+      // Fallback to window
+      window.addEventListener("scroll", handleScroll, { passive: true });
+    }
+
+    // Initial call
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener("scroll", handleScroll);
+      } else {
+        window.removeEventListener("scroll", handleScroll);
+      }
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+    };
   }, []);
 
   // Measure collapsed width dynamically based on active section
   useEffect(() => {
-    if (collapsedRef.current) {
-      const width = collapsedRef.current.scrollWidth;
-      setCollapsedWidth(width); // Use exact width, padding is already included
-    }
+    // Small delay to ensure DOM has updated with new text
+    const timer = setTimeout(() => {
+      if (collapsedRef.current) {
+        const width = collapsedRef.current.scrollWidth;
+        setCollapsedWidth(width);
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
   }, [activeSection]);
 
   const handleNavClick = (targetId) => {
+    // Immediately update active section on click
+    setActiveSection(targetId);
+    // Then scroll to section
     scrollToSection(targetId);
     setMobileMenuOpen(false);
   };

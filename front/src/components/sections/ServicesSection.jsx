@@ -5,36 +5,39 @@ import RevealOnScroll from "../common/RevealOnScroll";
 const servicesData = [
   {
     id: "mixed-food-residual-construction",
-    title: "Mixed, Food, Residual & Construction Waste",
+    title: "Mixed, Food, Residual & Construction",
     description:
-      "End-to-end hauling programs for businesses, developments, and communities handling everyday and project-based waste.",
+      "End-to-end hauling for businesses and communities handling everyday and project-based waste.",
     bullets: [
       "Scheduled or on-call collections",
-      "Mixed, food, residual, and construction debris",
-      "Fleet sized for tight city access and bulk movements",
+      "Mixed, food, residual & construction",
+      "Fleet for tight access & bulk loads",
     ],
+    category: "Waste Hauling",
   },
   {
     id: "purchasing-recyclables",
     title: "Purchasing of Recyclables",
     description:
-      "We buy carton, plastic, aluminum, copper, metal, and more with transparent weights and fair, repeatable pricing.",
+      "We buy carton, plastic, aluminum, copper, metal with transparent weights and fair pricing.",
     bullets: [
-      "Carton, plastic, aluminum, copper, metal, and more",
-      "Recurring volume programs for partners",
-      "Documented weights and clear payouts",
+      "Carton, plastic, aluminum, copper, metal",
+      "Recurring volume programs",
+      "Documented weights & clear payouts",
     ],
+    category: "Recyclables",
   },
   {
     id: "septic-tank-siphoning",
     title: "Septic Tank Siphoning",
     description:
-      "Safe and compliant septic tank siphoning to keep facilities operating smoothly and hygienically.",
+      "Safe and compliant septic siphoning to keep facilities operating smoothly.",
     bullets: [
       "Quick-response scheduling",
-      "Secure transport and treatment",
-      "Preventative maintenance programs",
+      "Secure transport & treatment",
+      "Preventative maintenance",
     ],
+    category: "Septic",
   },
 ];
 
@@ -43,54 +46,42 @@ const ServicesSection = () => {
     <SectionShell
       id="services"
       label="Our Services"
-      headline="Waste hauling built for real-world operations."
-      subheadline="From everyday mixed waste to specialized recyclables and septic systems, Waste PH keeps your sites moving and compliant."
+      headline="Built for Real Operations."
+      subheadline="Mixed waste to recyclables—keeping your sites moving."
       variant="default"
     >
-      <div className="grid gap-8 md:grid-cols-3 lg:gap-10">
+      <div className="grid gap-3 md:grid-cols-3 lg:gap-4">
         {servicesData.map((service, index) => (
           <RevealOnScroll
             key={service.id}
             delayClass={`delay-[${(index + 1) * 100}ms]`}
           >
-            <article className="group flex h-full flex-col justify-between rounded-2xl border border-white/20 bg-black/40 p-8 backdrop-blur transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02] hover:border-[#15803d] hover:bg-black/60 hover:shadow-[0_30px_80px_rgba(21,128,61,0.3)] focus-within:-translate-y-3">
-              <header className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="h-0.5 w-8 bg-[#15803d]" />
-                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/60">
-                    {service.id === "purchasing-recyclables"
-                      ? "Recyclables"
-                      : service.id === "septic-tank-siphoning"
-                      ? "Septic"
-                      : "Waste Hauling"}
+            <article className="group flex h-full flex-col justify-between rounded-xl border border-white/20 bg-black/40 p-4 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:border-[#15803d] hover:bg-black/60 hover:shadow-[0_15px_40px_rgba(21,128,61,0.3)] sm:p-5 lg:p-6">
+              <div>
+                <div className="mb-2 flex items-center gap-2 sm:mb-3">
+                  <span className="h-0.5 w-5 bg-[#15803d] sm:w-6" />
+                  <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/60 sm:text-[10px]">
+                    {service.category}
                   </p>
                 </div>
-                <h3 className="text-xl font-bold text-white">
+                <h3 className="mb-2 text-sm font-bold leading-tight text-white sm:mb-3 sm:text-base lg:text-lg">
                   {service.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-white/70">
+                <p className="text-xs leading-snug text-white/70 sm:text-sm sm:leading-relaxed">
                   {service.description}
                 </p>
-              </header>
+              </div>
 
-              <ul className="mt-6 space-y-3 text-sm text-white/60">
+              <ul className="mt-3 space-y-1.5 text-[11px] text-white/60 sm:mt-4 sm:space-y-2 sm:text-xs lg:text-sm">
                 {service.bullets.map((bullet) => (
-                  <li key={bullet} className="flex items-start gap-3">
-                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#15803d]" />
-                    <span>{bullet}</span>
+                  <li key={bullet} className="flex items-start gap-2">
+                    <span className="mt-1 h-0.5 w-0.5 flex-shrink-0 rounded-full bg-[#15803d] sm:h-1 sm:w-1" />
+                    <span className="leading-snug sm:leading-relaxed">
+                      {bullet}
+                    </span>
                   </li>
                 ))}
               </ul>
-
-              <div className="mt-6">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-white/70 transition-colors group-hover:text-[#15803d] focus-visible:text-[#15803d] focus-visible:outline-none"
-                >
-                  <span>More Details</span>
-                  <span aria-hidden="true">→</span>
-                </button>
-              </div>
             </article>
           </RevealOnScroll>
         ))}

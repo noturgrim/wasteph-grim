@@ -7,7 +7,20 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 100px; /* Account for fixed header */
+}
+
+/* Snap scroll container */
+.snap-y {
+  scroll-snap-type: y mandatory;
+}
+
+.snap-mandatory {
+  scroll-snap-type: y mandatory;
+}
+
+.snap-start {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 /* Smoother scroll on supported browsers */

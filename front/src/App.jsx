@@ -48,12 +48,12 @@ const App = () => {
             <Header />
             <main className="pt-20">
               <HeroSection />
-              <ClientsSection />
               <MessageSection />
               <ServicesSection />
               <WasteStreamsShowcase />
               <ProcessSection />
               <CTASection />
+              <ClientsSection />
             </main>
             <Footer />
           </ScrollableLayout>

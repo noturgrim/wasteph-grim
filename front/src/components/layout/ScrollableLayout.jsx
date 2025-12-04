@@ -2,8 +2,8 @@ import React from "react";
 
 const ScrollableLayout = ({ children }) => {
   return (
-    <div className="min-h-screen w-full overflow-x-hidden text-white">
-      <div className="relative min-h-screen scroll-smooth">{children}</div>
+    <div className="h-screen w-full snap-y snap-mandatory overflow-y-scroll overflow-x-hidden text-white scroll-smooth">
+      <div className="relative">{children}</div>
     </div>
   );
 };

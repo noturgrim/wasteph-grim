@@ -63,7 +63,7 @@ const HeroSection = () => {
     <section
       ref={heroRef}
       id="hero"
-      className="relative flex snap-start items-center overflow-visible pb-32 pt-24 md:min-h-screen md:pb-24 md:pt-32 lg:pb-20"
+      className="relative flex min-h-screen snap-start items-center overflow-visible py-24 md:py-32 lg:py-20"
       aria-labelledby="hero-title"
     >
       {/* Premium ambient lighting */}
@@ -91,51 +91,136 @@ const HeroSection = () => {
       </div>
 
       <div
-        className="relative z-10 mx-auto w-full max-w-[1800px] px-6 lg:px-16 xl:px-24"
+        className="relative z-10 mx-auto flex h-full w-full max-w-[1600px] items-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16"
         style={{
           transform: `translateY(${scrollY * 0.12}px)`,
           opacity: Math.max(0, 1 - Math.max(0, scrollY - 800) / 2000),
           transition: "transform 0.1s ease-out, opacity 0.1s ease-out",
         }}
       >
-        {/* Main Hero Grid */}
-        <div className="grid gap-20 lg:grid-cols-[1.3fr_0.7fr] lg:gap-24 xl:gap-32">
-          {/* Left: Content */}
-          <div className="flex flex-col justify-center space-y-12">
+        {/* Main Hero Grid - Reversed for Image Prominence */}
+        <div className="grid w-full gap-8 sm:gap-10 md:gap-12 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+          {/* Left: Large Featured Image */}
+          <div className="relative order-2 lg:order-1">
+            <RevealOnScroll delayClass="delay-100">
+              {/* Main Feature Card - Larger, More Prominent */}
+              <div className="group relative h-[400px] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl sm:h-[450px] md:h-[500px] lg:h-[550px] xl:h-[600px]">
+                {/* Image Container */}
+                <div className="relative h-full overflow-hidden">
+                  <img
+                    src={truckImage}
+                    alt="Waste management truck"
+                    className="h-full w-full object-cover transition-all duration-[1500ms] group-hover:scale-110"
+                  />
+
+                  {/* Premium gradient overlay - Less intense to show image better */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+
+                  {/* Subtle noise texture */}
+                  <div
+                    className="absolute inset-0 opacity-[0.015] mix-blend-overlay"
+                    style={{
+                      backgroundImage:
+                        "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E\")",
+                    }}
+                  />
+                </div>
+
+                {/* Content Overlay - Positioned at bottom */}
+                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6 md:p-8">
+                  {/* Bottom: Info */}
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="space-y-2 sm:space-y-3">
+                      <h3 className="text-2xl font-black leading-tight text-white sm:text-3xl md:text-4xl lg:text-5xl">
+                        City-Wide
+                        <br />
+                        <span className="bg-gradient-to-r from-[#15803d] to-[#22c55e] bg-clip-text text-transparent">
+                          Coverage
+                        </span>
+                      </h3>
+                      <p className="max-w-md text-sm leading-relaxed text-white/90 sm:text-base">
+                        Precision routing for businesses and communities across
+                        the Philippines.
+                      </p>
+                    </div>
+
+                    {/* Stats - Horizontal, responsive */}
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6 md:gap-8">
+                      <div>
+                        <p className="text-2xl font-black text-white sm:text-3xl">
+                          24/7
+                        </p>
+                        <p className="text-[10px] font-medium uppercase tracking-wider text-white/70 sm:text-xs">
+                          Available
+                        </p>
+                      </div>
+                      <div className="h-10 w-px bg-white/20 sm:h-14" />
+                      <div>
+                        <p className="text-2xl font-black text-white sm:text-3xl">
+                          100%
+                        </p>
+                        <p className="text-[10px] font-medium uppercase tracking-wider text-white/70 sm:text-xs">
+                          Compliant
+                        </p>
+                      </div>
+                      <div className="h-10 w-px bg-white/20 sm:h-14" />
+                      <div>
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-2.5 py-1 backdrop-blur-xl sm:px-3 sm:py-1.5">
+                          <div className="h-1.5 w-1.5 rounded-full bg-[#15803d]">
+                            <div className="absolute h-1.5 w-1.5 animate-ping rounded-full bg-[#15803d]" />
+                          </div>
+                          <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/90 sm:text-[9px] sm:tracking-[0.25em]">
+                            Active Fleet
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Decorative corner accent */}
+                <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-[#15803d]/20 blur-3xl transition-all duration-1000 group-hover:scale-150" />
+              </div>
+            </RevealOnScroll>
+          </div>
+
+          {/* Right: Content - More Compact */}
+          <div className="order-1 flex flex-col justify-center space-y-6 sm:space-y-8 lg:order-2">
             {/* Badge */}
             <RevealOnScroll>
-              <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/10 bg-gradient-to-r from-white/5 to-white/[0.02] px-4 py-2 backdrop-blur-xl">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-gradient-to-r from-white/5 to-white/[0.02] px-3 py-1.5 backdrop-blur-xl sm:gap-3 sm:px-4 sm:py-2">
                 <div className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#15803d] opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-[#15803d]" />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.35em] text-white/80">
+                <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-white/80 sm:text-[10px] sm:tracking-[0.35em]">
                   Philippines • Waste Management
                 </span>
               </div>
             </RevealOnScroll>
 
-            {/* Hero Title */}
+            {/* Hero Title - Bold & Compact */}
             <RevealOnScroll delayClass="delay-100">
-              <h1 id="hero-title" className="overflow-hidden">
-                <div className="flex items-baseline gap-4 overflow-hidden">
-                  <span className="block text-[clamp(4rem,14vw,11rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] text-white">
-                    Waste
+              <h1 id="hero-title" className="space-y-1 sm:space-y-2">
+                <div className="text-[clamp(2.5rem,10vw,6rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] text-white">
+                  Waste
+                </div>
+                <div className="relative inline-block">
+                  <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-[clamp(2.5rem,10vw,6rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] text-transparent">
+                    Management
                   </span>
-                  <span className="relative">
-                    <span className="block bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-[clamp(4rem,14vw,11rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] text-transparent">
-                      PH
-                    </span>
-                    {/* Subtle underline accent */}
-                    <div className="absolute -bottom-4 left-0 h-1.5 w-full bg-gradient-to-r from-[#15803d] to-transparent" />
-                  </span>
+                  {/* Subtle underline accent */}
+                  <div className="absolute -bottom-1 left-0 h-1 w-20 bg-gradient-to-r from-[#15803d] to-transparent sm:-bottom-2 sm:h-1.5 sm:w-32" />
+                </div>
+                <div className="text-[clamp(1rem,3vw,2rem)] font-bold uppercase tracking-wide text-white/60">
+                  Philippines
                 </div>
               </h1>
             </RevealOnScroll>
 
-            {/* Description */}
+            {/* Description - More concise */}
             <RevealOnScroll delayClass="delay-200">
-              <p className="max-w-2xl text-lg font-medium leading-relaxed text-white/70 md:text-xl lg:text-2xl">
+              <p className="max-w-xl text-base font-medium leading-relaxed text-white/70 md:text-lg">
                 Elevating environmental responsibility through{" "}
                 <span className="font-semibold text-white">
                   precision logistics
@@ -150,19 +235,19 @@ const HeroSection = () => {
 
             {/* CTA Buttons */}
             <RevealOnScroll delayClass="delay-300">
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 {/* Primary CTA */}
                 <div
                   role="button"
                   tabIndex={0}
                   aria-label="Scroll to contact section"
-                  className="group relative inline-flex cursor-pointer items-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-sm font-bold uppercase tracking-[0.2em] text-black shadow-[0_20px_60px_rgba(255,255,255,0.15)] transition-all duration-500 hover:scale-105 hover:shadow-[0_25px_80px_rgba(255,255,255,0.25)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+                  className="group relative inline-flex cursor-pointer items-center gap-2 overflow-hidden rounded-full bg-white px-6 py-3 text-xs font-bold uppercase tracking-[0.15em] text-black shadow-[0_20px_60px_rgba(255,255,255,0.15)] transition-all duration-500 hover:scale-105 hover:shadow-[0_25px_80px_rgba(255,255,255,0.25)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30 sm:gap-3 sm:px-8 sm:py-4 sm:text-sm sm:tracking-[0.2em]"
                   onClick={handlePrimaryClick}
                   onKeyDown={handlePrimaryKeyDown}
                 >
                   <span className="relative z-10">Start Your Service</span>
                   <svg
-                    className="relative z-10 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+                    className="relative z-10 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1 sm:h-4 sm:w-4"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -183,13 +268,13 @@ const HeroSection = () => {
                   role="button"
                   tabIndex={0}
                   aria-label="Scroll to services section"
-                  className="group inline-flex cursor-pointer items-center gap-3 rounded-full border border-white/20 bg-white/5 px-8 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white backdrop-blur-xl transition-all duration-300 hover:border-white/40 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+                  className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 py-3 text-xs font-bold uppercase tracking-[0.15em] text-white backdrop-blur-xl transition-all duration-300 hover:border-white/40 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30 sm:gap-3 sm:px-8 sm:py-4 sm:text-sm sm:tracking-[0.2em]"
                   onClick={handleSecondaryClick}
                   onKeyDown={handleSecondaryKeyDown}
                 >
                   <span>Explore Services</span>
                   <svg
-                    className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+                    className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1 sm:h-4 sm:w-4"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -223,87 +308,6 @@ const HeroSection = () => {
                     {item}
                   </span>
                 ))}
-              </div>
-            </RevealOnScroll>
-          </div>
-
-          {/* Right: Premium Visual Block */}
-          <div className="relative">
-            <RevealOnScroll delayClass="delay-200">
-              {/* Main Feature Card */}
-              <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl">
-                {/* Image Container */}
-                <div className="relative aspect-[4/5] overflow-hidden">
-                  <img
-                    src={truckImage}
-                    alt="Waste management truck"
-                    className="h-full w-full object-cover transition-all duration-[1500ms] group-hover:scale-110"
-                  />
-
-                  {/* Premium gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90" />
-
-                  {/* Subtle noise texture */}
-                  <div
-                    className="absolute inset-0 opacity-[0.015] mix-blend-overlay"
-                    style={{
-                      backgroundImage:
-                        "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E\")",
-                    }}
-                  />
-                </div>
-
-                {/* Content Overlay */}
-                <div className="absolute inset-0 flex flex-col justify-between p-8">
-                  {/* Top: Status Badge */}
-                  <div className="flex justify-end">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 backdrop-blur-xl">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[#15803d]">
-                        <div className="absolute h-1.5 w-1.5 animate-ping rounded-full bg-[#15803d]" />
-                      </div>
-                      <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-white/90">
-                        Active Fleet
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Bottom: Info */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <h3 className="text-3xl font-black leading-tight text-white lg:text-4xl">
-                        City-Wide
-                        <br />
-                        <span className="bg-gradient-to-r from-[#15803d] to-[#22c55e] bg-clip-text text-transparent">
-                          Coverage
-                        </span>
-                      </h3>
-                      <p className="text-sm leading-relaxed text-white/80">
-                        Precision routing for businesses and communities across
-                        the Philippines.
-                      </p>
-                    </div>
-
-                    {/* Mini stats */}
-                    <div className="flex gap-6">
-                      <div>
-                        <p className="text-2xl font-black text-white">24/7</p>
-                        <p className="text-[10px] font-medium uppercase tracking-wider text-white/60">
-                          Available
-                        </p>
-                      </div>
-                      <div className="h-12 w-px bg-white/10" />
-                      <div>
-                        <p className="text-2xl font-black text-white">100%</p>
-                        <p className="text-[10px] font-medium uppercase tracking-wider text-white/60">
-                          Compliant
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Decorative corner accent */}
-                <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-[#15803d]/20 blur-3xl transition-all duration-1000 group-hover:scale-150" />
               </div>
             </RevealOnScroll>
           </div>
