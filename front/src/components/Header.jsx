@@ -226,7 +226,7 @@ const Header = () => {
       <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-8 px-6 py-4 lg:px-12">
         {/* Logo - Left Side */}
         <div
-          className="pointer-events-auto group flex cursor-pointer items-center gap-3 rounded-full border border-white/10 bg-black/60 px-3 py-2 shadow-lg backdrop-blur-xl transition-all duration-500 hover:opacity-80 md:border-transparent md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none"
+          className="pointer-events-auto group flex cursor-pointer items-center gap-2 rounded-full border border-white/5 bg-black/40 py-1.5 pl-3 pr-5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all duration-500 hover:border-white/10 hover:bg-black/50 hover:shadow-[0_2px_12px_rgba(0,0,0,0.3)]"
           role="button"
           tabIndex={0}
           aria-label="Scroll to Waste PH hero section"
@@ -239,7 +239,7 @@ const Header = () => {
           <img
             src={logoImage}
             alt="Waste PH Logo"
-            className={`h-12 w-auto scale-125 object-contain transition-all duration-500 group-hover:scale-[1.375] sm:h-14 ${
+            className={`-ml-1 h-12 w-auto scale-125 object-contain transition-all duration-500 group-hover:scale-[1.375] sm:h-14 ${
               logoLoaded ? "opacity-100" : "opacity-0"
             }`}
             onLoad={() => setLogoLoaded(true)}
@@ -247,11 +247,17 @@ const Header = () => {
             fetchPriority="high"
           />
           <div className="flex flex-col leading-none">
-            <span className="bg-gradient-to-r from-white to-white/80 bg-clip-text text-xl font-black uppercase tracking-tight text-transparent transition-all duration-500 group-hover:from-[#15803d] group-hover:to-[#16a34a] sm:text-2xl">
-              WASTEPH
+            <span className="inline-flex items-center gap-[0.15em] text-xl font-black uppercase tracking-tight transition-all duration-500 sm:text-2xl">
+              <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent group-hover:from-white group-hover:to-white/90">
+                WASTE
+              </span>
+              <span className="text-[0.4em] text-white/40">·</span>
+              <span className="bg-gradient-to-r from-[#15803d] to-[#16a34a] bg-clip-text text-transparent group-hover:from-[#22c55e] group-hover:to-[#16a34a]">
+                PH
+              </span>
             </span>
             <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/50 sm:text-xs">
-              Philippines
+              est 2023
             </span>
           </div>
         </div>

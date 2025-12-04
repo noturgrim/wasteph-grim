@@ -183,42 +183,50 @@ const HeroSection = () => {
           <div className="order-1 flex flex-col justify-center space-y-4 sm:space-y-6 md:space-y-8 lg:order-2">
             {/* Badge */}
             <RevealOnScroll>
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-gradient-to-r from-white/5 to-white/[0.02] px-3 py-1.5 backdrop-blur-xl sm:gap-3 sm:px-4 sm:py-2">
+              <div className="inline-flex w-fit items-center gap-2.5 rounded-full border border-white/20 bg-gradient-to-r from-[#15803d]/10 via-[#16a34a]/5 to-transparent px-4 py-2 shadow-[0_0_20px_rgba(21,128,61,0.1)] backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/30 hover:shadow-[0_0_30px_rgba(21,128,61,0.15)] sm:gap-3 sm:px-5 sm:py-2.5">
                 <div className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#15803d] opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#15803d]" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22c55e] opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                 </div>
-                <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-white/80 sm:text-[10px] sm:tracking-[0.35em]">
-                  Philippines • Waste Management
+                <span className="bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-[9px] font-bold uppercase tracking-[0.2em] text-transparent sm:text-[10px] sm:tracking-[0.25em]">
+                  Philippines
+                </span>
+                <div className="h-3 w-px bg-gradient-to-b from-transparent via-white/30 to-transparent" />
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/70 sm:text-[10px] sm:tracking-[0.2em]">
+                  Waste Management
                 </span>
               </div>
             </RevealOnScroll>
 
             {/* Hero Title - Bold & Compact */}
             <RevealOnScroll delayClass="delay-100">
-              <h1 id="hero-title" className="space-y-1 sm:space-y-2">
+              <h1 id="hero-title" className="space-y-3 sm:space-y-4">
                 <div className="relative inline-block">
-                  <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-[clamp(2.5rem,10vw,8rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] text-transparent">
-                    WASTEPH
+                  <span className="inline-flex items-center gap-[0.15em] text-[clamp(2.5rem,10vw,8rem)] font-black uppercase leading-[0.85] tracking-[-0.05em]">
+                    <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
+                      WASTE
+                    </span>
+                    <span className="text-[0.4em] text-white/40">·</span>
+                    <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-transparent">
+                      PH
+                    </span>
                   </span>
-                  {/* Subtle underline accent */}
-                  <div className="absolute -bottom-1 left-0 h-0.5 w-16 bg-gradient-to-r from-[#15803d] to-transparent sm:-bottom-2 sm:h-1 sm:w-24 lg:h-1.5 lg:w-40" />
                 </div>
-                <div className="text-[clamp(0.875rem,2.5vw,2rem)] font-bold uppercase tracking-wide text-white/60">
-                  Philippines
+                <div className="text-[clamp(0.875rem,2.5vw,2rem)] font-light italic tracking-wide text-white/60">
+                  For a better, cleaner Cebu.
                 </div>
               </h1>
             </RevealOnScroll>
 
             {/* Description - More concise */}
             <RevealOnScroll delayClass="delay-200">
-              <p className="max-w-xl text-base font-medium leading-relaxed text-white/70 md:text-lg">
+              <p className="max-w-xl text-base font-normal leading-relaxed text-white/70 md:text-lg">
                 Elevating environmental responsibility through{" "}
-                <span className="font-semibold text-white">
+                <span className="font-bold text-white">
                   precision logistics
                 </span>
                 ,{" "}
-                <span className="font-semibold text-white">
+                <span className="font-bold text-white">
                   sustainable practices
                 </span>
                 , and unwavering commitment to the Filipino community.
@@ -294,7 +302,7 @@ const HeroSection = () => {
                 ].map((item, index) => (
                   <span
                     key={item}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-medium tracking-wide text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-[#15803d]/50 hover:bg-[#15803d]/10 hover:text-white"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-normal tracking-wide text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-[#15803d]/50 hover:bg-[#15803d]/10 hover:text-white"
                     style={{ animationDelay: `${index * 60}ms` }}
                   >
                     {item}
