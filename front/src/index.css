@@ -20,7 +20,14 @@ html {
 
 .snap-start {
   scroll-snap-align: start;
-  scroll-snap-stop: always;
+  scroll-snap-stop: normal; /* Changed from 'always' for better mobile experience */
+}
+
+/* Optional: Make snap less aggressive on mobile */
+@media (max-width: 768px) {
+  .snap-y {
+    scroll-snap-type: y proximity; /* Less strict on mobile */
+  }
 }
 
 /* Smoother scroll on supported browsers */
