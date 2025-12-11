@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import ParallaxLayer from "../common/ParallaxLayer";
-import RevealOnScroll from "../common/RevealOnScroll";
+import FadeInUp from "../common/FadeInUp";
+import StaggerText from "../common/StaggerText";
+import FloatAnimation from "../common/FloatAnimation";
+import ScaleIn from "../common/ScaleIn";
 import { scrollToSection } from "../../utils/scrollToSection";
 import truckImage from "../../assets/trucks/truck.png";
 
@@ -103,7 +106,7 @@ const HeroSection = () => {
         <div className="grid w-full gap-6 sm:gap-8 md:gap-10 lg:grid-cols-2 lg:gap-10 xl:gap-12">
           {/* Left: Large Featured Image */}
           <div className="relative order-2 lg:order-1">
-            <RevealOnScroll delayClass="delay-100">
+            <ScaleIn delay={0.2} duration={1}>
               {/* Main Feature Card - Larger, More Prominent */}
               <div className="group relative h-[350px] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl sm:h-[400px] md:h-[450px] lg:h-[500px] xl:h-[550px]">
                 {/* Image Container */}
@@ -141,34 +144,46 @@ const HeroSection = () => {
                   <div className="space-y-2 sm:space-y-3">
                     {/* Stats - Horizontal, compact */}
                     <div className="flex flex-wrap items-center gap-3 sm:gap-4 md:gap-5">
-                      <div>
-                        <p className="text-xl font-black text-white sm:text-2xl">
-                          24/7
-                        </p>
-                        <p className="text-[9px] font-medium uppercase tracking-wider text-white/70 sm:text-[10px]">
-                          Available
-                        </p>
-                      </div>
-                      <div className="h-8 w-px bg-white/20 sm:h-10" />
-                      <div>
-                        <p className="text-xl font-black text-white sm:text-2xl">
-                          100%
-                        </p>
-                        <p className="text-[9px] font-medium uppercase tracking-wider text-white/70 sm:text-[10px]">
-                          Compliant
-                        </p>
-                      </div>
-                      <div className="h-8 w-px bg-white/20 sm:h-10" />
-                      <div>
-                        <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/40 px-2 py-0.5 backdrop-blur-xl sm:gap-2 sm:px-2.5 sm:py-1">
-                          <div className="h-1 w-1 rounded-full bg-[#15803d] sm:h-1.5 sm:w-1.5">
-                            <div className="absolute h-1 w-1 animate-ping rounded-full bg-[#15803d] sm:h-1.5 sm:w-1.5" />
-                          </div>
-                          <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-white/90 sm:text-[9px] sm:tracking-[0.2em]">
-                            Active Fleet
-                          </span>
+                      <FadeInUp delay={0.5} distance={10}>
+                        <div>
+                          <p className="text-xl font-black text-white sm:text-2xl">
+                            24/7
+                          </p>
+                          <p className="text-[9px] font-medium uppercase tracking-wider text-white/70 sm:text-[10px]">
+                            Available
+                          </p>
                         </div>
-                      </div>
+                      </FadeInUp>
+                      <FadeInUp delay={0.6} distance={10}>
+                        <div className="h-8 w-px bg-white/20 sm:h-10" />
+                      </FadeInUp>
+                      <FadeInUp delay={0.7} distance={10}>
+                        <div>
+                          <p className="text-xl font-black text-white sm:text-2xl">
+                            100%
+                          </p>
+                          <p className="text-[9px] font-medium uppercase tracking-wider text-white/70 sm:text-[10px]">
+                            Compliant
+                          </p>
+                        </div>
+                      </FadeInUp>
+                      <FadeInUp delay={0.8} distance={10}>
+                        <div className="h-8 w-px bg-white/20 sm:h-10" />
+                      </FadeInUp>
+                      <FadeInUp delay={0.9} distance={10}>
+                        <div>
+                          <FloatAnimation delay={1.2} duration={3} distance={5}>
+                            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/40 px-2 py-0.5 backdrop-blur-xl sm:gap-2 sm:px-2.5 sm:py-1">
+                              <div className="h-1 w-1 rounded-full bg-[#15803d] sm:h-1.5 sm:w-1.5">
+                                <div className="absolute h-1 w-1 animate-ping rounded-full bg-[#15803d] sm:h-1.5 sm:w-1.5" />
+                              </div>
+                              <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-white/90 sm:text-[9px] sm:tracking-[0.2em]">
+                                Active Fleet
+                              </span>
+                            </div>
+                          </FloatAnimation>
+                        </div>
+                      </FadeInUp>
                     </div>
                   </div>
                 </div>
@@ -176,50 +191,67 @@ const HeroSection = () => {
                 {/* Decorative corner accent */}
                 <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-[#15803d]/20 blur-3xl transition-all duration-1000 group-hover:scale-150" />
               </div>
-            </RevealOnScroll>
+            </ScaleIn>
           </div>
 
           {/* Right: Content - More Compact */}
           <div className="order-1 flex flex-col justify-center space-y-4 sm:space-y-6 md:space-y-8 lg:order-2">
             {/* Badge */}
-            <RevealOnScroll>
-              <div className="inline-flex w-fit items-center gap-2.5 rounded-full border border-white/20 bg-gradient-to-r from-[#15803d]/10 via-[#16a34a]/5 to-transparent px-4 py-2 shadow-[0_0_20px_rgba(21,128,61,0.1)] backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/30 hover:shadow-[0_0_30px_rgba(21,128,61,0.15)] sm:gap-3 sm:px-5 sm:py-2.5">
-                <div className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22c55e] opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+            <FadeInUp delay={0.1} distance={15}>
+              <FloatAnimation delay={0.5} duration={4} distance={8}>
+                <div className="inline-flex w-fit items-center gap-2.5 rounded-full border border-white/20 bg-gradient-to-r from-[#15803d]/10 via-[#16a34a]/5 to-transparent px-4 py-2 shadow-[0_0_20px_rgba(21,128,61,0.1)] backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/30 hover:shadow-[0_0_30px_rgba(21,128,61,0.15)] sm:gap-3 sm:px-5 sm:py-2.5">
+                  <div className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22c55e] opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                  </div>
+                  <span className="bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-[9px] font-bold uppercase tracking-[0.2em] text-transparent sm:text-[10px] sm:tracking-[0.25em]">
+                    Philippines
+                  </span>
+                  <div className="h-3 w-px bg-gradient-to-b from-transparent via-white/30 to-transparent" />
+                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/70 sm:text-[10px] sm:tracking-[0.2em]">
+                    Waste Management
+                  </span>
                 </div>
-                <span className="bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-[9px] font-bold uppercase tracking-[0.2em] text-transparent sm:text-[10px] sm:tracking-[0.25em]">
-                  Philippines
-                </span>
-                <div className="h-3 w-px bg-gradient-to-b from-transparent via-white/30 to-transparent" />
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/70 sm:text-[10px] sm:tracking-[0.2em]">
-                  Waste Management
-                </span>
-              </div>
-            </RevealOnScroll>
+              </FloatAnimation>
+            </FadeInUp>
 
             {/* Hero Title - Bold & Compact */}
-            <RevealOnScroll delayClass="delay-100">
+            <div>
               <h1 id="hero-title" className="space-y-3 sm:space-y-4">
                 <div className="relative inline-block">
                   <span className="inline-flex items-center gap-[0.15em] text-[clamp(2.5rem,10vw,8rem)] font-black uppercase leading-[0.85] tracking-[-0.05em]">
-                    <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
+                    <StaggerText
+                      delay={0.3}
+                      staggerDelay={0.05}
+                      className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent"
+                    >
                       WASTE
-                    </span>
-                    <span className="text-[0.4em] text-white/40">·</span>
-                    <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-transparent">
+                    </StaggerText>
+                    <FadeInUp
+                      delay={0.6}
+                      className="text-[0.4em] text-white/40"
+                    >
+                      ·
+                    </FadeInUp>
+                    <StaggerText
+                      delay={0.7}
+                      staggerDelay={0.08}
+                      className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-transparent"
+                    >
                       PH
-                    </span>
+                    </StaggerText>
                   </span>
                 </div>
-                <div className="text-[clamp(0.875rem,2.5vw,2rem)] font-light italic tracking-wide text-white/60">
-                  For a better, cleaner Cebu.
-                </div>
+                <FadeInUp delay={0.9} distance={15}>
+                  <div className="text-[clamp(0.875rem,2.5vw,2rem)] font-light italic tracking-wide text-white/60">
+                    For a better, cleaner Cebu.
+                  </div>
+                </FadeInUp>
               </h1>
-            </RevealOnScroll>
+            </div>
 
             {/* Description - More concise */}
-            <RevealOnScroll delayClass="delay-200">
+            <FadeInUp delay={1.1} duration={0.7}>
               <p className="max-w-xl text-base font-normal leading-relaxed text-white/70 md:text-lg">
                 Elevating environmental responsibility through{" "}
                 <span className="font-bold text-white">
@@ -231,10 +263,10 @@ const HeroSection = () => {
                 </span>
                 , and unwavering commitment to the Filipino community.
               </p>
-            </RevealOnScroll>
+            </FadeInUp>
 
             {/* CTA Buttons */}
-            <RevealOnScroll delayClass="delay-300">
+            <FadeInUp delay={1.3} distance={15}>
               <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 {/* Primary CTA */}
                 <div
@@ -288,28 +320,29 @@ const HeroSection = () => {
                   </svg>
                 </div>
               </div>
-            </RevealOnScroll>
+            </FadeInUp>
 
             {/* Service Pills */}
-            <RevealOnScroll delayClass="delay-[400ms]">
-              <div className="flex flex-wrap gap-3">
-                {[
-                  "Mixed Waste",
-                  "Food Waste",
-                  "Recyclables",
-                  "Construction",
-                  "Septic Tank",
-                ].map((item, index) => (
-                  <span
-                    key={item}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-normal tracking-wide text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-[#15803d]/50 hover:bg-[#15803d]/10 hover:text-white"
-                    style={{ animationDelay: `${index * 60}ms` }}
-                  >
+            <div className="flex flex-wrap gap-3">
+              {[
+                "Mixed Waste",
+                "Food Waste",
+                "Recyclables",
+                "Construction",
+                "Septic Tank",
+              ].map((item, index) => (
+                <FadeInUp
+                  key={item}
+                  delay={1.5 + index * 0.1}
+                  duration={0.5}
+                  distance={10}
+                >
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-normal tracking-wide text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-[#15803d]/50 hover:bg-[#15803d]/10 hover:text-white">
                     {item}
                   </span>
-                ))}
-              </div>
-            </RevealOnScroll>
+                </FadeInUp>
+              ))}
+            </div>
           </div>
         </div>
       </div>
