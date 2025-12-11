@@ -105,14 +105,30 @@ const DateBadge = () => {
 const EventCard = ({ event, index, activeIndex, onToggle }) => {
   const { changeSlide } = useSlideShowContext();
   const isExpanded = activeIndex === index;
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  // Detect if device is mobile
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleMouseEnter = () => {
     changeSlide(index);
   };
 
   const handleClick = () => {
-    changeSlide(index);
-    onToggle(index);
+    // Only handle clicks on mobile devices
+    if (isMobile) {
+      changeSlide(index);
+      onToggle(index);
+    }
   };
 
   return (
@@ -192,6 +208,14 @@ const ServicesSlideshow = () => {
     // If clicking the same card, close it; otherwise open the new one
     setActiveCardIndex(activeCardIndex === index ? null : index);
   };
+
+  // Preload all images for better performance
+  React.useEffect(() => {
+    showcaseEvents.forEach((event) => {
+      const img = new Image();
+      img.src = event.image;
+    });
+  }, []);
 
   return (
     <SectionShell

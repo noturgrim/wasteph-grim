@@ -82,8 +82,7 @@ export const SlideShowText = ({ text, index, className }) => {
               initial={{ y: "0%" }}
               animate={isActive ? { y: "-110%" } : { y: "0%" }}
             >
-              {char}
-              {char === " " && charIndex < characters.length - 1 && <>&nbsp;</>}
+              {char === " " ? "\u00A0" : char}
             </motion.span>
 
             <motion.span
@@ -91,7 +90,7 @@ export const SlideShowText = ({ text, index, className }) => {
               initial={{ y: "110%" }}
               animate={isActive ? { y: "0%" } : { y: "110%" }}
             >
-              {char}
+              {char === " " ? "\u00A0" : char}
             </motion.span>
           </MotionConfig>
         </span>
@@ -129,22 +128,79 @@ const clipPathVariants = {
 };
 
 /**
- * Animated image component with clip path reveal
+ * Animated image component with clip path reveal and loading state
  */
 export const SlideShowImage = ({ index, imageUrl, alt, className }) => {
   const { activeSlide } = useSlideShowContext();
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const [hasError, setHasError] = React.useState(false);
+
+  const handleLoad = () => {
+    setIsLoaded(true);
+  };
+
+  const handleError = () => {
+    setHasError(true);
+    setIsLoaded(true);
+  };
 
   return (
-    <motion.img
-      src={imageUrl}
-      alt={alt}
-      className={cn(
-        "inline-block align-middle h-full w-full object-cover",
-        className
+    <>
+      {/* Loading Skeleton */}
+      {!isLoaded && (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-white/10 via-white/5 to-transparent">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-[#15803d]" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/60">
+                Loading...
+              </p>
+            </div>
+          </div>
+        </div>
       )}
-      transition={{ ease: [0.33, 1, 0.68, 1], duration: 0.8 }}
-      variants={clipPathVariants}
-      animate={activeSlide === index ? "visible" : "hidden"}
-    />
+
+      {/* Error State */}
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+          <div className="flex flex-col items-center gap-2 p-4 text-center">
+            <svg
+              className="h-12 w-12 text-white/40"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <p className="text-xs font-semibold text-white/60">
+              Failed to load image
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Actual Image */}
+      <motion.img
+        src={imageUrl}
+        alt={alt}
+        onLoad={handleLoad}
+        onError={handleError}
+        loading="lazy"
+        decoding="async"
+        className={cn(
+          "inline-block align-middle h-full w-full object-cover transition-opacity duration-500",
+          isLoaded && !hasError ? "opacity-100" : "opacity-0",
+          className
+        )}
+        transition={{ ease: [0.33, 1, 0.68, 1], duration: 0.8 }}
+        variants={clipPathVariants}
+        animate={activeSlide === index ? "visible" : "hidden"}
+      />
+    </>
   );
 };
