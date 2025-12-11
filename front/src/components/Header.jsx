@@ -8,6 +8,7 @@ const navItems = [
   { label: "Services", targetId: "services", icon: "services" },
   { label: "Waste Streams", targetId: "waste-streams", icon: "streams" },
   { label: "Process", targetId: "process", icon: "process" },
+  { label: "Showcase", targetId: "community-showcase", icon: "showcase" },
   { label: "Contact", targetId: "contact", icon: "contact" },
 ];
 
@@ -47,6 +48,7 @@ const Header = () => {
           { id: "services", navId: "services" },
           { id: "waste-streams", navId: "waste-streams" },
           { id: "process", navId: "process" },
+          { id: "community-showcase", navId: "community-showcase" },
           { id: "contact", navId: "contact" },
           { id: "clients", navId: "contact" }, // Clients flows with contact area
         ];
@@ -200,6 +202,20 @@ const Header = () => {
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
           </svg>
         );
+      case "showcase":
+        return (
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+          </svg>
+        );
       case "contact":
         return (
           <svg
@@ -273,7 +289,7 @@ const Header = () => {
                 : "border-[#15803d]/50 bg-gradient-to-r from-[#15803d]/20 to-[#16a34a]/20"
             }`}
             style={{
-              width: navExpanded ? "750px" : `${collapsedWidth}px`,
+              width: navExpanded ? "850px" : `${collapsedWidth}px`,
             }}
             onMouseEnter={() => setNavExpanded(true)}
             onMouseLeave={() => setNavExpanded(false)}

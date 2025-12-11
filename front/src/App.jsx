@@ -8,6 +8,7 @@ import MessageSection from "./components/sections/MessageSection";
 import ServicesSection from "./components/sections/ServicesSection";
 import WasteStreamsShowcase from "./components/sections/WasteStreamsShowcase";
 import ProcessSection from "./components/sections/ProcessSection";
+import ServicesSlideshow from "./components/sections/ServicesSlideshow";
 import CTASection from "./components/sections/CTASection";
 import LoadingScreen from "./components/common/LoadingScreen";
 import TopographicCanvas from "./components/common/TopographicCanvas";
@@ -52,6 +53,7 @@ const App = () => {
               <ServicesSection />
               <WasteStreamsShowcase />
               <ProcessSection />
+              <ServicesSlideshow />
               <CTASection />
               <ClientsSection />
             </main>
