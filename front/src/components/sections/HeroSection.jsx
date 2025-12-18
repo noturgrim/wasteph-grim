@@ -5,13 +5,16 @@ import StaggerText from "../common/StaggerText";
 import FloatAnimation from "../common/FloatAnimation";
 import ScaleIn from "../common/ScaleIn";
 import { scrollToSection } from "../../utils/scrollToSection";
-import truckImage from "../../assets/trucks/truck.png";
+import montageVideo from "../../assets/video/montage.mp4";
 
 const HeroSection = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [scrollY, setScrollY] = useState(0);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const heroRef = useRef(null);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -43,6 +46,43 @@ const HeroSection = () => {
     };
   }, []);
 
+  // Video loading progress tracking
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleProgress = () => {
+      if (video.buffered.length > 0) {
+        const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+        const duration = video.duration;
+        if (duration > 0) {
+          const progress = (bufferedEnd / duration) * 100;
+          setLoadingProgress(progress);
+        }
+      }
+    };
+
+    const handleCanPlay = () => {
+      setVideoLoaded(true);
+      setLoadingProgress(100);
+    };
+
+    const handleError = () => {
+      setVideoError(true);
+      console.error("Video failed to load");
+    };
+
+    video.addEventListener("progress", handleProgress);
+    video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("error", handleError);
+
+    return () => {
+      video.removeEventListener("progress", handleProgress);
+      video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("error", handleError);
+    };
+  }, []);
+
   const handlePrimaryClick = () => {
     scrollToSection("contact");
   };
@@ -67,137 +107,77 @@ const HeroSection = () => {
     <section
       ref={heroRef}
       id="hero"
-      className="relative flex min-h-screen snap-start items-center overflow-visible pb-16 pt-24 sm:pt-20 md:py-20 lg:py-24 xl:py-32"
+      className="relative flex min-h-screen snap-start items-center overflow-hidden pb-16 pt-24 sm:pt-20 md:py-20 lg:py-24 xl:py-32"
       aria-labelledby="hero-title"
     >
-      {/* Premium ambient lighting */}
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <ParallaxLayer speed={0.15}>
-          <div
-            className="absolute left-1/4 top-0 h-[800px] w-[800px] animate-pulse-glow rounded-full bg-[#15803d]/8 blur-[140px] transition-transform duration-1000 ease-out"
-            style={{
-              transform: `translate(${mousePosition.x * 20}px, ${
-                mousePosition.y * 20
-              }px)`,
-            }}
-          />
-        </ParallaxLayer>
-        <ParallaxLayer speed={-0.12}>
-          <div
-            className="absolute right-1/4 top-1/3 h-[600px] w-[600px] animate-pulse-glow rounded-full bg-[#16a34a]/6 blur-[120px] transition-transform duration-1200 ease-out"
-            style={{
-              transform: `translate(${mousePosition.x * -15}px, ${
-                mousePosition.y * -15
-              }px)`,
-            }}
-          />
-        </ParallaxLayer>
+      {/* Full-Screen Video Background */}
+      <div className="absolute inset-0 z-0">
+        {/* Loading State with Progress */}
+        {!videoLoaded && !videoError && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-gradient-to-br from-[#15803d]/20 to-[#051008]">
+            <div className="text-center">
+              <div className="mb-4 h-1.5 w-64 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full bg-gradient-to-r from-[#15803d] to-[#16a34a] transition-all duration-300"
+                  style={{ width: `${loadingProgress}%` }}
+                />
+              </div>
+              <p className="text-sm font-medium text-white/60">
+                Loading video... {Math.round(loadingProgress)}%
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Error Fallback - Static Gradient */}
+        {videoError && (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0a1f0f] via-[#051008] to-black">
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-[#15803d] blur-3xl" />
+              <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-[#16a34a] blur-3xl" />
+            </div>
+          </div>
+        )}
+
+        <video
+          ref={videoRef}
+          className={`h-full w-full object-cover transition-opacity duration-1000 ${
+            videoLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Crect fill='%230a1f0f' width='1920' height='1080'/%3E%3C/svg%3E"
+          style={{
+            willChange: videoLoaded ? "auto" : "opacity",
+          }}
+        >
+          <source src={montageVideo} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+
+        {/* Multi-layer gradient overlays for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40" />
+
+        {/* Subtle vignette effect */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_100%)] opacity-40" />
       </div>
 
+      {/* Content Layer */}
       <div
         className="relative z-10 mx-auto flex h-full w-full max-w-[1600px] items-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16"
         style={{
-          transform: `translateY(${scrollY * 0.12}px)`,
+          transform: `translateY(${scrollY * 0.08}px)`,
           opacity: Math.max(0, 1 - Math.max(0, scrollY - 800) / 2000),
           transition: "transform 0.1s ease-out, opacity 0.1s ease-out",
         }}
       >
-        {/* Main Hero Grid - Reversed for Image Prominence */}
-        <div className="grid w-full gap-4 sm:gap-6 md:gap-8 lg:grid-cols-2 lg:gap-10 xl:gap-12">
-          {/* Left: Large Featured Image */}
-          <div className="relative order-2 lg:order-1">
-            <ScaleIn delay={0.2} duration={1}>
-              {/* Main Feature Card - Larger, More Prominent */}
-              <div className="group relative h-[350px] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl sm:h-[400px] md:h-[450px] lg:h-[500px] xl:h-[550px]">
-                {/* Image Container */}
-                <div className="relative h-full overflow-hidden">
-                  {!imageLoaded && (
-                    <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-white/10 to-white/5" />
-                  )}
-                  <img
-                    src={truckImage}
-                    alt="Waste management truck"
-                    className={`h-full w-full object-cover transition-all duration-[1500ms] group-hover:scale-110 ${
-                      imageLoaded ? "opacity-100" : "opacity-0"
-                    }`}
-                    onLoad={() => setImageLoaded(true)}
-                    loading="eager"
-                    fetchPriority="high"
-                    decoding="async"
-                    style={{
-                      contentVisibility: "auto",
-                      willChange: imageLoaded ? "auto" : "opacity",
-                    }}
-                  />
-
-                  {/* Premium gradient overlay - Less intense to show image better */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-
-                  {/* Subtle noise texture */}
-                  <div
-                    className="absolute inset-0 opacity-[0.015] mix-blend-overlay"
-                    style={{
-                      backgroundImage:
-                        "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E\")",
-                    }}
-                  />
-                </div>
-
-                {/* Content Overlay - Positioned at bottom */}
-                <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4 md:p-5">
-                  {/* Bottom: Compact Info */}
-                  <div className="space-y-2 sm:space-y-3">
-                    {/* Stats - Horizontal, compact */}
-                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 md:gap-5">
-                      <FadeInUp delay={0.5} distance={10}>
-                        <div>
-                          <p className="text-xl font-black text-white sm:text-2xl">
-                            24/7
-                          </p>
-                          <p className="text-[9px] font-medium uppercase tracking-wider text-white/70 sm:text-[10px]">
-                            Available
-                          </p>
-                        </div>
-                      </FadeInUp>
-                      <FadeInUp delay={0.6} distance={10}>
-                        <div className="h-8 w-px bg-white/20 sm:h-10" />
-                      </FadeInUp>
-                      <FadeInUp delay={0.7} distance={10}>
-                        <div>
-                          <p className="text-xl font-black text-white sm:text-2xl">
-                            100%
-                          </p>
-                          <p className="text-[9px] font-medium uppercase tracking-wider text-white/70 sm:text-[10px]">
-                            Compliant
-                          </p>
-                        </div>
-                      </FadeInUp>
-                      <FadeInUp delay={0.8} distance={10}>
-                        <div className="h-8 w-px bg-white/20 sm:h-10" />
-                      </FadeInUp>
-                      <FadeInUp delay={0.9} distance={10}>
-                        <div>
-                          <FloatAnimation delay={1.2} duration={3} distance={5}>
-                            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/40 px-2 py-0.5 backdrop-blur-xl sm:gap-2 sm:px-2.5 sm:py-1">
-                              <div className="h-1 w-1 rounded-full bg-[#15803d] sm:h-1.5 sm:w-1.5">
-                                <div className="absolute h-1 w-1 animate-ping rounded-full bg-[#15803d] sm:h-1.5 sm:w-1.5" />
-                              </div>
-                              <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-white/90 sm:text-[9px] sm:tracking-[0.2em]">
-                                Active Fleet
-                              </span>
-                            </div>
-                          </FloatAnimation>
-                        </div>
-                      </FadeInUp>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Decorative corner accent */}
-                <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-[#15803d]/20 blur-3xl transition-all duration-1000 group-hover:scale-150" />
-              </div>
-            </ScaleIn>
-          </div>
+        {/* Centered Content with Video Stats */}
+        <div className="grid w-full gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-12 xl:gap-16">
+          {/* Left: Main Content */}
 
           {/* Right: Content - More Compact */}
           <div className="order-1 flex flex-col justify-center space-y-4 sm:space-y-6 md:space-y-8 lg:order-2">
@@ -350,6 +330,104 @@ const HeroSection = () => {
                   </span>
                 </FadeInUp>
               ))}
+            </div>
+          </div>
+
+          {/* Right: Stats Cards - Floating on video */}
+          <div className="order-1 lg:order-2">
+            <div className="flex flex-col gap-4">
+              {/* Stats Cards */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                <FadeInUp delay={1.0}>
+                  <div className="group rounded-xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.12] sm:p-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-3xl font-black text-white sm:text-4xl">
+                          24/7
+                        </p>
+                        <p className="mt-1 text-xs font-medium uppercase tracking-wider text-white/60">
+                          Service Available
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-[#15803d]/20 p-2">
+                        <svg
+                          className="h-6 w-6 text-[#15803d]"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </FadeInUp>
+
+                <FadeInUp delay={1.2}>
+                  <div className="group rounded-xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.12] sm:p-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-3xl font-black text-white sm:text-4xl">
+                          100%
+                        </p>
+                        <p className="mt-1 text-xs font-medium uppercase tracking-wider text-white/60">
+                          Compliant & Legal
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-[#15803d]/20 p-2">
+                        <svg
+                          className="h-6 w-6 text-[#15803d]"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </FadeInUp>
+
+                <FadeInUp delay={1.4}>
+                  <div className="group rounded-xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.12] sm:p-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-3xl font-black text-white sm:text-4xl">
+                          Active
+                        </p>
+                        <p className="mt-1 text-xs font-medium uppercase tracking-wider text-white/60">
+                          Fleet Operating
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-[#15803d]/20 p-2">
+                        <svg
+                          className="h-6 w-6 text-[#15803d]"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </FadeInUp>
+              </div>
             </div>
           </div>
         </div>

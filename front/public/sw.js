@@ -62,6 +62,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Skip caching for video files (they use range requests)
+  if (/\.(mp4|webm|ogg|mov)$/i.test(url.pathname)) {
+    return; // Let browser handle video streaming natively
+  }
+
   // Determine caching strategy based on file type
   let strategy = null;
 
@@ -106,7 +111,8 @@ async function cacheFirst(request, strategy) {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    // Only cache complete responses (status 200), not partial responses (status 206)
+    if (response.ok && response.status === 200) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone());
     }
