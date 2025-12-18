@@ -2,6 +2,7 @@ import React from "react";
 import RevealOnScroll from "./RevealOnScroll";
 import TextReveal from "./TextReveal";
 import WordReveal from "./WordReveal";
+import VerticalLabelReveal from "./VerticalLabelReveal";
 
 const getVariantClasses = (variant) => {
   if (variant === "accent") {
@@ -40,16 +41,20 @@ const SectionShell = ({
         {label && headline && (
           <div className="absolute left-1 top-1/2 z-10 -translate-y-1/2 sm:left-2 md:-left-2 lg:-left-4 xl:-left-8 2xl:-left-12">
             <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
-              <p
-                className="text-[8px] font-bold uppercase tracking-[0.2em] text-[#15803d] sm:text-[9px] sm:tracking-[0.25em] md:text-[10px] lg:text-xs lg:tracking-[0.35em] xl:text-sm"
-                style={{
-                  writingMode: "vertical-rl",
-                  transform: "rotate(180deg)",
-                }}
-              >
-                {label}
-              </p>
-              <span className="h-px w-4 bg-gradient-to-r from-[#15803d] to-transparent sm:w-6 md:w-8 lg:w-10 xl:w-12 2xl:w-16" />
+              <TextReveal delay={0} duration={0.6} direction="bottom">
+                <p
+                  className="text-[8px] font-bold uppercase tracking-[0.2em] text-[#15803d] sm:text-[9px] sm:tracking-[0.25em] md:text-[10px] lg:text-xs lg:tracking-[0.35em] xl:text-sm"
+                  style={{
+                    writingMode: "vertical-rl",
+                    transform: "rotate(180deg)",
+                  }}
+                >
+                  {label}
+                </p>
+              </TextReveal>
+              <TextReveal delay={0.2} duration={0.5} direction="right">
+                <span className="h-px w-4 bg-gradient-to-r from-[#15803d] to-transparent sm:w-6 md:w-8 lg:w-10 xl:w-12 2xl:w-16" />
+              </TextReveal>
             </div>
           </div>
         )}
