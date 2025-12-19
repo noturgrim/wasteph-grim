@@ -178,18 +178,20 @@ const HeroSection = () => {
         }}
       >
         {/* Centered Content with Video Stats */}
-        <div className="grid w-full gap-8 lg:grid-cols-[1.5fr_0.7fr] lg:gap-16 xl:gap-20">
+        <div className="grid w-full gap-8 lg:grid-cols-[1.3fr_0.9fr] lg:gap-16 xl:gap-20">
           {/* Left: Main Content (WASTE PH text, buttons, pills + Map Overlay) */}
           <div className="relative flex min-h-[700px] flex-col justify-center space-y-10 py-12 sm:space-y-12 md:space-y-16 lg:min-h-[800px] lg:space-y-20 lg:py-16">
             {/* Map Overlay - Shows when hovering 24/7 stats */}
             <div
-              className={`absolute inset-0 z-20 flex items-center justify-center transition-all duration-700 ${
+              className={`absolute inset-0 z-20 flex items-center justify-center overflow-visible transition-all duration-700 ${
                 showMap
                   ? "opacity-100 visible"
                   : "opacity-0 invisible pointer-events-none"
               }`}
             >
-              <PhilippinesMap highlightCebu={true} />
+              <div className="overflow-visible">
+                <PhilippinesMap highlightCebu={true} />
+              </div>
             </div>
 
             {/* Original Content - Fades out when map shows */}

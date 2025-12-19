@@ -53,10 +53,10 @@ const PhilippinesMap = ({ highlightCebu = true, className = "" }) => {
 
   return (
     <div
-      className={`relative flex h-full w-full items-center justify-center overflow-hidden ${className}`}
+      className={`relative flex h-96 w-96 items-center justify-center ${className}`}
     >
-      <div className="relative h-full w-full max-w-2xl px-8">
-        <div className="flex h-full items-center justify-center overflow-hidden">
+      <div className="relative h-full w-full">
+        <div className="flex h-full items-center justify-center">
           <Philippines
             type="select-single"
             size="100%"
