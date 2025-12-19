@@ -6,23 +6,53 @@ const layersData = [
   { className: "layer-5", speed: "95s", size: "311px", zIndex: 1, image: "5" },
   { className: "layer-4", speed: "75s", size: "468px", zIndex: 1, image: "4" },
   {
-    className: "bike-1",
+    className: "truck-1",
     speed: "10s",
-    size: "75px",
+    size: "150px",
     zIndex: 2,
     image: "bike",
     animation: "parallax_bike",
-    bottom: "100px",
+    bottom: "90px",
     noRepeat: true,
   },
   {
-    className: "bike-2",
+    className: "truck-2",
     speed: "15s",
-    size: "75px",
+    size: "150px",
     zIndex: 2,
     image: "bike",
     animation: "parallax_bike",
-    bottom: "100px",
+    bottom: "90px",
+    noRepeat: true,
+  },
+  {
+    className: "truck-3",
+    speed: "12s",
+    size: "150px",
+    zIndex: 2,
+    image: "bike",
+    animation: "parallax_bike",
+    bottom: "90px",
+    noRepeat: true,
+  },
+  {
+    className: "truck-4",
+    speed: "18s",
+    size: "150px",
+    zIndex: 2,
+    image: "bike",
+    animation: "parallax_bike",
+    bottom: "90px",
+    noRepeat: true,
+  },
+  {
+    className: "truck-5",
+    speed: "8s",
+    size: "150px",
+    zIndex: 2,
+    image: "bike",
+    animation: "parallax_bike",
+    bottom: "95px",
     noRepeat: true,
   },
   { className: "layer-3", speed: "55s", size: "158px", zIndex: 3, image: "3" },
@@ -31,11 +61,40 @@ const layersData = [
 ];
 
 const WasteManagementParallax = ({ title = "", subtitle = "" }) => {
+  // Garbage truck SVG as data URL
+  const truckSvg = `data:image/svg+xml,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" fill="none">
+      <!-- Main truck body -->
+      <rect x="40" y="35" width="120" height="45" fill="#15803d" rx="3"/>
+      <!-- Cargo section -->
+      <rect x="40" y="35" width="80" height="45" fill="#16a34a"/>
+      <!-- Cabin -->
+      <path d="M 120 35 L 120 80 L 160 80 L 160 50 L 145 35 Z" fill="#15803d"/>
+      <!-- Cabin window -->
+      <rect x="125" y="42" width="28" height="20" fill="#0a0f0d" opacity="0.3"/>
+      <!-- Wheels -->
+      <circle cx="65" cy="85" r="12" fill="#1a1a1a"/>
+      <circle cx="65" cy="85" r="8" fill="#2a2a2a"/>
+      <circle cx="140" cy="85" r="12" fill="#1a1a1a"/>
+      <circle cx="140" cy="85" r="8" fill="#2a2a2a"/>
+      <!-- Details -->
+      <rect x="45" y="45" width="25" height="25" fill="#14532d" opacity="0.5"/>
+      <rect x="75" y="45" width="25" height="25" fill="#14532d" opacity="0.3"/>
+      <!-- Front lights -->
+      <circle cx="157" cy="70" r="3" fill="#fbbf24" opacity="0.8"/>
+    </svg>
+  `)}`;
+
   // Generate dynamic CSS for each layer
   const dynamicStyles = useMemo(() => {
     return layersData
       .map((layer) => {
-        const url = `https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/${layer.image}.png`;
+        // Use truck SVG for bike layers, otherwise use original images
+        const url =
+          layer.image === "bike"
+            ? truckSvg
+            : `https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/${layer.image}.png`;
+
         return `
           .${layer.className} {
             background-image: url(${url});
@@ -49,7 +108,7 @@ const WasteManagementParallax = ({ title = "", subtitle = "" }) => {
         `;
       })
       .join("\n");
-  }, []);
+  }, [truckSvg]);
 
   return (
     <section
