@@ -15,6 +15,20 @@ const HeroSection = () => {
   const [videoError, setVideoError] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showMap, setShowMap] = useState(false);
+  const [mapTimeout, setMapTimeout] = useState(null);
+  const [isHoveringMap, setIsHoveringMap] = useState(false);
+  const [isHoveringStat, setIsHoveringStat] = useState(false);
+
+  // Update map visibility based on hover states
+  useEffect(() => {
+    if (isHoveringMap || isHoveringStat) {
+      if (mapTimeout) clearTimeout(mapTimeout);
+      setShowMap(true);
+    } else {
+      const timeout = setTimeout(() => setShowMap(false), 500);
+      setMapTimeout(timeout);
+    }
+  }, [isHoveringMap, isHoveringStat]);
   const heroRef = useRef(null);
   const videoRef = useRef(null);
 
@@ -178,26 +192,30 @@ const HeroSection = () => {
         }}
       >
         {/* Centered Content with Video Stats */}
-        <div className="grid w-full gap-8 lg:grid-cols-[1.3fr_0.9fr] lg:gap-16 xl:gap-20">
+        <div className="grid w-full gap-6 sm:gap-8 lg:grid-cols-[1.3fr_0.9fr] lg:gap-16 xl:gap-20">
           {/* Left: Main Content (WASTE PH text, buttons, pills + Map Overlay) */}
-          <div className="relative flex min-h-[700px] flex-col justify-center space-y-10 py-12 sm:space-y-12 md:space-y-16 lg:min-h-[800px] lg:space-y-20 lg:py-16">
+          <div className="relative flex min-h-[500px] flex-col justify-center space-y-6 py-8 sm:min-h-[600px] sm:space-y-8 sm:py-10 md:space-y-10 lg:min-h-[800px] lg:space-y-20 lg:py-16">
             {/* Map Overlay - Shows when hovering 24/7 stats */}
             <div
-              className={`absolute inset-0 z-20 flex items-center justify-center overflow-visible transition-all duration-700 ${
+              className={`absolute inset-0 z-20 flex items-center justify-center overflow-visible will-change-transform transition-all duration-500 ease-in-out ${
                 showMap
-                  ? "opacity-100 visible"
-                  : "opacity-0 invisible pointer-events-none"
+                  ? "opacity-100 visible scale-100"
+                  : "opacity-0 invisible scale-95 pointer-events-none"
               }`}
+              onMouseEnter={() => setIsHoveringMap(true)}
+              onMouseLeave={() => setIsHoveringMap(false)}
             >
               <div className="overflow-visible">
-                <PhilippinesMap highlightCebu={true} />
+                <PhilippinesMap selectedProvince="Cebu" highlightCebu={true} />
               </div>
             </div>
 
             {/* Original Content - Fades out when map shows */}
             <div
-              className={`relative z-10 space-y-5 py-6 transition-all duration-700 sm:space-y-6 md:space-y-8 lg:space-y-10 lg:py-8 ${
-                showMap ? "opacity-0 pointer-events-none" : "opacity-100"
+              className={`relative z-10 space-y-4 py-4 will-change-transform transition-all duration-500 ease-in-out sm:space-y-5 sm:py-6 md:space-y-6 lg:space-y-8 lg:py-8 ${
+                showMap
+                  ? "opacity-0 scale-95 pointer-events-none"
+                  : "opacity-100 scale-100"
               }`}
             >
               {/* Badge */}
@@ -362,9 +380,9 @@ const HeroSection = () => {
                   <div className="relative">
                     {/* Stat Card */}
                     <div
-                      className="group rounded-xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/50 hover:bg-white/[0.12] sm:p-5"
-                      onMouseEnter={() => setShowMap(true)}
-                      onMouseLeave={() => setShowMap(false)}
+                      className="group rounded-xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl transition-colors duration-200 ease-out hover:border-[#15803d]/50 hover:bg-white/[0.12] sm:p-5"
+                      onMouseEnter={() => setIsHoveringStat(true)}
+                      onMouseLeave={() => setIsHoveringStat(false)}
                       role="presentation"
                     >
                       {/* Original Content */}
@@ -400,10 +418,10 @@ const HeroSection = () => {
                       </div>
 
                       {/* Hover Hint */}
-                      <div className="mt-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <div className="mt-3 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100">
                         <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-[#22c55e]">
                           <div className="h-1 w-1 rounded-full bg-[#22c55e] animate-pulse" />
-                          <span>Hover to view service area</span>
+                          <span>Hover to view coverage map</span>
                         </div>
                       </div>
                     </div>
