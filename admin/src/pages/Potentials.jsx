@@ -23,6 +23,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
+import ResponsiveTable, {
+  MobileCard,
+  MobileCardRow,
+} from "../components/common/ResponsiveTable";
 
 const Potentials = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -121,7 +125,7 @@ const Potentials = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-slate-200 bg-slate-50">
@@ -200,47 +204,101 @@ const Potentials = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <ResponsiveTable
+            mobileCards={filteredPotentials.map((potential) => (
+              <MobileCard key={potential.id}>
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-slate-900 truncate mb-1">
+                        {potential.companyName}
+                      </h3>
+                      <span className="inline-block px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-medium">
+                        {potential.industry}
+                      </span>
+                    </div>
+                    {getStatusBadge(potential.status)}
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <MobileCardRow
+                      label="Contact"
+                      value={potential.contactPerson}
+                    />
+                    <MobileCardRow label="Email" value={potential.email} />
+                    <MobileCardRow label="Phone" value={potential.phone} />
+                    <MobileCardRow
+                      label="Sales Rep"
+                      value={potential.salesRep}
+                    />
+                    <MobileCardRow
+                      label="Date Added"
+                      value={new Date(potential.dateAdded).toLocaleDateString()}
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-2 border-t border-slate-200">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs"
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+              </MobileCard>
+            ))}
+          >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Company Name</TableHead>
-                  <TableHead>Industry</TableHead>
-                  <TableHead>Contact Person</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead className="hidden 2xl:table-cell">
+                    Industry
+                  </TableHead>
+                  <TableHead>Contact</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
+                  <TableHead className="hidden 2xl:table-cell">Phone</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Sales Rep</TableHead>
-                  <TableHead>Date Added</TableHead>
+                  <TableHead className="hidden 2xl:table-cell">
+                    Sales Rep
+                  </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredPotentials.map((potential) => (
                   <TableRow key={potential.id} className="hover:bg-slate-50">
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium max-w-[150px] truncate">
                       {potential.companyName}
                     </TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 rounded-md bg-blue-100 text-blue-700 text-xs font-medium">
+                    <TableCell className="hidden 2xl:table-cell">
+                      <span className="px-2 py-1 rounded-md bg-blue-100 text-blue-700 text-xs font-medium whitespace-nowrap">
                         {potential.industry}
                       </span>
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="text-slate-600 max-w-[120px] truncate">
                       {potential.contactPerson}
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="text-slate-600 max-w-[140px] truncate text-sm">
                       {potential.email}
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="hidden 2xl:table-cell text-slate-600 max-w-[110px] truncate text-sm">
                       {potential.phone}
                     </TableCell>
                     <TableCell>{getStatusBadge(potential.status)}</TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="hidden 2xl:table-cell text-slate-600">
                       {potential.salesRep}
-                    </TableCell>
-                    <TableCell className="text-slate-600">
-                      {new Date(potential.dateAdded).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -265,7 +323,7 @@ const Potentials = () => {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </ResponsiveTable>
         </CardContent>
       </Card>
     </div>

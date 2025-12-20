@@ -23,6 +23,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
+import ResponsiveTable, {
+  MobileCard,
+  MobileCardRow,
+} from "../components/common/ResponsiveTable";
 
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -126,7 +130,7 @@ const Leads = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="border-blue-200 bg-blue-50">
@@ -213,45 +217,106 @@ const Leads = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <ResponsiveTable
+            mobileCards={filteredLeads.map((lead) => (
+              <MobileCard key={lead.id}>
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-slate-900 truncate mb-1">
+                        {lead.name}
+                      </h3>
+                      <p className="text-sm text-slate-600 truncate">
+                        {lead.company}
+                      </p>
+                    </div>
+                    {getStatusBadge(lead.status)}
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <MobileCardRow label="Email" value={lead.email} />
+                    <MobileCardRow label="Phone" value={lead.phone} />
+                    <MobileCardRow
+                      label="Contract Type"
+                      value={
+                        <span className="px-2 py-0.5 rounded bg-slate-100 text-xs font-medium whitespace-nowrap">
+                          {lead.contractType}
+                        </span>
+                      }
+                    />
+                    <MobileCardRow
+                      label="Date Added"
+                      value={new Date(lead.date).toLocaleDateString()}
+                    />
+                    <MobileCardRow
+                      label="Last Update"
+                      value={new Date(lead.lastUpdate).toLocaleDateString()}
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-2 border-t border-slate-200">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs"
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+              </MobileCard>
+            ))}
+          >
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Contract Type</TableHead>
+                  <TableHead className="hidden 2xl:table-cell">Phone</TableHead>
+                  <TableHead className="hidden 2xl:table-cell">Type</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Date Added</TableHead>
-                  <TableHead>Last Update</TableHead>
+                  <TableHead className="hidden 2xl:table-cell">
+                    Updated
+                  </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredLeads.map((lead) => (
                   <TableRow key={lead.id} className="hover:bg-slate-50">
-                    <TableCell className="font-medium">{lead.name}</TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="font-medium max-w-[130px] truncate">
+                      {lead.name}
+                    </TableCell>
+                    <TableCell className="text-slate-600 max-w-[150px] truncate">
                       {lead.company}
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="text-slate-600 max-w-[140px] truncate text-sm">
                       {lead.email}
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="hidden 2xl:table-cell text-slate-600 max-w-[110px] truncate text-sm">
                       {lead.phone}
                     </TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 rounded-md bg-slate-100 text-xs font-medium">
+                    <TableCell className="hidden 2xl:table-cell">
+                      <span className="px-2 py-1 rounded-md bg-slate-100 text-xs font-medium whitespace-nowrap">
                         {lead.contractType}
                       </span>
                     </TableCell>
                     <TableCell>{getStatusBadge(lead.status)}</TableCell>
-                    <TableCell className="text-slate-600">
-                      {new Date(lead.date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-slate-600">
-                      {new Date(lead.lastUpdate).toLocaleDateString()}
+                    <TableCell className="hidden 2xl:table-cell text-slate-600 whitespace-nowrap text-sm">
+                      {new Date(lead.lastUpdate).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -276,7 +341,7 @@ const Leads = () => {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </ResponsiveTable>
         </CardContent>
       </Card>
     </div>

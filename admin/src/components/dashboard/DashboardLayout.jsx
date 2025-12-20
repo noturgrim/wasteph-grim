@@ -122,19 +122,19 @@ const DashboardLayout = () => {
       {/* Main Content */}
       <SidebarInset>
         {/* Top Bar */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-background">
+        <header className="flex h-auto min-h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4 lg:px-6 bg-background py-3 sm:py-0">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex items-center justify-between flex-1">
-            <div>
-              <h2 className="text-xl font-bold text-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between flex-1 gap-2 sm:gap-0">
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate">
                 {getPageTitle()}
               </h2>
-              <p className="text-sm text-muted-foreground hidden sm:block">
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
                 Welcome back, {user?.full_name}
               </p>
             </div>
-            <span className="text-sm text-muted-foreground hidden md:block">
+            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
               {new Date().toLocaleDateString("en-US", {
                 weekday: "short",
                 month: "short",
@@ -146,7 +146,7 @@ const DashboardLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5 lg:p-6">
           <Outlet />
         </main>
       </SidebarInset>
