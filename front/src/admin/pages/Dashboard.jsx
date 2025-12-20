@@ -1,10 +1,5 @@
 import DashboardCard from "../components/common/DashboardCard";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   UserPlus,
@@ -14,8 +9,10 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
+import { useTheme } from "../contexts/ThemeContext";
 
 const Dashboard = () => {
+  const { theme } = useTheme();
   // Mock data - replace with actual API calls
   const stats = [
     {
@@ -86,15 +83,24 @@ const Dashboard = () => {
     const variants = {
       new: {
         label: "New",
-        className: "bg-blue-100 text-blue-700 hover:bg-blue-100",
+        className:
+          theme === "dark"
+            ? "bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30"
+            : "bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200",
       },
       contacted: {
         label: "Contacted",
-        className: "bg-amber-100 text-amber-700 hover:bg-amber-100",
+        className:
+          theme === "dark"
+            ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30"
+            : "bg-amber-100 text-amber-700 border border-amber-300 hover:bg-amber-200",
       },
       qualified: {
         label: "Qualified",
-        className: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
+        className:
+          theme === "dark"
+            ? "bg-[#15803d]/20 text-[#15803d] border border-[#15803d]/30 hover:bg-[#15803d]/30"
+            : "bg-emerald-100 text-emerald-700 border border-emerald-300 hover:bg-emerald-200",
       },
     };
     const variant = variants[status] || variants.new;
@@ -111,12 +117,22 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
         {/* Recent Inquiries */}
-        <Card className="border-slate-200">
-          <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 shrink-0" />
+        <Card
+          className={
+            theme === "dark"
+              ? "border-white/10 bg-black/40 backdrop-blur-xl"
+              : "border-slate-200 bg-white shadow-sm"
+          }
+        >
+          <CardHeader className="px-4 py-4 sm:px-6 sm:py-6">
+            <CardTitle
+              className={`flex items-center gap-2 text-base sm:text-lg ${
+                theme === "dark" ? "text-white" : "text-slate-900"
+              }`}
+            >
+              <Clock className="h-4 w-4 shrink-0 text-[#15803d] sm:h-5 sm:w-5" />
               Recent Inquiries
             </CardTitle>
           </CardHeader>
@@ -125,20 +141,40 @@ const Dashboard = () => {
               {recentInquiries.map((inquiry) => (
                 <div
                   key={inquiry.id}
-                  className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 transition-all cursor-pointer"
+                  className={`group cursor-pointer rounded-lg border p-3 transition-all sm:p-4 ${
+                    theme === "dark"
+                      ? "border-white/10 bg-white/5 hover:border-[#15803d]/40 hover:bg-[#15803d]/10 hover:shadow-[0_0_20px_rgba(21,128,61,0.1)]"
+                      : "border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md"
+                  }`}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1">
-                      <h4 className="font-semibold text-sm sm:text-base text-slate-900 truncate">
+                    <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <h4
+                        className={`truncate text-sm font-bold sm:text-base ${
+                          theme === "dark" ? "text-white" : "text-slate-900"
+                        }`}
+                      >
                         {inquiry.company}
                       </h4>
                       {getStatusBadge(inquiry.status)}
                     </div>
-                    <p className="text-xs sm:text-sm text-slate-600 mb-1 truncate">
+                    <p
+                      className={`mb-1 truncate text-xs sm:text-sm ${
+                        theme === "dark" ? "text-white/60" : "text-slate-600"
+                      }`}
+                    >
                       {inquiry.contact}
                     </p>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <span className="px-2 py-1 rounded bg-slate-100 truncate max-w-full">
+                    <div
+                      className={`flex flex-wrap items-center gap-2 text-xs ${
+                        theme === "dark" ? "text-white/50" : "text-slate-500"
+                      }`}
+                    >
+                      <span
+                        className={`max-w-full truncate rounded px-2 py-1 ${
+                          theme === "dark" ? "bg-white/10" : "bg-slate-200"
+                        }`}
+                      >
                         {inquiry.service}
                       </span>
                       <span className="hidden sm:inline">•</span>
@@ -152,57 +188,109 @@ const Dashboard = () => {
         </Card>
 
         {/* Quick Actions */}
-        <Card className="border-slate-200">
-          <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 shrink-0" />
+        <Card
+          className={
+            theme === "dark"
+              ? "border-white/10 bg-black/40 backdrop-blur-xl"
+              : "border-slate-200 bg-white shadow-sm"
+          }
+        >
+          <CardHeader className="px-4 py-4 sm:px-6 sm:py-6">
+            <CardTitle
+              className={`flex items-center gap-2 text-base sm:text-lg ${
+                theme === "dark" ? "text-white" : "text-slate-900"
+              }`}
+            >
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-[#15803d] sm:h-5 sm:w-5" />
               Quick Actions
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
             <div className="space-y-2 sm:space-y-3">
-              <button className="w-full p-3 sm:p-4 rounded-lg border-2 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 transition-colors text-left touch-manipulation">
+              <button
+                className={`group w-full touch-manipulation rounded-lg border-2 p-3 text-left transition-all hover:scale-[1.02] active:scale-100 sm:p-4 ${
+                  theme === "dark"
+                    ? "border-[#15803d]/30 bg-[#15803d]/10 hover:border-[#15803d]/50 hover:bg-[#15803d]/20 hover:shadow-[0_0_20px_rgba(21,128,61,0.2)]"
+                    : "border-emerald-200 bg-emerald-50 hover:border-emerald-400 hover:bg-emerald-100 hover:shadow-md"
+                }`}
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
-                    <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#15803d] to-[#16a34a] transition-transform group-hover:scale-110 sm:h-10 sm:w-10">
+                    <UserPlus className="h-4 w-4 text-white sm:h-5 sm:w-5" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-sm sm:text-base text-slate-900 truncate">
+                    <h4
+                      className={`truncate text-sm font-bold sm:text-base ${
+                        theme === "dark" ? "text-white" : "text-slate-900"
+                      }`}
+                    >
                       Add New Inquiry
                     </h4>
-                    <p className="text-xs sm:text-sm text-slate-600 truncate">
+                    <p
+                      className={`truncate text-xs sm:text-sm ${
+                        theme === "dark" ? "text-white/60" : "text-slate-600"
+                      }`}
+                    >
                       Manually add a new inquiry
                     </p>
                   </div>
                 </div>
               </button>
 
-              <button className="w-full p-3 sm:p-4 rounded-lg border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 transition-colors text-left touch-manipulation">
+              <button
+                className={`group w-full touch-manipulation rounded-lg border-2 p-3 text-left transition-all hover:scale-[1.02] active:scale-100 sm:p-4 ${
+                  theme === "dark"
+                    ? "border-blue-500/30 bg-blue-500/10 hover:border-blue-500/50 hover:bg-blue-500/20 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+                    : "border-blue-200 bg-blue-50 hover:border-blue-400 hover:bg-blue-100 hover:shadow-md"
+                }`}
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 transition-transform group-hover:scale-110 sm:h-10 sm:w-10">
+                    <TrendingUp className="h-4 w-4 text-white sm:h-5 sm:w-5" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-sm sm:text-base text-slate-900 truncate">
+                    <h4
+                      className={`truncate text-sm font-bold sm:text-base ${
+                        theme === "dark" ? "text-white" : "text-slate-900"
+                      }`}
+                    >
                       Add Lead
                     </h4>
-                    <p className="text-xs sm:text-sm text-slate-600 truncate">
+                    <p
+                      className={`truncate text-xs sm:text-sm ${
+                        theme === "dark" ? "text-white/60" : "text-slate-600"
+                      }`}
+                    >
                       Create a new potential lead
                     </p>
                   </div>
                 </div>
               </button>
 
-              <button className="w-full p-3 sm:p-4 rounded-lg border-2 border-violet-200 bg-violet-50 hover:bg-violet-100 active:bg-violet-200 transition-colors text-left touch-manipulation">
+              <button
+                className={`group w-full touch-manipulation rounded-lg border-2 p-3 text-left transition-all hover:scale-[1.02] active:scale-100 sm:p-4 ${
+                  theme === "dark"
+                    ? "border-violet-500/30 bg-violet-500/10 hover:border-violet-500/50 hover:bg-violet-500/20 hover:shadow-[0_0_20px_rgba(139,92,246,0.2)]"
+                    : "border-violet-200 bg-violet-50 hover:border-violet-400 hover:bg-violet-100 hover:shadow-md"
+                }`}
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-violet-600 flex items-center justify-center shrink-0">
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 transition-transform group-hover:scale-110 sm:h-10 sm:w-10">
+                    <Users className="h-4 w-4 text-white sm:h-5 sm:w-5" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-sm sm:text-base text-slate-900 truncate">
+                    <h4
+                      className={`truncate text-sm font-bold sm:text-base ${
+                        theme === "dark" ? "text-white" : "text-slate-900"
+                      }`}
+                    >
                       View All Clients
                     </h4>
-                    <p className="text-xs sm:text-sm text-slate-600 truncate">
+                    <p
+                      className={`truncate text-xs sm:text-sm ${
+                        theme === "dark" ? "text-white/60" : "text-slate-600"
+                      }`}
+                    >
                       See contracted clients
                     </p>
                   </div>

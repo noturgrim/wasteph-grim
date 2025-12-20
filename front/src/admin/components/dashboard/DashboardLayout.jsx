@@ -8,8 +8,11 @@ import {
   TrendingUp,
   LogOut,
   Trash2,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +34,7 @@ import PageTransition from "../common/PageTransition";
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
   const navigationItems = [
@@ -50,38 +54,74 @@ const DashboardLayout = () => {
 
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar
+        className={`border-r backdrop-blur-xl ${
+          theme === "dark"
+            ? "border-white/10 bg-black/60"
+            : "border-slate-200 bg-white"
+        }`}
+      >
         {/* Logo Header */}
-        <SidebarHeader>
+        <SidebarHeader
+          className={`border-b ${
+            theme === "dark" ? "border-white/10" : "border-slate-200"
+          }`}
+        >
           <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#15803d] to-[#16a34a] shadow-md">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#15803d] to-[#16a34a] shadow-lg">
               <Trash2 className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">WastePH</h1>
-              <p className="text-xs text-muted-foreground">CRM System</p>
+              <h1
+                className={`text-lg font-black uppercase tracking-tight ${
+                  theme === "dark" ? "text-white" : "text-slate-900"
+                }`}
+              >
+                WastePH
+              </h1>
+              <p
+                className={`text-xs font-semibold uppercase tracking-wider ${
+                  theme === "dark" ? "text-white/40" : "text-slate-500"
+                }`}
+              >
+                CRM System
+              </p>
             </div>
           </div>
         </SidebarHeader>
 
-        <Separator />
-
         {/* Navigation */}
-        <SidebarContent>
+        <SidebarContent className="px-3 py-4">
           <SidebarGroup>
-            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+            <SidebarGroupLabel
+              className={`mb-2 px-3 text-[10px] font-bold uppercase tracking-widest ${
+                theme === "dark" ? "text-white/40" : "text-slate-400"
+              }`}
+            >
+              Navigation
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="space-y-1">
                 {navigationItems.map((item) => (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
                       asChild
                       isActive={location.pathname === item.path}
                       tooltip={item.name}
+                      className={`group relative overflow-hidden rounded-lg transition-all duration-200 ${
+                        location.pathname === item.path
+                          ? "bg-gradient-to-r from-[#15803d] to-[#16a34a] text-white shadow-lg"
+                          : theme === "dark"
+                          ? "text-white/60 hover:bg-white/5 hover:text-white"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
                     >
-                      <Link to={item.path}>
-                        <item.icon className="w-4 h-4" />
-                        <span>{item.name}</span>
+                      <Link
+                        to={item.path}
+                        className="flex items-center gap-3 px-3 py-2.5"
+                      >
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        <span className="font-semibold">{item.name}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -92,29 +132,82 @@ const DashboardLayout = () => {
         </SidebarContent>
 
         {/* User Section */}
-        <SidebarFooter>
-          <SidebarMenu>
+        <SidebarFooter
+          className={`border-t p-3 ${
+            theme === "dark" ? "border-white/10" : "border-slate-200"
+          }`}
+        >
+          <SidebarMenu className="space-y-2">
+            {/* Theme Toggle */}
             <SidebarMenuItem>
-              <div className="flex items-center gap-3 px-2 py-2 rounded-lg">
-                <Avatar className="h-8 w-8 bg-gradient-to-br from-[#15803d] to-[#16a34a]">
+              <SidebarMenuButton
+                onClick={toggleTheme}
+                tooltip={
+                  theme === "dark"
+                    ? "Switch to Light Mode"
+                    : "Switch to Dark Mode"
+                }
+                className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                  theme === "dark"
+                    ? "text-white/60 hover:bg-white/5 hover:text-white"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                {theme === "dark" ? (
+                  <>
+                    <Sun className="h-4 w-4 shrink-0" />
+                    <span className="font-semibold">Light Mode</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="h-4 w-4 shrink-0" />
+                    <span className="font-semibold">Dark Mode</span>
+                  </>
+                )}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <div
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${
+                  theme === "dark" ? "bg-white/5" : "bg-slate-100"
+                }`}
+              >
+                <Avatar className="h-9 w-9 border-2 border-[#15803d]">
                   <AvatarFallback className="bg-gradient-to-br from-[#15803d] to-[#16a34a] text-sm font-bold text-white">
                     {user?.full_name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
+                  <p
+                    className={`truncate text-sm font-bold ${
+                      theme === "dark" ? "text-white" : "text-slate-900"
+                    }`}
+                  >
                     {user?.full_name}
                   </p>
-                  <p className="text-xs text-muted-foreground capitalize">
+                  <p
+                    className={`truncate text-xs font-medium capitalize ${
+                      theme === "dark" ? "text-white/50" : "text-slate-500"
+                    }`}
+                  >
                     {user?.role}
                   </p>
                 </div>
               </div>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={logout} tooltip="Logout">
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
+              <SidebarMenuButton
+                onClick={logout}
+                tooltip="Logout"
+                className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                  theme === "dark"
+                    ? "text-white/60 hover:bg-red-500/10 hover:text-red-400"
+                    : "text-slate-600 hover:bg-red-50 hover:text-red-600"
+                }`}
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                <span className="font-semibold">Logout</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -122,21 +215,44 @@ const DashboardLayout = () => {
       </Sidebar>
 
       {/* Main Content */}
-      <SidebarInset>
+      <SidebarInset className="dark:bg-[#0a1f0f] light:bg-slate-50">
         {/* Top Bar */}
-        <header className="flex h-auto min-h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4 lg:px-6 bg-background py-3 sm:py-0">
+        <header
+          className={`flex h-auto min-h-16 shrink-0 items-center gap-2 border-b px-3 py-3 backdrop-blur-xl sm:px-4 sm:py-0 lg:px-6 ${
+            theme === "dark"
+              ? "border-white/10 bg-black/40"
+              : "border-slate-200 bg-white shadow-sm"
+          }`}
+        >
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between flex-1 gap-2 sm:gap-0">
+          <Separator
+            orientation="vertical"
+            className={`mr-2 h-4 ${
+              theme === "dark" ? "bg-white/10" : "bg-slate-300"
+            }`}
+          />
+          <div className="flex flex-1 flex-col justify-between gap-2 sm:flex-row sm:items-center sm:gap-0">
             <div className="min-w-0">
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate">
+              <h2
+                className={`truncate text-lg font-bold sm:text-xl lg:text-2xl ${
+                  theme === "dark" ? "text-white" : "text-slate-900"
+                }`}
+              >
                 {getPageTitle()}
               </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground truncate">
+              <p
+                className={`truncate text-xs sm:text-sm ${
+                  theme === "dark" ? "text-white/50" : "text-slate-500"
+                }`}
+              >
                 Welcome back, {user?.full_name}
               </p>
             </div>
-            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+            <span
+              className={`whitespace-nowrap text-xs sm:text-sm ${
+                theme === "dark" ? "text-white/40" : "text-slate-400"
+              }`}
+            >
               {new Date().toLocaleDateString("en-US", {
                 weekday: "short",
                 month: "short",

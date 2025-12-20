@@ -46,37 +46,78 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Default to dark theme colors for CRM */
+  --background: #0a1f0f;
+  --foreground: #ffffff;
+  --card: rgba(0, 0, 0, 0.4);
+  --card-foreground: #ffffff;
+  --popover: rgba(0, 0, 0, 0.6);
+  --popover-foreground: #ffffff;
+  --primary: #15803d;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.1);
+  --secondary-foreground: #ffffff;
+  --muted: rgba(255, 255, 255, 0.1);
+  --muted-foreground: rgba(255, 255, 255, 0.5);
+  --accent: rgba(21, 128, 61, 0.2);
+  --accent-foreground: #15803d;
+  --destructive: #ef4444;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #15803d;
+  --chart-1: #15803d;
+  --chart-2: #3b82f6;
+  --chart-3: #f59e0b;
+  --chart-4: #8b5cf6;
+  --chart-5: #ef4444;
+
+  /* Sidebar dark theme colors */
+  --sidebar-background: rgba(0, 0, 0, 0.6);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #15803d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.05);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #15803d;
+}
+
+/* Light mode theme */
+.light {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #15803d;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #15803d;
+  --chart-1: #15803d;
+  --chart-2: #3b82f6;
+  --chart-3: #f59e0b;
+  --chart-4: #8b5cf6;
+  --chart-5: #ef4444;
+
+  /* Sidebar light theme colors */
+  --sidebar-background: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #15803d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #15803d;
 }
 
 .dark {
@@ -127,7 +168,34 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    transition: background-color 0.3s ease;
+  }
+
+  /* Dark mode background */
+  body.dark,
+  html.dark body {
+    background-color: #0a1f0f;
+  }
+
+  /* Light mode background */
+  body.light,
+  html.light body {
+    background-color: #f8fafc;
+  }
+
+  /* Force dark/light background for CRM pages */
+  #root {
+    @apply min-h-screen;
+    transition: background-color 0.3s ease;
+  }
+
+  html.dark #root {
+    background-color: #0a1f0f;
+  }
+
+  html.light #root {
+    background-color: #f8fafc;
   }
 }
 
@@ -143,5 +211,80 @@
   [data-sidebar] a:hover,
   [data-sidebar] button:hover {
     transform: translateX(2px);
+  }
+
+  /* Dark mode sidebar styling */
+  html.dark [data-sidebar="sidebar"] {
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(24px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Light mode sidebar styling - Clean and professional */
+  html.light [data-sidebar="sidebar"] {
+    background: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Dark mode sidebar text colors */
+  html.dark [data-sidebar] {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  html.dark [data-sidebar] h1,
+  html.dark [data-sidebar] h2,
+  html.dark [data-sidebar] h3,
+  html.dark [data-sidebar] .font-bold,
+  html.dark [data-sidebar] .font-black {
+    color: white !important;
+  }
+
+  /* Light mode sidebar text colors */
+  html.light [data-sidebar] {
+    color: #64748b;
+  }
+
+  html.light [data-sidebar] h1,
+  html.light [data-sidebar] h2,
+  html.light [data-sidebar] h3 {
+    color: #0f172a !important;
+  }
+
+  html.light [data-sidebar] .font-bold,
+  html.light [data-sidebar] .font-black {
+    color: #0f172a !important;
+  }
+
+  /* Fix subtitle/description text in light mode */
+  html.light [data-sidebar] p {
+    color: #64748b !important;
+  }
+
+  /* Light mode navigation improvements */
+  html.light [data-sidebar] [data-active="true"] {
+    background: linear-gradient(to right, #15803d, #16a34a) !important;
+    color: white !important;
+  }
+
+  html.light [data-sidebar] a:not([data-active="true"]),
+  html.light [data-sidebar] button:not([data-active="true"]) {
+    color: #475569 !important;
+  }
+
+  html.light [data-sidebar] a:not([data-active="true"]):hover,
+  html.light [data-sidebar] button:not([data-active="true"]):hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+
+  html.light [data-sidebar] a:not([data-active="true"]) svg,
+  html.light [data-sidebar] button:not([data-active="true"]) svg {
+    color: #64748b !important;
+  }
+
+  html.light [data-sidebar] a:not([data-active="true"]):hover svg,
+  html.light [data-sidebar] button:not([data-active="true"]):hover svg {
+    color: #0f172a !important;
   }
 }
