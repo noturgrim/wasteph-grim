@@ -349,36 +349,36 @@ const ClientsSection = () => {
             </p>
           </FadeInUp>
         </div>
+      </div>
 
-        {/* Client Logos - Infinite Scroll */}
-        <div className="relative">
-          {/* Gradient fade edges */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-[#0a1f0f] to-transparent md:w-32 lg:w-40" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-[#0a1f0f] to-transparent md:w-32 lg:w-40" />
+      {/* Client Logos - Full Width Infinite Scroll */}
+      <div className="relative w-full">
+        {/* Gradient fade edges */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-32 bg-gradient-to-r from-[#0a1f0f] to-transparent md:w-40 lg:w-48" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-32 bg-gradient-to-r from-transparent to-[#0a1f0f] md:w-40 lg:w-48" />
 
-          {/* Scrolling track */}
-          <div className="flex overflow-x-clip">
-            <div className="flex animate-scroll-infinite gap-6 sm:gap-8 md:gap-10">
-              {duplicatedClients.map((client, index) => (
-                <div
-                  key={`${client.name}-${index}`}
-                  className="group flex min-w-[120px] items-center justify-center rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 backdrop-blur-sm transition-all duration-300 hover:border-[#15803d]/30 hover:bg-white/5 sm:min-w-[140px] sm:px-5 sm:py-3.5 md:min-w-[160px]"
-                >
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="flex h-7 items-center justify-center transition-all duration-300 group-hover:scale-110 sm:h-8">
-                      <img
-                        src={client.logo}
-                        alt={`${client.name} logo`}
-                        className="h-4 w-auto opacity-50 brightness-0 invert transition-all duration-300 group-hover:opacity-80 sm:h-5 md:h-6"
-                      />
-                    </div>
-                    <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/50 transition-colors duration-300 group-hover:text-white/80 sm:text-[9px]">
-                      {client.name}
-                    </span>
+        {/* Scrolling track - full width */}
+        <div className="flex overflow-x-clip">
+          <div className="flex animate-scroll-infinite gap-6 sm:gap-8 md:gap-10">
+            {duplicatedClients.map((client, index) => (
+              <div
+                key={`${client.name}-${index}`}
+                className="group flex min-w-[120px] items-center justify-center rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 backdrop-blur-sm transition-all duration-300 hover:border-[#15803d]/30 hover:bg-white/5 sm:min-w-[140px] sm:px-5 sm:py-3.5 md:min-w-[160px]"
+              >
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="flex h-7 items-center justify-center transition-all duration-300 group-hover:scale-110 sm:h-8">
+                    <img
+                      src={client.logo}
+                      alt={`${client.name} logo`}
+                      className="h-4 w-auto opacity-50 brightness-0 invert transition-all duration-300 group-hover:opacity-80 sm:h-5 md:h-6"
+                    />
                   </div>
+                  <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/50 transition-colors duration-300 group-hover:text-white/80 sm:text-[9px]">
+                    {client.name}
+                  </span>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

@@ -73,8 +73,8 @@ const PublicApp = () => {
                 <WasteStreamsShowcase />
                 <ProcessSection />
                 <ServicesSlideshow />
-                <CTASection />
                 <ClientsSection />
+                <CTASection />
               </Suspense>
             </main>
             <Footer />

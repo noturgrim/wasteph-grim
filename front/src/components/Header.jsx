@@ -30,7 +30,10 @@ const Header = () => {
         ? scrollContainer.scrollTop
         : window.scrollY;
 
-      setScrolled(scrollY > 50);
+      // Only set scrolled to true when scrolled past hero section (roughly viewport height)
+      const heroSection = document.getElementById("hero");
+      const threshold = heroSection ? heroSection.offsetHeight * 0.7 : 400;
+      setScrolled(scrollY > threshold);
 
       // Clear any pending scroll detection
       if (scrollTimeout) {
@@ -236,11 +239,19 @@ const Header = () => {
   const activeLabel = activeItem ? activeItem.label : "About Us";
 
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-50 transition-all duration-500">
-      <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-8 px-0 py-4 sm:px-6 lg:px-12">
-        {/* Logo - Left Side */}
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-50 transition-all duration-700 ease-out">
+      <div
+        className={`relative flex items-center justify-between gap-8 py-4 transition-all duration-1000 ease-in-out ${
+          scrolled ? "" : "mx-auto max-w-7xl px-4 sm:px-6 lg:px-12"
+        }`}
+      >
+        {/* Logo - Left Side - Moves to edge when scrolled */}
         <div
-          className="pointer-events-auto group flex cursor-pointer items-center rounded-r-full border border-l-0 border-white/5 bg-black/40 py-3 pl-3 pr-6 shadow-[0_2px_12px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all duration-500 hover:border-white/10 hover:bg-black/50 hover:shadow-[0_2px_12px_rgba(0,0,0,0.3)] sm:pl-4 md:rounded-full md:border-l md:pl-6"
+          className={`pointer-events-auto group flex cursor-pointer items-center border border-white/5 bg-black/40 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all duration-1000 ease-in-out hover:border-white/10 hover:bg-black/50 hover:shadow-[0_2px_12px_rgba(0,0,0,0.3)] ${
+            scrolled
+              ? "ml-2 rounded-r-full border-l-0 pl-3 pr-6 sm:ml-3 sm:pl-4 md:ml-4 md:rounded-full md:border-l md:pl-6"
+              : "rounded-full px-6"
+          }`}
           role="button"
           tabIndex={0}
           aria-label="Scroll to Waste PH hero section"
@@ -260,7 +271,11 @@ const Header = () => {
         </div>
 
         {/* Expandable Navigation - Desktop */}
-        <nav className="pointer-events-auto hidden lg:block">
+        <nav
+          className={`pointer-events-auto hidden transition-all duration-1000 ease-in-out lg:block ${
+            scrolled ? "mr-4 lg:mr-6 xl:mr-8" : ""
+          }`}
+        >
           <div
             className={`group/nav relative overflow-hidden rounded-full border shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-all duration-700 ease-in-out ${
               scrolled ? "shadow-[0_8px_32px_rgba(0,0,0,0.5)]" : ""
@@ -332,7 +347,11 @@ const Header = () => {
         </nav>
 
         {/* Mobile Menu Button */}
-        <div className="pointer-events-auto flex items-center gap-2 lg:hidden">
+        <div
+          className={`pointer-events-auto flex items-center gap-2 transition-all duration-1000 ease-in-out lg:hidden ${
+            scrolled ? "mr-2 sm:mr-3 md:mr-4" : ""
+          }`}
+        >
           <button
             type="button"
             className={`flex items-center justify-center rounded-full border border-white/10 bg-black/60 p-3 text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-all duration-500 hover:scale-105 hover:border-white/20 hover:bg-black/70 ${
@@ -369,7 +388,11 @@ const Header = () => {
 
       {/* Mobile Menu */}
       <div
-        className={`pointer-events-auto absolute left-0 right-6 top-full mt-2 overflow-hidden rounded-3xl backdrop-blur-xl transition-all duration-300 sm:left-6 lg:hidden ${
+        className={`pointer-events-auto absolute top-full mt-2 overflow-hidden rounded-3xl backdrop-blur-xl transition-all duration-300 lg:hidden ${
+          scrolled
+            ? "left-2 right-2 sm:left-3 sm:right-3 md:left-4 md:right-4"
+            : "left-4 right-4 sm:left-6 sm:right-6"
+        } ${
           mobileMenuOpen
             ? "max-h-screen border border-white/10 bg-black/90 shadow-[0_12px_48px_rgba(0,0,0,0.5)]"
             : "max-h-0 border-0"
