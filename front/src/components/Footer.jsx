@@ -41,7 +41,7 @@ const Footer = () => {
               className="font-semibold uppercase tracking-widest text-white/40 transition-colors hover:text-white/70 focus-visible:text-white/70 focus-visible:outline-none"
               aria-label="Admin Portal"
             >
-              Admin
+              Sales
             </a>
           </div>
         </div>
