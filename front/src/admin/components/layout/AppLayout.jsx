@@ -210,7 +210,7 @@ export default function AppLayout() {
         {/* Page Content */}
         <main
           className={`flex-1 overflow-y-auto p-4 md:p-6 ${
-            theme === "dark" ? "bg-[#0a1f0f]" : "bg-slate-50"
+            theme === "dark" ? "bg-[#0a1f0f]" : "bg-white"
           }`}
         >
           <AnimatePresence mode="wait">

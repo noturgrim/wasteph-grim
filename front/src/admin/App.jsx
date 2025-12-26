@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { Toaster } from "@/components/ui/sonner";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
 import Login from "./pages/Login";
@@ -17,6 +18,7 @@ const CRMApp = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <Toaster position="top-right" />
         <Routes>
           <Route path="login" element={<Login />} />
 
