@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
-import { inquiryTable, activityLogTable } from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { inquiryTable, activityLogTable, leadTable } from "../db/schema.js";
+import { eq, desc, and, or, like } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 
 /**
@@ -136,6 +136,157 @@ class InquiryService {
     });
 
     return inquiry;
+  }
+
+  /**
+   * Create inquiry manually (from phone/FB/email by Sales)
+   * @param {Object} inquiryData - Inquiry data from request
+   * @param {string} userId - User creating the inquiry (auto-assigned)
+   * @param {Object} metadata - Request metadata (ip, userAgent)
+   * @returns {Promise<Object>} Created inquiry
+   */
+  async createInquiryManual(inquiryData, userId, metadata = {}) {
+    const { name, email, phone, company, message, source = "phone" } = inquiryData;
+
+    const [inquiry] = await db
+      .insert(inquiryTable)
+      .values({
+        name,
+        email,
+        phone,
+        company,
+        message,
+        source,
+        assignedTo: userId, // Auto-assign to creator
+      })
+      .returning();
+
+    // Log activity
+    await this.logActivity({
+      userId,
+      action: "inquiry_created_manual",
+      entityType: "inquiry",
+      entityId: inquiry.id,
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
+
+    return inquiry;
+  }
+
+  /**
+   * Get all inquiries with filtering and search
+   * @param {Object} filters - Filter parameters
+   * @returns {Promise<Array>} Filtered inquiries array
+   */
+  async getAllInquiriesFiltered(filters = {}) {
+    const { status, assignedTo, search, source } = filters;
+
+    let query = db.select().from(inquiryTable);
+
+    const conditions = [];
+
+    // Status filter
+    if (status) {
+      conditions.push(eq(inquiryTable.status, status));
+    }
+
+    // Assigned to filter
+    if (assignedTo) {
+      conditions.push(eq(inquiryTable.assignedTo, assignedTo));
+    }
+
+    // Source filter
+    if (source) {
+      conditions.push(eq(inquiryTable.source, source));
+    }
+
+    // Search filter (name, email, company)
+    if (search) {
+      const searchTerm = `%${search}%`;
+      conditions.push(
+        or(
+          like(inquiryTable.name, searchTerm),
+          like(inquiryTable.email, searchTerm),
+          like(inquiryTable.company, searchTerm)
+        )
+      );
+    }
+
+    // Apply conditions if any
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Order by creation date
+    const inquiries = await query.orderBy(desc(inquiryTable.createdAt));
+
+    return inquiries;
+  }
+
+  /**
+   * Convert inquiry to lead (simple one-click conversion)
+   * @param {string} inquiryId - Inquiry UUID
+   * @param {string} userId - User performing the conversion
+   * @param {Object} metadata - Request metadata (ip, userAgent)
+   * @returns {Promise<Object>} Created lead object
+   * @throws {AppError} If inquiry not found
+   */
+  async convertInquiryToLead(inquiryId, userId, metadata = {}) {
+    // 1. Fetch inquiry
+    const inquiry = await this.getInquiryById(inquiryId);
+
+    // 2. Validate inquiry can be converted (warn if not qualified)
+    if (inquiry.status !== "qualified") {
+      console.warn(
+        `Converting inquiry ${inquiryId} with status '${inquiry.status}' (recommended: 'qualified')`
+      );
+    }
+
+    // 3. Create lead with mapped fields
+    const [lead] = await db
+      .insert(leadTable)
+      .values({
+        companyName: inquiry.company || inquiry.name, // Use company name or fallback to person name
+        contactPerson: inquiry.name,
+        email: inquiry.email,
+        phone: inquiry.phone,
+        notes: `Converted from inquiry.\n\nOriginal message: ${inquiry.message}`,
+        assignedTo: inquiry.assignedTo || userId, // Keep same assignment or assign to converter
+        status: "new",
+        priority: 3, // Default priority
+        // Leave empty: address, city, province, wasteType, estimatedVolume, estimatedValue
+      })
+      .returning();
+
+    // 4. Update inquiry status to converted
+    await db
+      .update(inquiryTable)
+      .set({ status: "converted", updatedAt: new Date() })
+      .where(eq(inquiryTable.id, inquiryId));
+
+    // 5. Log activities for both inquiry and lead
+    await this.logActivity({
+      userId,
+      action: "inquiry_converted_to_lead",
+      entityType: "inquiry",
+      entityId: inquiry.id,
+      details: { leadId: lead.id },
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
+
+    await db.insert(activityLogTable).values({
+      userId,
+      action: "lead_created_from_inquiry",
+      entityType: "lead",
+      entityId: lead.id,
+      details: JSON.stringify({ inquiryId: inquiry.id }),
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
+
+    return lead;
   }
 
   /**
