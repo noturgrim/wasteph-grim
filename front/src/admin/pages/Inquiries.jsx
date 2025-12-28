@@ -48,6 +48,7 @@ export default function Inquiries() {
   // Filters
   const [statusFilter, setStatusFilter] = useState([]);
   const [sourceFilter, setSourceFilter] = useState([]);
+  const [serviceTypeFilter, setServiceTypeFilter] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   // Column visibility
@@ -56,6 +57,7 @@ export default function Inquiries() {
     email: true,
     company: true,
     source: true,
+    serviceType: true,
     status: true,
     assignedTo: true,
     createdAt: true,
@@ -85,7 +87,7 @@ export default function Inquiries() {
   useEffect(() => {
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on filter change
     fetchInquiries(1);
-  }, [statusFilter, sourceFilter, searchTerm]);
+  }, [statusFilter, sourceFilter, serviceTypeFilter, searchTerm]);
 
   const fetchUsers = async () => {
     try {
@@ -113,6 +115,7 @@ export default function Inquiries() {
       const response = await api.getInquiries({
         status: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
         source: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
+        serviceType: serviceTypeFilter.length > 0 ? serviceTypeFilter.join(",") : undefined,
         search: searchTerm || undefined,
         page,
         limit,
@@ -136,6 +139,11 @@ export default function Inquiries() {
   // Get count for each source from all inquiries
   const getSourceCount = (source) => {
     return allInquiries.filter((inquiry) => inquiry.source === source).length;
+  };
+
+  // Get count for each service type from all inquiries
+  const getServiceTypeCount = (serviceType) => {
+    return allInquiries.filter((inquiry) => inquiry.serviceType === serviceType).length;
   };
 
   // CRUD Handlers
@@ -251,7 +259,17 @@ export default function Inquiries() {
 
           <FacetedFilter
             title="Status"
-            options={["new", "contacted", "qualified", "converted", "closed"]}
+            options={[
+              { value: "submitted_proposal", label: "Submitted Proposal" },
+              { value: "initial_comms", label: "Initial Comms" },
+              { value: "negotiating", label: "Negotiating" },
+              { value: "to_call", label: "To Call" },
+              { value: "submitted_company_profile", label: "Submitted Company Profile" },
+              { value: "na", label: "N/A" },
+              { value: "waiting_for_feedback", label: "Waiting for Feedback" },
+              { value: "declined", label: "Declined" },
+              { value: "on_boarded", label: "On Boarded" },
+            ]}
             selectedValues={statusFilter}
             onSelectionChange={setStatusFilter}
             getCount={getStatusCount}
@@ -265,13 +283,27 @@ export default function Inquiries() {
             getCount={getSourceCount}
           />
 
-          {(statusFilter.length > 0 || sourceFilter.length > 0 || searchTerm) && (
+          <FacetedFilter
+            title="Service Type"
+            options={[
+              { value: "garbage_collection", label: "Garbage Collection" },
+              { value: "septic_siphoning", label: "Septic Siphoning" },
+              { value: "hazardous_waste", label: "Hazardous Waste" },
+              { value: "onetime_hauling", label: "One-time Hauling" },
+            ]}
+            selectedValues={serviceTypeFilter}
+            onSelectionChange={setServiceTypeFilter}
+            getCount={getServiceTypeCount}
+          />
+
+          {(statusFilter.length > 0 || sourceFilter.length > 0 || serviceTypeFilter.length > 0 || searchTerm) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setStatusFilter([]);
                 setSourceFilter([]);
+                setServiceTypeFilter([]);
                 setSearchTerm("");
               }}
               className="h-8 px-2 lg:px-3"
@@ -290,16 +322,25 @@ export default function Inquiries() {
               View
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[150px]">
+          <DropdownMenuContent align="end" className="w-[180px]">
             <DropdownMenuLabel className="font-bold">Toggle columns</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {allColumns
               .filter((column) => column.accessorKey)
               .map((column) => {
+                const columnLabels = {
+                  name: "Name",
+                  email: "Email",
+                  company: "Company",
+                  source: "Source",
+                  serviceType: "Type of Inquiry",
+                  status: "Status",
+                  assignedTo: "Assigned To",
+                  createdAt: "Date",
+                };
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.accessorKey}
-                    className="capitalize"
                     checked={columnVisibility[column.accessorKey]}
                     onCheckedChange={(value) =>
                       setColumnVisibility((prev) => ({
@@ -308,7 +349,7 @@ export default function Inquiries() {
                       }))
                     }
                   >
-                    {column.accessorKey}
+                    {columnLabels[column.accessorKey] || column.accessorKey}
                   </DropdownMenuCheckboxItem>
                 );
               })}

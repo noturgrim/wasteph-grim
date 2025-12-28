@@ -20,6 +20,13 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
+const SERVICE_TYPES = [
+  { value: "garbage_collection", label: "Garbage Collection" },
+  { value: "septic_siphoning", label: "Septic Siphoning" },
+  { value: "hazardous_waste", label: "Hazardous Waste" },
+  { value: "onetime_hauling", label: "One-time Hauling" },
+];
+
 export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], onSubmit, isSubmitting }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -27,8 +34,9 @@ export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], onS
     phone: "",
     company: "",
     message: "",
+    serviceType: "",
     source: "phone",
-    status: "new",
+    status: "initial_comms",
     assignedTo: "",
     notes: "",
   });
@@ -43,8 +51,9 @@ export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], onS
         phone: inquiry.phone || "",
         company: inquiry.company || "",
         message: inquiry.message || "",
+        serviceType: inquiry.serviceType || "",
         source: inquiry.source || "phone",
-        status: inquiry.status || "new",
+        status: inquiry.status || "initial_comms",
         assignedTo: inquiry.assignedTo || "",
         notes: inquiry.notes || "",
       });
@@ -151,6 +160,27 @@ export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], onS
           </div>
 
           <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+            <Label htmlFor="edit-serviceType" className="text-right">Type of Inquiry</Label>
+            <Select
+              value={formData.serviceType}
+              onValueChange={(val) =>
+                setFormData({ ...formData, serviceType: val })
+              }
+            >
+              <SelectTrigger id="edit-serviceType">
+                <SelectValue placeholder="Select service type" />
+              </SelectTrigger>
+              <SelectContent>
+                {SERVICE_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-[120px_1fr] items-center gap-4">
             <Label htmlFor="edit-source" className="text-right">Source</Label>
             <Select
               value={formData.source}
@@ -184,11 +214,15 @@ export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], onS
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="new">New</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="qualified">Qualified</SelectItem>
-                <SelectItem value="converted">Converted</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
+                <SelectItem value="submitted_proposal">Submitted Proposal</SelectItem>
+                <SelectItem value="initial_comms">Initial Comms</SelectItem>
+                <SelectItem value="negotiating">Negotiating</SelectItem>
+                <SelectItem value="to_call">To Call</SelectItem>
+                <SelectItem value="submitted_company_profile">Submitted Company Profile</SelectItem>
+                <SelectItem value="na">N/A</SelectItem>
+                <SelectItem value="waiting_for_feedback">Waiting for Feedback</SelectItem>
+                <SelectItem value="declined">Declined</SelectItem>
+                <SelectItem value="on_boarded">On Boarded</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -231,6 +231,35 @@ class ApiClient {
     const queryString = params.toString();
     return this.request(`/users${queryString ? `?${queryString}` : ""}`);
   }
+
+  // Service Request endpoints
+  async getServiceRequestsByLeadId(leadId) {
+    return this.request(`/service-requests/lead/${leadId}`);
+  }
+
+  async getServiceRequestById(id) {
+    return this.request(`/service-requests/${id}`);
+  }
+
+  async createServiceRequest(data) {
+    return this.request("/service-requests", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateServiceRequest(id, data) {
+    return this.request(`/service-requests/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteServiceRequest(id) {
+    return this.request(`/service-requests/${id}`, {
+      method: "DELETE",
+    });
+  }
 }
 
 // Export singleton instance

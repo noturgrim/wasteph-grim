@@ -10,6 +10,13 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "../StatusBadge";
 import { format } from "date-fns";
 
+const SERVICE_TYPE_LABELS = {
+  garbage_collection: "Garbage Collection",
+  septic_siphoning: "Septic Siphoning",
+  hazardous_waste: "Hazardous Waste",
+  onetime_hauling: "One-time Hauling",
+};
+
 export function ViewInquiryDialog({ open, onOpenChange, inquiry, users = [] }) {
   if (!inquiry) return null;
 
@@ -52,6 +59,12 @@ export function ViewInquiryDialog({ open, onOpenChange, inquiry, users = [] }) {
           <div className="border-t pt-4">
             <h3 className="text-sm font-semibold mb-3 text-foreground">Inquiry Details</h3>
             <div className="grid grid-cols-2 gap-4">
+              {inquiry.serviceType && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Type of Inquiry</p>
+                  <p className="text-sm font-medium">{SERVICE_TYPE_LABELS[inquiry.serviceType] || inquiry.serviceType}</p>
+                </div>
+              )}
               <div>
                 <p className="text-sm text-muted-foreground">Source</p>
                 <p className="text-sm font-medium capitalize">{inquiry.source?.replace("-", " ")}</p>

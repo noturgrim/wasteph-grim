@@ -76,6 +76,20 @@ export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete,
     },
   },
   {
+    accessorKey: "serviceType",
+    header: "Type of Inquiry",
+    cell: ({ row }) => {
+      const serviceType = row.original.serviceType;
+      const labels = {
+        garbage_collection: "Garbage Collection",
+        septic_siphoning: "Septic Siphoning",
+        hazardous_waste: "Hazardous Waste",
+        onetime_hauling: "One-time Hauling",
+      };
+      return serviceType ? labels[serviceType] || serviceType : "-";
+    },
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
@@ -136,7 +150,9 @@ export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete,
 
       return (
         <div className="flex items-center gap-2">
-          {inquiry.status === "qualified" && (
+          {(inquiry.status === "submitted_proposal" ||
+            inquiry.status === "negotiating" ||
+            inquiry.status === "waiting_for_feedback") && (
             <Button
               variant="ghost"
               size="sm"
@@ -166,7 +182,9 @@ export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete,
                 <Pencil className="h-4 w-4" />
               </DropdownMenuItem>
 
-              {inquiry.status === "qualified" && (
+              {(inquiry.status === "submitted_proposal" ||
+                inquiry.status === "negotiating" ||
+                inquiry.status === "waiting_for_feedback") && (
                 <DropdownMenuItem onClick={() => onConvert(inquiry)} className="cursor-pointer">
                   <span className="flex-1">Convert to Lead</span>
                   <ArrowRight className="h-4 w-4" />

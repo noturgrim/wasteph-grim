@@ -8,113 +8,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Loader2, Info } from "lucide-react";
-
-const WASTE_TYPES = [
-  "Industrial Waste",
-  "Medical Waste",
-  "Hazardous Waste",
-  "Recyclable Waste",
-  "Electronic Waste",
-  "Construction Waste",
-  "Organic Waste",
-  "Other",
-];
-
-const PH_PROVINCES = [
-  "Metro Manila (NCR)",
-  "Abra",
-  "Agusan del Norte",
-  "Agusan del Sur",
-  "Aklan",
-  "Albay",
-  "Antique",
-  "Apayao",
-  "Aurora",
-  "Basilan",
-  "Bataan",
-  "Batanes",
-  "Batangas",
-  "Benguet",
-  "Biliran",
-  "Bohol",
-  "Bukidnon",
-  "Bulacan",
-  "Cagayan",
-  "Camarines Norte",
-  "Camarines Sur",
-  "Camiguin",
-  "Capiz",
-  "Catanduanes",
-  "Cavite",
-  "Cebu",
-  "Cotabato",
-  "Davao de Oro",
-  "Davao del Norte",
-  "Davao del Sur",
-  "Davao Occidental",
-  "Davao Oriental",
-  "Dinagat Islands",
-  "Eastern Samar",
-  "Guimaras",
-  "Ifugao",
-  "Ilocos Norte",
-  "Ilocos Sur",
-  "Iloilo",
-  "Isabela",
-  "Kalinga",
-  "La Union",
-  "Laguna",
-  "Lanao del Norte",
-  "Lanao del Sur",
-  "Leyte",
-  "Maguindanao",
-  "Marinduque",
-  "Masbate",
-  "Misamis Occidental",
-  "Misamis Oriental",
-  "Mountain Province",
-  "Negros Occidental",
-  "Negros Oriental",
-  "Northern Samar",
-  "Nueva Ecija",
-  "Nueva Vizcaya",
-  "Occidental Mindoro",
-  "Oriental Mindoro",
-  "Palawan",
-  "Pampanga",
-  "Pangasinan",
-  "Quezon",
-  "Quirino",
-  "Rizal",
-  "Romblon",
-  "Samar",
-  "Sarangani",
-  "Siquijor",
-  "Sorsogon",
-  "South Cotabato",
-  "Southern Leyte",
-  "Sultan Kudarat",
-  "Sulu",
-  "Surigao del Norte",
-  "Surigao del Sur",
-  "Tarlac",
-  "Tawi-Tawi",
-  "Zambales",
-  "Zamboanga del Norte",
-  "Zamboanga del Sur",
-  "Zamboanga Sibugay",
-];
+import { Loader2, Plus, Trash2, Info } from "lucide-react";
+import { ServiceRequestDialog } from "../leads/ServiceRequestDialog";
 
 export function ConvertToLeadDialog({
   open,
@@ -123,92 +18,76 @@ export function ConvertToLeadDialog({
   onConvert,
   isSubmitting,
 }) {
-  const [formData, setFormData] = useState({
-    wasteType: "",
-    estimatedVolume: "",
-    address: "",
-    city: "",
-    province: "",
-    priority: "3",
-    estimatedValue: "",
-    notes: "",
-  });
+  const [serviceRequests, setServiceRequests] = useState([]);
+  const [currentServiceRequest, setCurrentServiceRequest] = useState(null);
+  const [isAddingService, setIsAddingService] = useState(false);
 
   const handleSkipAndConvert = async () => {
     // Convert without any service details
-    await onConvert({});
+    await onConvert({ serviceRequests: [] });
+    resetState();
   };
 
-  const handleConvertWithDetails = async () => {
-    // Convert with form data (filter out empty values)
-    const serviceDetails = {};
-    Object.keys(formData).forEach((key) => {
-      if (formData[key]) {
-        serviceDetails[key] = formData[key];
-      }
-    });
-    await onConvert(serviceDetails);
+  const handleConvertWithServices = async () => {
+    // Convert with all service requests
+    await onConvert({ serviceRequests });
+    resetState();
   };
 
-  const resetForm = () => {
-    setFormData({
-      wasteType: "",
-      estimatedVolume: "",
-      address: "",
-      city: "",
-      province: "",
-      priority: "3",
-      estimatedValue: "",
-      notes: "",
-    });
+  const handleAddServiceRequest = (serviceData) => {
+    setServiceRequests([...serviceRequests, serviceData]);
+    setIsAddingService(false);
+    setCurrentServiceRequest(null);
+  };
+
+  const handleRemoveServiceRequest = (index) => {
+    setServiceRequests(serviceRequests.filter((_, i) => i !== index));
+  };
+
+  const resetState = () => {
+    setServiceRequests([]);
+    setCurrentServiceRequest(null);
+    setIsAddingService(false);
   };
 
   const handleOpenChange = (isOpen) => {
     if (!isOpen) {
-      resetForm();
+      resetState();
     }
     onOpenChange(isOpen);
   };
 
-  // Check if all service detail fields are filled
-  const allFieldsFilled = () => {
-    return (
-      formData.wasteType &&
-      formData.estimatedVolume &&
-      formData.address &&
-      formData.city &&
-      formData.province &&
-      formData.estimatedValue
-    );
+  const getServiceTypeLabel = (type) => {
+    const labels = {
+      garbage_collection: "Garbage Collection",
+      septic_siphoning: "Septic Siphoning",
+      hazardous_waste: "Hazardous Waste",
+      onetime_hauling: "One-time Hauling",
+    };
+    return labels[type] || type;
   };
 
-  // Check if at least one service detail field is filled
-  const hasAnyServiceDetails = () => {
-    return (
-      formData.wasteType ||
-      formData.estimatedVolume ||
-      formData.address ||
-      formData.city ||
-      formData.province ||
-      formData.estimatedValue ||
-      formData.notes
-    );
+  const getServiceModeLabel = (mode) => {
+    const labels = {
+      one_time: "One-time",
+      contract_based: "Contract-based",
+    };
+    return labels[mode] || mode;
   };
 
   if (!inquiry) return null;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] w-300 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Convert Inquiry to Lead</DialogTitle>
           <DialogDescription>
-            Convert this qualified inquiry to an active lead in your sales
-            pipeline
+            Convert this qualified inquiry to an active lead and add service requests
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Inquiry Details - Read Only */}
           <div>
             <h3 className="text-sm font-semibold mb-3">Inquiry Details</h3>
@@ -232,150 +111,101 @@ export function ConvertToLeadDialog({
             </div>
           </div>
 
-          {/* Service Details - Optional */}
+          {/* Service Requests Section */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-sm font-semibold">
-                Service Details (Optional)
-              </h3>
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                Can be added later
-              </span>
-            </div>
-            <div className="flex items-start gap-2 mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-              <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
-              <p className="text-xs text-blue-800">
-                You can skip this section and add details later by editing the
-                lead
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="wasteType">Waste Type</Label>
-                <Select
-                  value={formData.wasteType}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, wasteType: value })
-                  }
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold">Service Requests</h3>
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                  Optional - Can be added later
+                </span>
+              </div>
+              {!isAddingService && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsAddingService(true)}
                 >
-                  <SelectTrigger id="wasteType">
-                    <SelectValue placeholder="Select waste type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WASTE_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="estimatedVolume">Estimated Volume</Label>
-                <Input
-                  id="estimatedVolume"
-                  placeholder="e.g., 10 tons/month"
-                  value={formData.estimatedVolume}
-                  onChange={(e) =>
-                    setFormData({ ...formData, estimatedVolume: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="col-span-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  placeholder="Street address"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  placeholder="City"
-                  value={formData.city}
-                  onChange={(e) =>
-                    setFormData({ ...formData, city: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="province">Province</Label>
-                <Select
-                  value={formData.province}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, province: value })
-                  }
-                >
-                  <SelectTrigger id="province">
-                    <SelectValue placeholder="Province" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PH_PROVINCES.map((prov) => (
-                      <SelectItem key={prov} value={prov}>
-                        {prov}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="priority">Priority</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, priority: value })
-                  }
-                >
-                  <SelectTrigger id="priority">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="estimatedValue">Est. Value</Label>
-                <Input
-                  id="estimatedValue"
-                  type="number"
-                  placeholder="0"
-                  value={formData.estimatedValue}
-                  onChange={(e) =>
-                    setFormData({ ...formData, estimatedValue: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="col-span-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Any additional information..."
-                  rows={2}
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                />
-              </div>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Service Request
+                </Button>
+              )}
             </div>
+
+            {!isAddingService && serviceRequests.length === 0 && (
+              <div className="flex items-start gap-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm text-blue-800 font-medium">No service requests added</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    You can skip this and add service details later by editing the lead
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* List of added service requests */}
+            {serviceRequests.length > 0 && !isAddingService && (
+              <div className="space-y-3">
+                {serviceRequests.map((service, index) => (
+                  <div
+                    key={index}
+                    className="p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-semibold text-sm">
+                            {getServiceTypeLabel(service.serviceType)}
+                          </h4>
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                            {getServiceModeLabel(service.serviceMode)}
+                          </span>
+                          {service.priority && (
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              service.priority === 'high' ? 'bg-red-100 text-red-800' :
+                              service.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {service.priority.charAt(0).toUpperCase() + service.priority.slice(1)} Priority
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <div>
+                            <span className="font-medium">Location:</span> {service.serviceLocation}
+                          </div>
+                          {service.city && (
+                            <div>
+                              <span className="font-medium">City:</span> {service.city}
+                            </div>
+                          )}
+                          {service.estimatedVolume && (
+                            <div>
+                              <span className="font-medium">Est. Volume:</span> {service.estimatedVolume}
+                            </div>
+                          )}
+                          {service.notes && (
+                            <div className="col-span-2 mt-1">
+                              <span className="font-medium">Notes:</span> {service.notes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleRemoveServiceRequest(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
           </div>
         </div>
 
@@ -388,16 +218,24 @@ export function ConvertToLeadDialog({
             Cancel
           </Button>
           <Button
-            onClick={hasAnyServiceDetails() ? handleConvertWithDetails : handleSkipAndConvert}
+            onClick={serviceRequests.length > 0 ? handleConvertWithServices : handleSkipAndConvert}
             disabled={isSubmitting}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {allFieldsFilled()
-              ? "Convert to Lead"
-              : "Convert & Add Details Later"}
+            {serviceRequests.length > 0
+              ? `Convert with ${serviceRequests.length} Service${serviceRequests.length > 1 ? 's' : ''}`
+              : "Convert & Add Services Later"}
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Service Request Dialog */}
+      <ServiceRequestDialog
+        open={isAddingService}
+        onOpenChange={setIsAddingService}
+        initialData={currentServiceRequest}
+        onSubmit={handleAddServiceRequest}
+      />
     </Dialog>
   );
 }

@@ -58,13 +58,14 @@ export const createInquiryManual = async (req, res, next) => {
  */
 export const getAllInquiries = async (req, res, next) => {
   try {
-    const { status, assignedTo, search, source, page, limit } = req.query;
+    const { status, assignedTo, search, source, serviceType, page, limit } = req.query;
 
     const result = await inquiryService.getAllInquiries({
       status,
       assignedTo,
       search,
       source,
+      serviceType,
       page: page ? parseInt(page) : 1,
       limit: limit ? parseInt(limit) : 10,
     });
@@ -152,7 +153,7 @@ export const assignInquiry = async (req, res, next) => {
 };
 
 /**
- * Controller: Convert inquiry to lead with optional service details
+ * Controller: Convert inquiry to lead with optional service requests
  * Route: POST /api/inquiries/:id/convert-to-lead
  * Access: Protected (authenticated users)
  */
@@ -160,12 +161,12 @@ export const convertInquiryToLead = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    const serviceDetails = req.body; // Optional: wasteType, estimatedVolume, address, city, province, priority, estimatedValue, notes
+    const data = req.body; // { serviceRequests: [] }
 
     const lead = await inquiryService.convertInquiryToLead(
       id,
       userId,
-      serviceDetails,
+      data,
       {
         ipAddress: req.ip,
         userAgent: req.get("user-agent"),
