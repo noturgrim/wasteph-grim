@@ -200,28 +200,6 @@ const MessageSection = () => {
                 <p className="mt-1 text-xs text-white/70">Fast response</p>
               </div>
             </div>
-
-            {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-center backdrop-blur">
-                <p className="text-xl font-black text-white">2019</p>
-                <p className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-white/60">
-                  Est.
-                </p>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-center backdrop-blur">
-                <p className="text-xl font-black text-white">24/7</p>
-                <p className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-white/60">
-                  Active
-                </p>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-center backdrop-blur">
-                <p className="text-xl font-black text-white">100%</p>
-                <p className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-white/60">
-                  Safe
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </RevealOnScroll>
