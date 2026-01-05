@@ -23,6 +23,7 @@ const HeroSection = () => {
   const [isHoveringLegal, setIsHoveringLegal] = useState(false);
   const [showFleetInfo, setShowFleetInfo] = useState(false);
   const [isHoveringFleet, setIsHoveringFleet] = useState(false);
+  const [fleetVideoLoaded, setFleetVideoLoaded] = useState(false);
 
   // Update map visibility based on hover states
   useEffect(() => {
@@ -56,6 +57,7 @@ const HeroSection = () => {
   }, [isHoveringFleet]);
   const heroRef = useRef(null);
   const videoRef = useRef(null);
+  const fleetVideoRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -145,6 +147,38 @@ const HeroSection = () => {
     };
   }, [videoLoaded]);
 
+  // Fleet video loading with timeout fallback
+  useEffect(() => {
+    const video = fleetVideoRef.current;
+    if (!video) return;
+
+    // Timeout fallback - show video after 5 seconds if not loaded
+    const loadTimeout = setTimeout(() => {
+      if (!fleetVideoLoaded) {
+        setFleetVideoLoaded(true);
+      }
+    }, 5000);
+
+    const handleCanPlay = () => {
+      setFleetVideoLoaded(true);
+      clearTimeout(loadTimeout);
+    };
+
+    const handleError = () => {
+      setFleetVideoLoaded(true);
+      clearTimeout(loadTimeout);
+    };
+
+    video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("error", handleError);
+
+    return () => {
+      clearTimeout(loadTimeout);
+      video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("error", handleError);
+    };
+  }, [fleetVideoLoaded]);
+
   const handlePrimaryClick = () => {
     scrollToSection("contact");
   };
@@ -210,7 +244,7 @@ const HeroSection = () => {
           loop
           muted
           playsInline
-          preload="metadata"
+          preload="auto"
           poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Crect fill='%230a1f0f' width='1920' height='1080'/%3E%3C/svg%3E"
           style={{
             willChange: videoLoaded ? "auto" : "opacity",
@@ -413,13 +447,25 @@ const HeroSection = () => {
                   }`}
                 >
                   <div className="relative h-full w-full overflow-hidden">
+                    {/* Loading placeholder for fleet video */}
+                    {!fleetVideoLoaded && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-gradient-to-br from-[#15803d]/10 to-black">
+                        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#15803d]/30 border-t-[#15803d]" />
+                      </div>
+                    )}
                     <video
+                      ref={fleetVideoRef}
                       autoPlay
                       loop
                       muted
                       playsInline
-                      preload="metadata"
-                      className="h-full w-full object-cover"
+                      preload="auto"
+                      className={`h-full w-full object-cover transition-opacity duration-700 ${
+                        fleetVideoLoaded ? "opacity-100" : "opacity-0"
+                      }`}
+                      style={{
+                        willChange: fleetVideoLoaded ? "auto" : "opacity",
+                      }}
                     >
                       <source src={trucksVideo} type="video/mp4" />
                       Your browser does not support the video tag.

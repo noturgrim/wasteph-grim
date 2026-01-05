@@ -42,6 +42,15 @@ const ClientsSection = () => {
     const video = videoRef.current;
     if (!video) return;
 
+    // Timeout fallback - if video doesn't load in 8 seconds, show it anyway
+    const loadTimeout = setTimeout(() => {
+      if (!videoLoaded) {
+        console.warn("Video loading timeout - displaying video anyway");
+        setVideoLoaded(true);
+        setLoadingProgress(100);
+      }
+    }, 8000);
+
     const handleProgress = () => {
       if (video.buffered.length > 0) {
         const bufferedEnd = video.buffered.end(video.buffered.length - 1);
@@ -53,19 +62,54 @@ const ClientsSection = () => {
       }
     };
 
+    const handleLoadedMetadata = () => {
+      setLoadingProgress(10);
+    };
+
+    const handleLoadedData = () => {
+      setLoadingProgress(50);
+    };
+
     const handleCanPlay = () => {
       setVideoLoaded(true);
       setLoadingProgress(100);
+      clearTimeout(loadTimeout);
     };
 
+    const handleCanPlayThrough = () => {
+      setVideoLoaded(true);
+      setLoadingProgress(100);
+      clearTimeout(loadTimeout);
+    };
+
+    const handleError = (e) => {
+      console.error("Video error:", e);
+      // Show video anyway on error
+      setVideoLoaded(true);
+      setLoadingProgress(100);
+      clearTimeout(loadTimeout);
+    };
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("loadeddata", handleLoadedData);
     video.addEventListener("progress", handleProgress);
     video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("canplaythrough", handleCanPlayThrough);
+    video.addEventListener("error", handleError);
+
+    // Try to load the video
+    video.load();
 
     return () => {
+      clearTimeout(loadTimeout);
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      video.removeEventListener("loadeddata", handleLoadedData);
       video.removeEventListener("progress", handleProgress);
       video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("canplaythrough", handleCanPlayThrough);
+      video.removeEventListener("error", handleError);
     };
-  }, []);
+  }, [videoLoaded]);
 
   // Autoplay when video is in viewport
   useEffect(() => {
@@ -182,8 +226,11 @@ const ClientsSection = () => {
                     loop
                     muted
                     playsInline
-                    preload="metadata"
+                    preload="auto"
                     poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%230a1f0f'/%3E%3Cstop offset='100%25' style='stop-color:%23051008'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1920' height='1080'/%3E%3C/svg%3E"
+                    style={{
+                      willChange: videoLoaded ? "auto" : "opacity",
+                    }}
                   >
                     <source src={reviewVideo} type="video/mp4" />
                     Your browser does not support the video tag.
