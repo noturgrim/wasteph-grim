@@ -61,6 +61,7 @@ const CTASection = () => {
     location: "",
   });
   const [focusedField, setFocusedField] = useState(null);
+  const [submitStatus, setSubmitStatus] = useState(null);
 
   const handleChange = (field) => (e) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
@@ -68,14 +69,37 @@ const CTASection = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    // Handle form submission here
-    console.log("Form submitted:", formData);
-    setFormData({
-      company: "",
-      email: "",
-      wasteType: "",
-      location: "",
-    });
+
+    // Create email content
+    const subject = encodeURIComponent(
+      `Waste PH Inquiry - ${formData.company}`
+    );
+    const body = encodeURIComponent(
+      `New inquiry from Waste PH website:\n\n` +
+        `Company/Site: ${formData.company}\n` +
+        `Email: ${formData.email}\n` +
+        `Waste Type: ${formData.wasteType}\n` +
+        `Location: ${formData.location}\n\n` +
+        `---\n` +
+        `This inquiry was submitted via the Waste PH contact form.`
+    );
+
+    // Open email client with pre-filled content
+    window.location.href = `mailto:sales@waste.ph?subject=${subject}&body=${body}`;
+
+    // Show success message
+    setSubmitStatus("success");
+
+    // Reset form after a delay
+    setTimeout(() => {
+      setFormData({
+        company: "",
+        email: "",
+        wasteType: "",
+        location: "",
+      });
+      setSubmitStatus(null);
+    }, 3000);
   };
 
   return (
@@ -242,22 +266,45 @@ const CTASection = () => {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="group relative w-full overflow-hidden rounded-xl bg-linear-to-r from-[#15803d] to-[#16a34a] px-8 py-4 text-base font-black uppercase tracking-wide text-white shadow-[0_8px_30px_rgba(21,128,61,0.4)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_40px_rgba(21,128,61,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15803d] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                  className={`group relative w-full overflow-hidden rounded-xl px-8 py-4 text-base font-black uppercase tracking-wide text-white shadow-[0_8px_30px_rgba(21,128,61,0.4)] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15803d] focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+                    submitStatus === "success"
+                      ? "bg-[#16a34a]"
+                      : "bg-linear-to-r from-[#15803d] to-[#16a34a] hover:scale-[1.02] hover:shadow-[0_12px_40px_rgba(21,128,61,0.6)]"
+                  }`}
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
-                    Send Request
-                    <svg
-                      className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    >
-                      <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
+                    {submitStatus === "success" ? (
+                      <>
+                        <svg
+                          className="h-5 w-5"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                        >
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                        Email Client Opened
+                      </>
+                    ) : (
+                      <>
+                        Send Request
+                        <svg
+                          className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                        >
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                      </>
+                    )}
                   </span>
                   {/* Shimmer effect */}
-                  <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                  {submitStatus !== "success" && (
+                    <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                  )}
                 </button>
               </div>
 
