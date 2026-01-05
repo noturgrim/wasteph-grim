@@ -95,8 +95,8 @@ const MessageSection = () => {
 
             {/* Stream Cards - Horizontal on larger screens */}
             <div className="grid gap-2 sm:grid-cols-3">
-              <div className="rounded-lg border border-[#15803d]/50 bg-gradient-to-br from-[#15803d]/15 to-[#16a34a]/5 p-3 backdrop-blur">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#16a34a]">
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em]  text-white/80">
                   Mixed
                 </p>
                 <p className="mt-1 text-xs text-white/70">All waste types</p>
