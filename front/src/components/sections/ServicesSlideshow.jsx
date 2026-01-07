@@ -65,24 +65,28 @@ const fallbackEvents = [
 
 // Event Card Component
 const EventCard = ({ event, index, isActive, onClick }) => {
-  const handleClick = () => {
+  const handleCardClick = () => {
     onClick(index);
-    if (event.link) {
-      window.open(event.link, "_blank", "noopener,noreferrer");
-    }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      handleClick();
+      handleCardClick();
+    }
+  };
+
+  const handleReadMoreClick = (e) => {
+    e.stopPropagation();
+    if (event.link) {
+      window.open(event.link, "_blank", "noopener,noreferrer");
     }
   };
 
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       className={`group relative flex h-full w-full flex-col overflow-hidden rounded-xl border text-left transition-all duration-500 ${
@@ -90,7 +94,8 @@ const EventCard = ({ event, index, isActive, onClick }) => {
           ? "border-[#15803d] bg-[#15803d]/10 shadow-lg shadow-[#15803d]/20"
           : "border-white/5 bg-white/2 hover:border-[#15803d]/30 hover:bg-[#15803d]/5"
       }`}
-      aria-label={`View ${event.title}`}
+      aria-label={`${isActive ? "Collapse" : "Expand"} ${event.title}`}
+      aria-expanded={isActive}
     >
       {/* Image */}
       <div className="relative aspect-video overflow-hidden">
@@ -159,26 +164,46 @@ const EventCard = ({ event, index, isActive, onClick }) => {
           </p>
         </div>
 
-        {/* View More Indicator */}
-        <div
-          className={`mt-auto flex items-center gap-2 text-xs font-medium uppercase tracking-wider transition-all ${
-            isActive ? "text-[#16a34a]" : "text-white/40"
-          }`}
-        >
-          <span>View on Facebook</span>
-          <svg
-            className="h-3 w-3"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
+        {/* Read More Link (only shown when expanded) */}
+        {isActive && event.link && (
+          <button
+            type="button"
+            onClick={handleReadMoreClick}
+            className="mt-auto flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#16a34a] transition-all hover:gap-3 hover:text-[#16a34a]/80"
+            aria-label={`Read more about ${event.title} on Facebook`}
           >
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-            <polyline points="15 3 21 3 21 9" />
-            <line x1="10" y1="14" x2="21" y2="3" />
-          </svg>
-        </div>
+            <span>Read More</span>
+            <svg
+              className="h-3 w-3"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </button>
+        )}
+
+        {/* Click to Expand Indicator (only shown when collapsed) */}
+        {!isActive && (
+          <div className="mt-auto flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-white/40 transition-all">
+            <span>Click to expand</span>
+            <svg
+              className="h-3 w-3"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* Bottom Border Accent */}
