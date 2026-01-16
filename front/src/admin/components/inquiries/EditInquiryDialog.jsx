@@ -26,6 +26,7 @@ export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], onS
     email: "",
     phone: "",
     company: "",
+    location: "",
     message: "",
     source: "phone",
     status: "initial_comms",
@@ -42,6 +43,7 @@ export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], onS
         email: inquiry.email || "",
         phone: inquiry.phone || "",
         company: inquiry.company || "",
+        location: inquiry.location || "",
         message: inquiry.message || "",
         source: inquiry.source || "phone",
         status: inquiry.status || "initial_comms",
@@ -147,6 +149,18 @@ export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], onS
               onChange={(e) =>
                 setFormData({ ...formData, company: e.target.value })
               }
+            />
+          </div>
+
+          <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+            <Label htmlFor="edit-location" className="text-right">Location</Label>
+            <Input
+              id="edit-location"
+              value={formData.location}
+              onChange={(e) =>
+                setFormData({ ...formData, location: e.target.value })
+              }
+              placeholder="City, Province or Address"
             />
           </div>
 

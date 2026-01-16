@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -202,11 +204,12 @@ export function ServiceRequestForm({ initialData, onSubmit, onCancel }) {
 
             <div className="space-y-2">
               <Label htmlFor="lastSiphoningDate">Last Siphoning Date</Label>
-              <Input
-                id="lastSiphoningDate"
-                type="date"
-                value={formData.lastSiphoningDate}
-                onChange={(e) => handleChange("lastSiphoningDate", e.target.value)}
+              <DatePicker
+                date={formData.lastSiphoningDate ? new Date(formData.lastSiphoningDate) : undefined}
+                onDateChange={(date) => 
+                  handleChange("lastSiphoningDate", date ? format(date, "yyyy-MM-dd") : "")
+                }
+                placeholder="Select last siphoning date"
               />
             </div>
 
@@ -233,11 +236,12 @@ export function ServiceRequestForm({ initialData, onSubmit, onCancel }) {
 
             <div className="space-y-2">
               <Label htmlFor="urgencyTargetDate">Urgency/Target Date</Label>
-              <Input
-                id="urgencyTargetDate"
-                type="date"
-                value={formData.urgencyTargetDate}
-                onChange={(e) => handleChange("urgencyTargetDate", e.target.value)}
+              <DatePicker
+                date={formData.urgencyTargetDate ? new Date(formData.urgencyTargetDate) : undefined}
+                onDateChange={(date) => 
+                  handleChange("urgencyTargetDate", date ? format(date, "yyyy-MM-dd") : "")
+                }
+                placeholder="Select target date"
               />
             </div>
           </>
@@ -335,11 +339,12 @@ export function ServiceRequestForm({ initialData, onSubmit, onCancel }) {
 
             <div className="space-y-2">
               <Label htmlFor="preferredPickupDate">Preferred Pickup Date</Label>
-              <Input
-                id="preferredPickupDate"
-                type="date"
-                value={formData.preferredPickupDate}
-                onChange={(e) => handleChange("preferredPickupDate", e.target.value)}
+              <DatePicker
+                date={formData.preferredPickupDate ? new Date(formData.preferredPickupDate) : undefined}
+                onDateChange={(date) => 
+                  handleChange("preferredPickupDate", date ? format(date, "yyyy-MM-dd") : "")
+                }
+                placeholder="Select pickup date"
               />
             </div>
 

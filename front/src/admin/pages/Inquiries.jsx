@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "sonner";
-import { Plus, SlidersHorizontal, X, CalendarDays } from "lucide-react";
+import { Plus, SlidersHorizontal, X, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -31,6 +37,89 @@ import { ViewInquiryDialog } from "../components/inquiries/ViewInquiryDialog";
 import { RequestProposalDialog } from "../components/inquiries/RequestProposalDialog";
 import { SendProposalDialog } from "../components/inquiries/SendProposalDialog";
 import { createColumns } from "../components/inquiries/columns";
+
+// Month names for the picker
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
+// Month Picker Content Component
+function MonthPickerContent({ value, onChange }) {
+  const [displayYear, setDisplayYear] = useState(() => {
+    if (value) {
+      return parseInt(value.split("-")[0]);
+    }
+    return new Date().getFullYear();
+  });
+
+  const selectedMonth = value ? parseInt(value.split("-")[1]) - 1 : null;
+  const selectedYear = value ? parseInt(value.split("-")[0]) : null;
+
+  const handleMonthSelect = (monthIndex) => {
+    const month = String(monthIndex + 1).padStart(2, "0");
+    onChange(`${displayYear}-${month}`);
+  };
+
+  const handleClear = () => {
+    onChange("");
+  };
+
+  return (
+    <div className="p-3">
+      {/* Year Navigation */}
+      <div className="flex items-center justify-between mb-3">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setDisplayYear(displayYear - 1)}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="text-sm font-medium">{displayYear}</span>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setDisplayYear(displayYear + 1)}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Month Grid */}
+      <div className="grid grid-cols-3 gap-2">
+        {MONTHS.map((month, index) => {
+          const isSelected = selectedMonth === index && selectedYear === displayYear;
+          return (
+            <Button
+              key={month}
+              variant={isSelected ? "default" : "ghost"}
+              size="sm"
+              className={`h-8 text-xs ${isSelected ? "" : "hover:bg-accent"}`}
+              onClick={() => handleMonthSelect(index)}
+            >
+              {month.substring(0, 3)}
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* Clear Button */}
+      {value && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full mt-3 text-muted-foreground"
+          onClick={handleClear}
+        >
+          Clear selection
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function Inquiries() {
   const { user } = useAuth();
@@ -303,34 +392,27 @@ export default function Inquiries() {
             getCount={getServiceTypeCount}
           />
 
-          {/* Month Filter */}
-          <Select
-            value={monthFilter || "all"}
-            onValueChange={(value) => setMonthFilter(value === "all" ? "" : value)}
-          >
-            <SelectTrigger className="h-8 w-[180px]">
-              <CalendarDays className="mr-2 h-4 w-4 shrink-0" />
-              <SelectValue placeholder="All Months" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Months</SelectItem>
-              {(() => {
-                const months = [];
-                const now = new Date();
-                for (let i = 0; i < 12; i++) {
-                  const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                  const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                  const label = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-                  months.push(
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  );
-                }
-                return months;
-              })()}
-            </SelectContent>
-          </Select>
+          {/* Month Filter - Calendar Picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`h-8 border-dashed ${monthFilter ? "border-solid" : ""}`}
+              >
+                <CalendarDays className="mr-2 h-4 w-4" />
+                {monthFilter
+                  ? format(new Date(monthFilter + "-01"), "MMMM yyyy")
+                  : "Select Month"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <MonthPickerContent
+                value={monthFilter}
+                onChange={setMonthFilter}
+              />
+            </PopoverContent>
+          </Popover>
 
           {(statusFilter.length > 0 || sourceFilter.length > 0 || serviceTypeFilter.length > 0 || monthFilter || searchTerm) && (
             <Button

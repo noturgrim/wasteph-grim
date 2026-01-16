@@ -224,11 +224,11 @@ class LeadService {
         email: existingLead.email || "noemail@wasteph.com", // Required field fallback
         phone: existingLead.phone,
         company: existingLead.company,
+        location: existingLead.location || null,
         message: existingLead.notes || `Lead from pool: ${existingLead.clientName}`,
         status: "initial_comms",
         source: source || null,
         assignedTo: userId,
-        notes: existingLead.location ? `Location: ${existingLead.location}` : null,
       })
       .returning();
 

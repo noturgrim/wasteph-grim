@@ -63,6 +63,10 @@ export function ViewInquiryDialog({ open, onOpenChange, inquiry, users = [], onP
                 <p className="text-sm text-muted-foreground">Company</p>
                 <p className="text-sm font-medium">{inquiry.company || "N/A"}</p>
               </div>
+              <div className="col-span-2">
+                <p className="text-sm text-muted-foreground">Location</p>
+                <p className="text-sm font-medium">{inquiry.location || "N/A"}</p>
+              </div>
             </div>
           </div>
 
