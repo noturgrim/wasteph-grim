@@ -83,6 +83,8 @@ class ApiClient {
     if (filters.assignedTo) params.append("assignedTo", filters.assignedTo);
     if (filters.search) params.append("search", filters.search);
     if (filters.source) params.append("source", filters.source);
+    if (filters.serviceType) params.append("serviceType", filters.serviceType);
+    if (filters.month) params.append("month", filters.month);
     if (filters.page) params.append("page", filters.page);
     if (filters.limit) params.append("limit", filters.limit);
 

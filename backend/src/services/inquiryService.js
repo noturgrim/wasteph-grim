@@ -40,7 +40,7 @@ class InquiryService {
    * @returns {Promise<Object>} Object with data and pagination info
    */
   async getAllInquiries(options = {}) {
-    const { status, assignedTo, search, source, serviceType, page = 1, limit = 10 } = options;
+    const { status, assignedTo, search, source, serviceType, month, page = 1, limit = 10 } = options;
 
     // Calculate offset
     const offset = (page - 1) * limit;
@@ -92,6 +92,19 @@ class InquiryService {
           like(inquiryTable.name, searchTerm),
           like(inquiryTable.email, searchTerm),
           like(inquiryTable.company, searchTerm)
+        )
+      );
+    }
+
+    // Month filter (format: "YYYY-MM")
+    if (month) {
+      const [year, monthNum] = month.split('-').map(Number);
+      const startDate = new Date(year, monthNum - 1, 1);
+      const endDate = new Date(year, monthNum, 0, 23, 59, 59, 999); // Last day of month
+      conditions.push(
+        and(
+          sql`${inquiryTable.createdAt} >= ${startDate}`,
+          sql`${inquiryTable.createdAt} <= ${endDate}`
         )
       );
     }

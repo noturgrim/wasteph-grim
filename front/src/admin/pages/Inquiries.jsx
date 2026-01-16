@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "sonner";
-import { Plus, SlidersHorizontal, X } from "lucide-react";
+import { Plus, SlidersHorizontal, X, CalendarDays } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +51,7 @@ export default function Inquiries() {
   const [statusFilter, setStatusFilter] = useState([]);
   const [sourceFilter, setSourceFilter] = useState([]);
   const [serviceTypeFilter, setServiceTypeFilter] = useState([]);
+  const [monthFilter, setMonthFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   // Column visibility
@@ -91,7 +92,7 @@ export default function Inquiries() {
   useEffect(() => {
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on filter change
     fetchInquiries(1);
-  }, [statusFilter, sourceFilter, serviceTypeFilter, searchTerm]);
+  }, [statusFilter, sourceFilter, serviceTypeFilter, monthFilter, searchTerm]);
 
   const fetchUsers = async () => {
     try {
@@ -125,6 +126,7 @@ export default function Inquiries() {
         status: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
         source: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
         serviceType: serviceTypeFilter.length > 0 ? serviceTypeFilter.join(",") : undefined,
+        month: monthFilter || undefined,
         search: searchTerm || undefined,
         page,
         limit,
@@ -301,7 +303,36 @@ export default function Inquiries() {
             getCount={getServiceTypeCount}
           />
 
-          {(statusFilter.length > 0 || sourceFilter.length > 0 || serviceTypeFilter.length > 0 || searchTerm) && (
+          {/* Month Filter */}
+          <Select
+            value={monthFilter || "all"}
+            onValueChange={(value) => setMonthFilter(value === "all" ? "" : value)}
+          >
+            <SelectTrigger className="h-8 w-[180px]">
+              <CalendarDays className="mr-2 h-4 w-4 shrink-0" />
+              <SelectValue placeholder="All Months" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Months</SelectItem>
+              {(() => {
+                const months = [];
+                const now = new Date();
+                for (let i = 0; i < 12; i++) {
+                  const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                  const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                  const label = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                  months.push(
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  );
+                }
+                return months;
+              })()}
+            </SelectContent>
+          </Select>
+
+          {(statusFilter.length > 0 || sourceFilter.length > 0 || serviceTypeFilter.length > 0 || monthFilter || searchTerm) && (
             <Button
               variant="ghost"
               size="sm"
@@ -309,6 +340,7 @@ export default function Inquiries() {
                 setStatusFilter([]);
                 setSourceFilter([]);
                 setServiceTypeFilter([]);
+                setMonthFilter("");
                 setSearchTerm("");
               }}
               className="h-8 px-2 lg:px-3"
