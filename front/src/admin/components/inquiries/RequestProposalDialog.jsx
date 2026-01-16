@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -19,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, ArrowRight, Edit3, Loader2, Sparkles, Send, AlertCircle } from "lucide-react";
+import { format } from "date-fns";
 import { api } from "../../services/api";
 import { toast } from "sonner";
 import TiptapEditor from "@/components/common/TiptapEditor";
@@ -95,7 +97,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
             clientPhone: existingData.clientPhone || inquiry.phone || "",
             clientCompany: existingData.clientCompany || inquiry.company || "",
             clientPosition: existingData.clientPosition || inquiry.position || "",
-            clientAddress: existingData.clientAddress || inquiry.address || "",
+            clientAddress: existingData.clientAddress || inquiry.location || "",
             proposalDate: existingData.proposalDate || new Date().toISOString().split("T")[0],
             validityDays: existingData.validityDays || 30,
             notes: existingData.notes || "",
@@ -129,7 +131,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
               clientPhone: inquiry.phone || "",
               clientCompany: inquiry.company || "",
               clientPosition: inquiry.position || "",
-              clientAddress: inquiry.address || "",
+              clientAddress: inquiry.location || "",
               proposalDate: new Date().toISOString().split("T")[0],
               validityDays: 30,
               notes: "",
@@ -145,7 +147,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
             clientPhone: inquiry.phone || "",
             clientCompany: inquiry.company || "",
             clientPosition: inquiry.position || "",
-            clientAddress: inquiry.address || "",
+            clientAddress: inquiry.location || "",
             proposalDate: new Date().toISOString().split("T")[0],
             validityDays: 30,
             notes: "",
@@ -557,11 +559,12 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="proposalDate">Proposal Date</Label>
-                      <Input
-                        id="proposalDate"
-                        type="date"
-                        value={formData.proposalDate}
-                        onChange={(e) => handleInputChange("proposalDate", e.target.value)}
+                      <DatePicker
+                        date={formData.proposalDate ? new Date(formData.proposalDate) : undefined}
+                        onDateChange={(date) => 
+                          handleInputChange("proposalDate", date ? format(date, "yyyy-MM-dd") : "")
+                        }
+                        placeholder="Select proposal date"
                       />
                     </div>
                   </div>

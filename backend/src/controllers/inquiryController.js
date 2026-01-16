@@ -55,7 +55,7 @@ export const createInquiryManual = async (req, res, next) => {
  */
 export const getAllInquiries = async (req, res, next) => {
   try {
-    const { status, assignedTo, search, source, serviceType, page, limit } = req.query;
+    const { status, assignedTo, search, source, serviceType, month, page, limit } = req.query;
 
     const result = await inquiryService.getAllInquiries({
       status,
@@ -63,6 +63,7 @@ export const getAllInquiries = async (req, res, next) => {
       search,
       source,
       serviceType,
+      month,
       page: page ? parseInt(page) : 1,
       limit: limit ? parseInt(limit) : 10,
     });

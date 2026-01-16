@@ -110,6 +110,7 @@ export const inquiryTable = pgTable("inquiry", {
   email: text("email").notNull(),
   phone: text("phone"),
   company: text("company"),
+  location: text("location"),
   message: text("message").notNull(),
   serviceId: uuid("service_id").references(() => serviceTable.id),
   serviceType: text("service_type"), // Maps to template types for auto-suggestion
