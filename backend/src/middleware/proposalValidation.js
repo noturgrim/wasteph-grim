@@ -33,7 +33,6 @@ const legacyProposalDataSchema = z.object({
 
   terms: z.object({
     paymentTerms: z.string().optional(),
-    validityDays: z.number().int().min(1).max(365).optional(),
     notes: z.string().optional(),
   }),
 
@@ -64,7 +63,6 @@ const editableProposalDataSchema = z.object({
 
   // Proposal metadata
   proposalDate: z.string().optional(),
-  validityDays: z.number().int().min(1).max(365).optional(),
   serviceType: z.string().optional(),
   notes: z.string().optional(),
 

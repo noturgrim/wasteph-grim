@@ -12,28 +12,56 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, Edit3, Loader2, Sparkles, Send, AlertCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Edit3, Loader2, Sparkles, Send, AlertCircle, Truck, Skull, Calendar, Building2, PackageCheck, Scale, Recycle, Check } from "lucide-react";
 import { format } from "date-fns";
 import { api } from "../../services/api";
 import { toast } from "sonner";
 import TiptapEditor from "@/components/common/TiptapEditor";
 
-// Service Type Options
+// Service Type Options with Icons
 const SERVICE_TYPE_OPTIONS = [
-  { value: "waste_collection", label: "Waste Collection (Compactor Hauling)", icon: "🚛" },
-  { value: "hazardous", label: "Hazardous Waste Collection", icon: "☢️" },
-  { value: "fixed_monthly", label: "Fixed Monthly Rate", icon: "📅" },
-  { value: "clearing", label: "Clearing Project", icon: "🏗️" },
-  { value: "one_time", label: "One Time Hauling", icon: "🚚" },
-  { value: "long_term", label: "Long Term Garbage (Per-kg)", icon: "⚖️" },
-  { value: "recyclables", label: "Purchase of Recyclables", icon: "♻️" },
+  {
+    value: "waste_collection",
+    label: "Waste Collection",
+    subtitle: "Compactor hauling services",
+    icon: Truck
+  },
+  {
+    value: "hazardous",
+    label: "Hazardous Waste",
+    subtitle: "Specialized hazardous waste handling",
+    icon: Skull
+  },
+  {
+    value: "fixed_monthly",
+    label: "Fixed Monthly Rate",
+    subtitle: "Regular monthly service contract",
+    icon: Calendar
+  },
+  {
+    value: "clearing",
+    label: "Clearing Project",
+    subtitle: "One-time clearing and cleanup",
+    icon: Building2
+  },
+  {
+    value: "one_time",
+    label: "One Time Hauling",
+    subtitle: "Single pickup service",
+    icon: PackageCheck
+  },
+  {
+    value: "long_term",
+    label: "Long Term Garbage",
+    subtitle: "Per-kg weight-based pricing",
+    icon: Scale
+  },
+  {
+    value: "recyclables",
+    label: "Purchase of Recyclables",
+    subtitle: "Recyclable materials buyback",
+    icon: Recycle
+  },
 ];
 
 // Service Type to Template Type Mapping
@@ -69,8 +97,17 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
     clientPosition: "",
     clientAddress: "",
     proposalDate: new Date().toISOString().split("T")[0],
-    validityDays: 30,
     notes: "",
+  });
+
+  // Validation errors state
+  const [validationErrors, setValidationErrors] = useState({
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    clientCompany: "",
+    clientAddress: "",
+    proposalDate: "",
   });
 
   // Pre-populate from inquiry and load existing proposal data if revising
@@ -99,7 +136,6 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
             clientPosition: existingData.clientPosition || inquiry.position || "",
             clientAddress: existingData.clientAddress || inquiry.location || "",
             proposalDate: existingData.proposalDate || new Date().toISOString().split("T")[0],
-            validityDays: existingData.validityDays || 30,
             notes: existingData.notes || "",
           });
 
@@ -133,8 +169,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
               clientPosition: inquiry.position || "",
               clientAddress: inquiry.location || "",
               proposalDate: new Date().toISOString().split("T")[0],
-              validityDays: 30,
-              notes: "",
+                            notes: "",
             });
           }
         }
@@ -149,8 +184,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
             clientPosition: inquiry.position || "",
             clientAddress: inquiry.location || "",
             proposalDate: new Date().toISOString().split("T")[0],
-            validityDays: 30,
-            notes: "",
+                        notes: "",
           });
 
           // Pre-select service type if available from inquiry
@@ -175,8 +209,74 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
     }
   }, [open]);
 
+  const validateField = (field, value) => {
+    let error = "";
+
+    switch (field) {
+      case "clientName":
+        if (!value.trim()) {
+          error = "Name is required";
+        } else if (value.trim().length < 2) {
+          error = "Name must be at least 2 characters";
+        } else if (!/^[a-zA-Z\s.'-]+$/.test(value)) {
+          error = "Name can only contain letters, spaces, and basic punctuation";
+        }
+        break;
+
+      case "clientEmail":
+        if (!value.trim()) {
+          error = "Email is required";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          error = "Please enter a valid email address";
+        }
+        break;
+
+      case "clientPhone":
+        if (!value.trim()) {
+          error = "Phone number is required";
+        } else if (!/^[\d\s+()-]+$/.test(value)) {
+          error = "Phone number can only contain digits, spaces, +, -, ( )";
+        } else if (value.replace(/[\s+()-]/g, "").length < 7) {
+          error = "Phone number must have at least 7 digits";
+        }
+        break;
+
+      case "clientCompany":
+        if (!value.trim()) {
+          error = "Company name is required";
+        } else if (value.trim().length < 2) {
+          error = "Company name must be at least 2 characters";
+        }
+        break;
+
+      case "clientAddress":
+        if (!value.trim()) {
+          error = "Address is required";
+        } else if (value.trim().length < 5) {
+          error = "Address must be at least 5 characters";
+        }
+        break;
+
+      case "proposalDate":
+        if (!value) {
+          error = "Proposal date is required";
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    return error;
+  };
+
   const handleInputChange = (field, value) => {
+    // Update form data
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+    // Validate and update errors
+    const error = validateField(field, value);
+    setValidationErrors((prev) => ({ ...prev, [field]: error }));
   };
 
   // Load template based on selected service type
@@ -216,6 +316,17 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
   const handleServiceTypeChange = async (serviceType) => {
     setSelectedServiceType(serviceType);
     await loadTemplateForServiceType(serviceType);
+
+    // Update the inquiry with the selected service type
+    if (inquiry?.id) {
+      try {
+        await api.updateInquiry(inquiry.id, { serviceType });
+        console.log("Inquiry updated with service type:", serviceType);
+      } catch (error) {
+        console.error("Failed to update inquiry service type:", error);
+        // Don't show error to user as this is a background operation
+      }
+    }
   };
 
   // Render template with client data and load into editor
@@ -227,10 +338,6 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
 
     setIsLoadingEditor(true);
     try {
-      // Calculate validity date
-      const validUntilDate = new Date();
-      validUntilDate.setDate(validUntilDate.getDate() + (parseInt(formData.validityDays) || 30));
-
       // Prepare data for template
       const templateData = {
         clientName: formData.clientName || "Client Name",
@@ -240,11 +347,6 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
         clientPosition: formData.clientPosition || "",
         clientAddress: formData.clientAddress || "",
         proposalDate: new Date(formData.proposalDate).toLocaleDateString("en-PH", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-        validUntilDate: validUntilDate.toLocaleDateString("en-PH", {
           year: "numeric",
           month: "long",
           day: "numeric",
@@ -314,9 +416,6 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
 
     setIsSubmitting(true);
     try {
-      const validUntilDate = new Date();
-      validUntilDate.setDate(validUntilDate.getDate() + (parseInt(formData.validityDays) || 30));
-
       // Prepare proposal data with structured format + edited HTML
       const proposalData = {
         // Client info
@@ -329,7 +428,6 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
 
         // Proposal metadata
         proposalDate: formData.proposalDate,
-        validityDays: parseInt(formData.validityDays) || 30,
         serviceType: selectedServiceType,
         notes: formData.notes || "",
 
@@ -366,72 +464,163 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
     }
   };
 
-  const isFormValid = formData.clientName && formData.clientCompany;
+  const isFormValid =
+    formData.clientName &&
+    formData.clientEmail &&
+    formData.clientPhone &&
+    formData.clientCompany &&
+    formData.clientAddress &&
+    formData.proposalDate &&
+    !validationErrors.clientName &&
+    !validationErrors.clientEmail &&
+    !validationErrors.clientPhone &&
+    !validationErrors.clientCompany &&
+    !validationErrors.clientAddress &&
+    !validationErrors.proposalDate;
   const canSubmit = savedEditorContent.html && !hasUnsavedEditorChanges && !isSubmitting;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[900px]! max-w-[95vw]! h-[90vh]! max-h-[90vh]! flex flex-col p-0">
-        {/* Header */}
-        <div className="px-6 py-4 border-b shrink-0">
-          <DialogHeader>
-            <DialogTitle className="text-xl">
-              {inquiry?.proposalStatus === "rejected" ? "Revise Proposal" : "Create Proposal"}
-            </DialogTitle>
-            <DialogDescription>
-              For {inquiry?.name} ({inquiry?.email})
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent className="w-[1000px]! max-w-[95vw]! h-[90vh]! max-h-[90vh]! flex flex-col p-0 gap-0">
+        {/* Two Column Layout */}
+        <div className="flex flex-1 min-h-0">
+          {/* Left Sidebar - Progress Steps */}
+          <div className="w-[280px] shrink-0 bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-r border-gray-200 dark:border-gray-700 p-6 flex flex-col">
+            {/* Header in Sidebar */}
+            <div className="mb-8">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                {inquiry?.proposalStatus === "rejected" ? "Revise Proposal" : "Create Proposal"}
+              </h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                For {inquiry?.name}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500">
+                {inquiry?.email}
+              </p>
+            </div>
 
-          {/* Step Indicator */}
-          <div className="flex items-center gap-2 mt-4">
-            <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-                currentStep === 1
-                  ? "bg-[#106934] text-white"
-                  : currentStep > 1
-                  ? "bg-green-100 text-green-800"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                1
-              </span>
-              Service Type
+            {/* Step Indicator - Vertical */}
+            <div className="flex flex-col gap-3 flex-1">
+              {/* Step 1 */}
+              <div className="relative">
+                <div
+                  className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
+                    currentStep === 1
+                      ? "bg-[#15803d] text-white shadow-md"
+                      : currentStep > 1
+                      ? "bg-white/60 dark:bg-gray-800/60 text-green-700 dark:text-green-400"
+                      : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                      currentStep === 1
+                        ? "bg-white/20 text-white"
+                        : currentStep > 1
+                        ? "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300"
+                        : "bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {currentStep > 1 ? "✓" : "1"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm leading-tight">Service Type</p>
+                    <p className={`text-xs mt-0.5 leading-tight ${
+                      currentStep === 1 ? "text-white/80" : "text-gray-500 dark:text-gray-400"
+                    }`}>
+                      Select service category
+                    </p>
+                  </div>
+                </div>
+                {/* Connector Line */}
+                <div
+                  className={`absolute left-[27px] top-[52px] w-0.5 h-3 ${
+                    currentStep > 1 ? "bg-green-400 dark:bg-green-600" : "bg-gray-300 dark:bg-gray-600"
+                  }`}
+                />
+              </div>
+
+              {/* Step 2 */}
+              <div className="relative">
+                <div
+                  className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
+                    currentStep === 2
+                      ? "bg-[#15803d] text-white shadow-md"
+                      : currentStep > 2
+                      ? "bg-white/60 dark:bg-gray-800/60 text-green-700 dark:text-green-400"
+                      : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                      currentStep === 2
+                        ? "bg-white/20 text-white"
+                        : currentStep > 2
+                        ? "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300"
+                        : "bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {currentStep > 2 ? "✓" : "2"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm leading-tight">Client Info</p>
+                    <p className={`text-xs mt-0.5 leading-tight ${
+                      currentStep === 2 ? "text-white/80" : "text-gray-500 dark:text-gray-400"
+                    }`}>
+                      Enter client details
+                    </p>
+                  </div>
+                </div>
+                {/* Connector Line */}
+                <div
+                  className={`absolute left-[27px] top-[52px] w-0.5 h-3 ${
+                    currentStep > 2 ? "bg-green-400 dark:bg-green-600" : "bg-gray-300 dark:bg-gray-600"
+                  }`}
+                />
+              </div>
+
+              {/* Step 3 */}
+              <div>
+                <div
+                  className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
+                    currentStep === 3
+                      ? "bg-[#15803d] text-white shadow-md"
+                      : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                      currentStep === 3
+                        ? "bg-white/20 text-white"
+                        : "bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    3
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm leading-tight">Edit & Submit</p>
+                    <p className={`text-xs mt-0.5 leading-tight ${
+                      currentStep === 3 ? "text-white/80" : "text-gray-500 dark:text-gray-400"
+                    }`}>
+                      Customize proposal
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className={`w-8 h-0.5 ${currentStep > 1 ? "bg-green-400" : "bg-gray-200"}`} />
-            <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-                currentStep === 2
-                  ? "bg-[#106934] text-white"
-                  : currentStep > 2
-                  ? "bg-green-100 text-green-800"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                2
-              </span>
-              Client Info
-            </div>
-            <div className={`w-8 h-0.5 ${currentStep > 2 ? "bg-green-400" : "bg-gray-200"}`} />
-            <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-                currentStep === 3
-                  ? "bg-[#106934] text-white"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                3
-              </span>
-              Edit & Submit
+
+            {/* Help Text at Bottom */}
+            <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                Need help? Contact support at support@wasteph.com
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className={`flex-1 px-6 py-4 min-h-0 ${currentStep === 3 ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}>
+          {/* Right Content Area */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Content */}
+            <div className={`flex-1 px-8 py-6 min-h-0 ${currentStep === 3 ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}>
           {/* Rejection Banner */}
           {inquiry?.proposalStatus === "rejected" && inquiry?.proposalRejectionReason && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
@@ -442,64 +631,115 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
 
           {currentStep === 1 ? (
             /* STEP 1: Service Type Selection */
-            <div className="space-y-6 max-w-2xl mx-auto">
-              <div className="space-y-2">
-                <Label htmlFor="serviceType" className="text-base font-semibold">
-                  Select Service Type <span className="text-red-500">*</span>
-                </Label>
-                <p className="text-sm text-gray-500">
-                  Choose the type of service for this proposal. The appropriate template will be automatically selected.
+            <div className="space-y-5">
+              {/* Step Title */}
+              <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Select Service Type
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Choose the service type for this inquiry's proposal
                 </p>
-                <Select value={selectedServiceType} onValueChange={handleServiceTypeChange}>
-                  <SelectTrigger id="serviceType" className="w-full h-12 text-base">
-                    <SelectValue placeholder="Select a service type..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SERVICE_TYPE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value} className="py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">{option.icon}</span>
-                          <span>{option.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
-              {/* Template Auto-Selected Indicator */}
-              {selectedServiceType && template && (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <Sparkles className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                        Template Auto-Selected
+              {/* Template Auto-Selected Indicator - Moved to top */}
+              {selectedServiceType && template && !isLoadingTemplate && (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 max-w-3xl">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-xs font-medium text-green-900 dark:text-green-100">
+                        Template Auto-Selected:
                       </p>
-                      <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                        <span className="font-semibold">{template.name}</span> will be used for this proposal
+                      <p className="text-xs text-green-700 dark:text-green-300">
+                        <span className="font-semibold">{template.name}</span>
                       </p>
                     </div>
                   </div>
                 </div>
               )}
 
+              {/* Service Type Cards Grid */}
+              <div className="grid grid-cols-2 gap-4 max-w-3xl">
+                {SERVICE_TYPE_OPTIONS.map((option) => {
+                  const Icon = option.icon;
+                  const isSelected = selectedServiceType === option.value;
+                  const isDisabled = option.value !== "fixed_monthly";
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleServiceTypeChange(option.value)}
+                      disabled={isLoadingTemplate || isDisabled}
+                      className={`relative flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all text-center min-h-[140px] bg-white dark:bg-gray-800 ${
+                        isSelected
+                          ? "border-[#15803d]"
+                          : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                      } ${isLoadingTemplate || isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                    >
+                      {/* Checkbox Circle - Top Right Inside */}
+                      <div className="absolute top-3 right-3">
+                        {isSelected ? (
+                          <div className="w-5 h-5 bg-[#15803d] rounded-full flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                          </div>
+                        ) : (
+                          <div className="w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded-full" />
+                        )}
+                      </div>
+
+                      {/* Icon */}
+                      <div className="w-12 h-12 bg-white dark:bg-white border border-gray-200 dark:border-gray-600 rounded-lg flex items-center justify-center mb-3 text-gray-700 dark:text-gray-700 shadow-sm">
+                        <Icon className="w-6 h-6" />
+                      </div>
+
+                      {/* Label */}
+                      <h3 className={`font-semibold text-sm mb-1 ${
+                        isSelected
+                          ? "text-gray-900 dark:text-white"
+                          : "text-gray-900 dark:text-white"
+                      }`}>
+                        {option.label}
+                      </h3>
+
+                      {/* Subtitle */}
+                      <p className={`text-xs leading-relaxed ${
+                        isSelected
+                          ? "text-gray-600 dark:text-gray-400"
+                          : "text-gray-500 dark:text-gray-500"
+                      }`}>
+                        {option.subtitle}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+
               {isLoadingTemplate && (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-[#106934]" />
-                  <span className="ml-3 text-gray-600">Loading template...</span>
+                  <Loader2 className="h-8 w-8 animate-spin text-[#15803d]" />
+                  <span className="ml-3 text-gray-600 dark:text-gray-400">Loading template...</span>
                 </div>
               )}
             </div>
           ) : currentStep === 2 ? (
             /* STEP 2: Client Information Form */
-            <div className="space-y-4 max-w-2xl mx-auto">
+            <div className="space-y-6">
+              {/* Step Title */}
+              <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Client Information</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Enter the client details for this proposal
+                </p>
+              </div>
+
               {isLoadingTemplate ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-[#106934]" />
                 </div>
               ) : (
-                <>
+                <div className="space-y-4 max-w-2xl">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="clientName">
@@ -510,7 +750,11 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                         value={formData.clientName}
                         onChange={(e) => handleInputChange("clientName", e.target.value)}
                         placeholder="John Doe"
+                        aria-invalid={!!validationErrors.clientName}
                       />
+                      {validationErrors.clientName && (
+                        <p className="text-xs text-red-500 mt-1">{validationErrors.clientName}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="clientPosition">Position/Title</Label>
@@ -533,62 +777,77 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                         value={formData.clientCompany}
                         onChange={(e) => handleInputChange("clientCompany", e.target.value)}
                         placeholder="ABC Corporation"
+                        aria-invalid={!!validationErrors.clientCompany}
                       />
+                      {validationErrors.clientCompany && (
+                        <p className="text-xs text-red-500 mt-1">{validationErrors.clientCompany}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="clientEmail">Email</Label>
+                      <Label htmlFor="clientEmail">
+                        Email <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         id="clientEmail"
                         type="email"
                         value={formData.clientEmail}
                         onChange={(e) => handleInputChange("clientEmail", e.target.value)}
                         placeholder="john@example.com"
+                        aria-invalid={!!validationErrors.clientEmail}
                       />
+                      {validationErrors.clientEmail && (
+                        <p className="text-xs text-red-500 mt-1">{validationErrors.clientEmail}</p>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="clientPhone">Phone</Label>
+                      <Label htmlFor="clientPhone">
+                        Phone <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         id="clientPhone"
                         value={formData.clientPhone}
                         onChange={(e) => handleInputChange("clientPhone", e.target.value)}
                         placeholder="+63 912 345 6789"
+                        aria-invalid={!!validationErrors.clientPhone}
                       />
+                      {validationErrors.clientPhone && (
+                        <p className="text-xs text-red-500 mt-1">{validationErrors.clientPhone}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="proposalDate">Proposal Date</Label>
+                      <Label htmlFor="proposalDate">
+                        Proposal Date <span className="text-red-500">*</span>
+                      </Label>
                       <DatePicker
                         date={formData.proposalDate ? new Date(formData.proposalDate) : undefined}
-                        onDateChange={(date) => 
+                        onDateChange={(date) =>
                           handleInputChange("proposalDate", date ? format(date, "yyyy-MM-dd") : "")
                         }
                         placeholder="Select proposal date"
                       />
+                      {validationErrors.proposalDate && (
+                        <p className="text-xs text-red-500 mt-1">{validationErrors.proposalDate}</p>
+                      )}
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="clientAddress">Address</Label>
+                    <Label htmlFor="clientAddress">
+                      Address <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="clientAddress"
                       value={formData.clientAddress}
                       onChange={(e) => handleInputChange("clientAddress", e.target.value)}
                       placeholder="123 Business St, Metro Manila"
+                      aria-invalid={!!validationErrors.clientAddress}
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="validityDays">Proposal Valid For (Days)</Label>
-                    <Input
-                      id="validityDays"
-                      type="number"
-                      min="1"
-                      max="365"
-                      value={formData.validityDays}
-                      onChange={(e) => handleInputChange("validityDays", e.target.value)}
-                    />
+                    {validationErrors.clientAddress && (
+                      <p className="text-xs text-red-500 mt-1">{validationErrors.clientAddress}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -604,21 +863,29 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
 
                   {/* Template Info */}
                   {template && (
-                    <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                      <span className="text-gray-500">Using template: </span>
-                      <span className="font-medium">{template.name}</span>
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-sm">
+                      <span className="text-gray-500 dark:text-gray-400">Using template: </span>
+                      <span className="font-medium text-gray-900 dark:text-white">{template.name}</span>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
           ) : (
             /* STEP 3: Edit & Submit */
-            <div className="flex flex-col h-full min-h-0 gap-4">
+            <div className="flex flex-col h-full min-h-0">
+              {/* Step Title */}
+              <div className="pb-4 border-b border-gray-200 dark:border-gray-700 shrink-0 mb-4">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit & Submit Proposal</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Customize the proposal content and submit for approval
+                </p>
+              </div>
+
               {/* Instructions */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm shrink-0">
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm shrink-0 mb-3">
                 <div className="flex items-start gap-2">
-                  <Edit3 className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                  <Edit3 className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
                   <div>
                     <p className="text-blue-800 dark:text-blue-100 font-medium">
                       Edit your proposal content below
@@ -632,11 +899,11 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
 
               {/* Unsaved Changes Warning - uses visibility to prevent layout shift */}
               <div
-                className={`bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm shrink-0 transition-all duration-200 ${
-                  hasUnsavedEditorChanges ? 'visible opacity-100' : 'invisible opacity-0'
+                className={`bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm shrink-0 mb-3 transition-all duration-200 ${
+                  hasUnsavedEditorChanges ? 'visible opacity-100' : 'invisible opacity-0 h-0 mb-0 p-0 border-0'
                 }`}
               >
-                <div className="flex items-center gap-2 text-amber-800">
+                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   <span>You have unsaved changes. Save before submitting.</span>
                 </div>
@@ -645,8 +912,8 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
               {/* Editor */}
               {isLoadingEditor ? (
                 <div className="flex-1 flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-[#106934]" />
-                  <span className="ml-3 text-gray-600">Loading editor...</span>
+                  <Loader2 className="h-8 w-8 animate-spin text-[#15803d]" />
+                  <span className="ml-3 text-gray-600 dark:text-gray-400">Loading editor...</span>
                 </div>
               ) : (
                 <div className="flex-1 min-h-0">
@@ -660,67 +927,71 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
               )}
             </div>
           )}
-        </div>
+            </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t shrink-0">
-          <DialogFooter className="gap-2">
-            {currentStep === 1 ? (
-              <>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => setCurrentStep(2)}
-                  disabled={!selectedServiceType || isLoadingTemplate}
-                >
-                  {isLoadingTemplate ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                  )}
-                  Next
-                </Button>
-              </>
-            ) : currentStep === 2 ? (
-              <>
-                <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-                <Button
-                  onClick={prepareEditorContent}
-                  disabled={!isFormValid || isLoadingEditor || isLoadingTemplate}
-                >
-                  {isLoadingEditor ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Edit3 className="h-4 w-4 mr-2" />
-                  )}
-                  Edit Proposal
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => setCurrentStep(2)} disabled={isSubmitting}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!canSubmit}
-                  className={!canSubmit ? "opacity-50" : ""}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4 mr-2" />
-                  )}
-                  Submit Request
-                </Button>
-              </>
-            )}
-          </DialogFooter>
+            {/* Footer - Inside Right Content Area */}
+            <div className="px-8 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0 bg-gray-50/50 dark:bg-gray-900/50">
+              <div className="flex items-center justify-between gap-3">
+                {currentStep === 1 ? (
+                  <>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => setCurrentStep(2)}
+                      disabled={!selectedServiceType || isLoadingTemplate}
+                      className="min-w-[120px]"
+                    >
+                      {isLoadingTemplate ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                      )}
+                      Next Step
+                    </Button>
+                  </>
+                ) : currentStep === 2 ? (
+                  <>
+                    <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back
+                    </Button>
+                    <Button
+                      onClick={prepareEditorContent}
+                      disabled={!isFormValid || isLoadingEditor || isLoadingTemplate}
+                      className="min-w-[140px]"
+                    >
+                      {isLoadingEditor ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Edit3 className="h-4 w-4 mr-2" />
+                      )}
+                      Edit Proposal
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" onClick={() => setCurrentStep(2)} disabled={isSubmitting}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={!canSubmit}
+                      className={`min-w-[140px] ${!canSubmit ? "opacity-50" : ""}`}
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
+                      Submit Request
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

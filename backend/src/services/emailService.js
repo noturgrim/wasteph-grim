@@ -53,36 +53,23 @@ class EmailService {
       // Handle both old format (pricing/terms objects) and new format (flat structure with editedHtmlContent)
       const isNewFormat = !!proposalData.editedHtmlContent;
 
-      let clientName, total, validityDays;
+      let clientName, total;
 
       if (isNewFormat) {
         // New simplified format
         clientName = proposalData.clientName || inquiryData.name;
         total = null; // New format doesn't have a computed total
-        validityDays = proposalData.validityDays || 30;
       } else {
         // Legacy format with pricing/terms objects
-        const { pricing, terms } = proposalData;
+        const { pricing } = proposalData;
         clientName = inquiryData.name;
         total = pricing?.total;
-        validityDays = terms?.validityDays || 30;
       }
-
-      // Calculate validity date
-      const validityDate = new Date();
-      validityDate.setDate(validityDate.getDate() + validityDays);
 
       // Generate email HTML
       const htmlContent = isNewFormat
-        ? this.generateSimpleProposalEmailHTML(
-            clientName,
-            validityDate.toLocaleDateString("en-PH")
-          )
-        : this.generateProposalEmailHTML(
-            clientName,
-            total,
-            validityDate.toLocaleDateString("en-PH")
-          );
+        ? this.generateSimpleProposalEmailHTML(clientName)
+        : this.generateProposalEmailHTML(clientName, total);
 
       // Send email with PDF attachment
       console.log(`📤 Sending proposal email to: ${to}`);
@@ -154,10 +141,9 @@ class EmailService {
   /**
    * Generate simple proposal email HTML for new format (without total)
    * @param {string} clientName - Client name
-   * @param {string} validityDate - Validity date string
    * @returns {string} HTML content
    */
-  generateSimpleProposalEmailHTML(clientName, validityDate) {
+  generateSimpleProposalEmailHTML(clientName) {
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -248,11 +234,6 @@ class EmailService {
 
       <p>Please find attached our detailed proposal outlining the services we can provide, pricing structure, and terms and conditions.</p>
 
-      <div class="validity-box">
-        <p>This proposal is valid until</p>
-        <p><strong>${validityDate}</strong></p>
-      </div>
-
       <p>The attached PDF contains complete details including:</p>
       <ul style="margin: 15px 0; padding-left: 20px;">
         <li>Service breakdown and specifications</li>
@@ -283,10 +264,9 @@ class EmailService {
    * Generate proposal email HTML using template literals
    * @param {string} clientName - Client name
    * @param {number} total - Total amount
-   * @param {string} validityDate - Validity date string
    * @returns {string} HTML content
    */
-  generateProposalEmailHTML(clientName, total, validityDate) {
+  generateProposalEmailHTML(clientName, total) {
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -404,10 +384,6 @@ class EmailService {
         <tr>
           <td>Total Investment:</td>
           <td>₱${Number(total).toFixed(2)}</td>
-        </tr>
-        <tr>
-          <td>Valid Until:</td>
-          <td>${validityDate}</td>
         </tr>
       </table>
 
