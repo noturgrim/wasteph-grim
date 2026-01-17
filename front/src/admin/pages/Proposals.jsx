@@ -196,15 +196,6 @@ export default function Proposals() {
     return columnVisibility[column.accessorKey];
   });
 
-  // Status counts
-  const statusCounts = {
-    all: proposals.length,
-    pending: proposals.filter(p => p.status === "pending").length,
-    approved: proposals.filter(p => p.status === "approved").length,
-    rejected: proposals.filter(p => p.status === "rejected").length,
-    sent: proposals.filter(p => p.status === "sent").length,
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -215,70 +206,45 @@ export default function Proposals() {
         </p>
       </div>
 
-      {/* Status Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        <Button
-          variant={statusFilter.length === 0 ? "default" : "outline"}
-          onClick={() => setStatusFilter([])}
-          size="sm"
-        >
-          All
-          <span className="ml-2 rounded-full bg-background px-2 py-0.5 text-xs">
-            {statusCounts.all}
-          </span>
-        </Button>
-        <Button
-          variant={statusFilter.includes("pending") ? "default" : "outline"}
-          onClick={() => setStatusFilter(["pending"])}
-          size="sm"
-        >
-          Pending Review
-          <span className="ml-2 rounded-full bg-background px-2 py-0.5 text-xs">
-            {statusCounts.pending}
-          </span>
-        </Button>
-        <Button
-          variant={statusFilter.includes("approved") ? "default" : "outline"}
-          onClick={() => setStatusFilter(["approved"])}
-          size="sm"
-        >
-          Approved
-          <span className="ml-2 rounded-full bg-background px-2 py-0.5 text-xs">
-            {statusCounts.approved}
-          </span>
-        </Button>
-        <Button
-          variant={statusFilter.includes("sent") ? "default" : "outline"}
-          onClick={() => setStatusFilter(["sent"])}
-          size="sm"
-        >
-          Sent
-          <span className="ml-2 rounded-full bg-background px-2 py-0.5 text-xs">
-            {statusCounts.sent}
-          </span>
-        </Button>
-        <Button
-          variant={statusFilter.includes("rejected") ? "default" : "outline"}
-          onClick={() => setStatusFilter(["rejected"])}
-          size="sm"
-        >
-          Rejected
-          <span className="ml-2 rounded-full bg-background px-2 py-0.5 text-xs">
-            {statusCounts.rejected}
-          </span>
-        </Button>
-      </div>
-
-      {/* Filters & Actions */}
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex flex-1 gap-2">
+      {/* Filters */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
           {/* Search */}
           <SearchInput
             placeholder="Search by client name, email, or company..."
             value={searchTerm}
             onChange={setSearchTerm}
-            className="max-w-sm"
           />
+
+          {/* Status Filter */}
+          <FacetedFilter
+            title="Status"
+            options={[
+              { value: "pending", label: "Pending Review" },
+              { value: "approved", label: "Approved" },
+              { value: "sent", label: "Sent" },
+              { value: "rejected", label: "Rejected" },
+            ]}
+            selectedValues={statusFilter}
+            onSelectionChange={setStatusFilter}
+            getCount={(status) => proposals.filter(p => p.status === status).length}
+          />
+
+          {/* Clear filters */}
+          {(statusFilter.length > 0 || searchTerm) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setStatusFilter([]);
+                setSearchTerm("");
+              }}
+              className="h-8 px-2 lg:px-3"
+            >
+              Reset
+              <X className="ml-2 h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         <div className="flex gap-2">
@@ -307,49 +273,6 @@ export default function Proposals() {
           </DropdownMenu>
         </div>
       </div>
-
-      {/* Active Filters */}
-      {(statusFilter.length > 0 || searchTerm) && (
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-muted-foreground">Active filters:</span>
-          {statusFilter.length > 0 && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-secondary rounded-md text-sm">
-              Status: {statusFilter.join(", ")}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 hover:bg-transparent"
-                onClick={() => setStatusFilter([])}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
-          {searchTerm && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-secondary rounded-md text-sm">
-              Search: "{searchTerm}"
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 hover:bg-transparent"
-                onClick={() => setSearchTerm("")}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setStatusFilter([]);
-              setSearchTerm("");
-            }}
-          >
-            Clear all
-          </Button>
-        </div>
-      )}
 
       {/* Table */}
       <DataTable
