@@ -17,11 +17,13 @@ import ProposalTemplates from "./pages/ProposalTemplates";
 import Proposals from "./pages/Proposals";
 import Showcase from "./pages/Showcase";
 import ClientsShowcase from "./pages/ClientsShowcase";
+import InAppBrowserBanner from "../components/common/InAppBrowserBanner";
 
 const CRMApp = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <InAppBrowserBanner />
         <Toaster position="top-right" />
         <Routes>
           <Route path="login" element={<Login />} />
