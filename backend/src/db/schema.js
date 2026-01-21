@@ -399,6 +399,40 @@ export const showcaseTable = pgTable("showcase", {
   isActiveIdx: index("showcase_is_active_idx").on(table.isActive),
 }));
 
+// Clients Showcase Table
+export const clientsShowcaseTable = pgTable("clients_showcase", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  company: text("company").notNull(),
+  logo: text("logo"),
+  industry: text("industry").notNull(),
+  location: text("location"),
+  employees: text("employees"),
+  established: text("established"),
+  background: text("background").notNull(),
+  challenge: text("challenge"),
+  solution: text("solution"),
+  testimonial: text("testimonial").notNull(),
+  author: text("author").notNull(),
+  position: text("position"),
+  rating: integer("rating").default(5),
+  wasteReduction: text("waste_reduction"),
+  partnership: text("partnership"),
+  achievements: text("achievements").array(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => userTable.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  isActiveIdx: index("clients_showcase_is_active_idx").on(table.isActive),
+  companyIdx: index("clients_showcase_company_idx").on(table.company),
+}));
+
 // Blog Post Status Enum
 export const blogPostStatusEnum = pgEnum("blog_post_status", [
   "draft",

@@ -1,18 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import FadeInUp from "../components/common/FadeInUp";
 import RevealOnScroll from "../components/common/RevealOnScroll";
-import flickrLogo from "../assets/clients/24chicken.png";
-import metaLogo from "../assets/clients/24chicken.png";
-import tiktokLogo from "../assets/clients/24chicken.png";
-import youtubeLogo from "../assets/clients/24chicken.png";
+import { fetchClientsShowcase } from "../services/clientsShowcaseService";
+import { Building2 } from "lucide-react";
 
-// Mock client data with detailed backgrounds and testimonials
-const CLIENT_STORIES = [
+// Fallback client data if API fails
+const FALLBACK_CLIENT_STORIES = [
   {
     id: 1,
     company: "Meta",
-    logo: metaLogo,
+    logo: "",
     industry: "Technology & Social Media",
     location: "Metro Manila",
     employees: "500+",
@@ -40,7 +38,7 @@ const CLIENT_STORIES = [
   {
     id: 2,
     company: "YouTube",
-    logo: youtubeLogo,
+    logo: "",
     industry: "Media & Entertainment",
     location: "Quezon City",
     employees: "300+",
@@ -68,7 +66,7 @@ const CLIENT_STORIES = [
   {
     id: 3,
     company: "TikTok",
-    logo: tiktokLogo,
+    logo: "",
     industry: "Social Media & Technology",
     location: "BGC, Taguig",
     employees: "400+",
@@ -96,7 +94,7 @@ const CLIENT_STORIES = [
   {
     id: 4,
     company: "Flickr",
-    logo: flickrLogo,
+    logo: "",
     industry: "Technology & Photography",
     location: "Makati City",
     employees: "200+",
@@ -126,18 +124,29 @@ const CLIENT_STORIES = [
 const ClientStoryCard = ({ story }) => {
   return (
     <div className="group overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-black/40 to-black/20 backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/50 hover:shadow-[0_20px_60px_rgba(21,128,61,0.3)]">
-      {/* Header */}
-      <div className="border-b border-white/10 bg-[#15803d]/5 p-6 sm:p-8">
-        <div className="flex items-start gap-4 sm:gap-6">
-          {/* Logo */}
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white/5 p-3 sm:h-20 sm:w-20">
-            <img
-              src={story.logo}
-              alt={`${story.company} logo`}
-              className="h-full w-auto brightness-0 invert opacity-70"
-            />
-          </div>
+      {/* Logo Header - Full Width Banner */}
+      {story.logo ? (
+        <div className="h-32 w-full overflow-hidden bg-white/90 sm:h-40">
+          <img
+            src={story.logo}
+            alt={`${story.company} logo`}
+            className="block h-full w-full object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              const parent = e.target.parentElement;
+              parent.innerHTML = '<div class="flex h-full w-full items-center justify-center"><svg class="h-16 w-16 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg></div>';
+            }}
+          />
+        </div>
+      ) : (
+        <div className="flex h-32 w-full items-center justify-center bg-white/90 sm:h-40">
+          <Building2 className="h-16 w-16 text-slate-400" />
+        </div>
+      )}
 
+      {/* Header Info */}
+      <div className="border-b border-white/10 bg-[#15803d]/5 p-6 sm:p-8">
+        <div className="flex items-start justify-between gap-4">
           {/* Company Info */}
           <div className="flex-1">
             <h3 className="mb-2 text-2xl font-bold text-white sm:text-3xl">
@@ -147,36 +156,42 @@ const ClientStoryCard = ({ story }) => {
 
             {/* Stats */}
             <div className="flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />
-                <span className="text-white/70">{story.location}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />
-                <span className="text-white/70">
-                  {story.employees} employees
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />
-                <span className="text-white/70">{story.partnership}</span>
-              </div>
+              {story.location && (
+                <div className="flex items-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />
+                  <span className="text-white/70">{story.location}</span>
+                </div>
+              )}
+              {story.employees && (
+                <div className="flex items-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />
+                  <span className="text-white/70">{story.employees} employees</span>
+                </div>
+              )}
+              {story.partnership && (
+                <div className="flex items-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />
+                  <span className="text-white/70">{story.partnership}</span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Rating */}
-          <div className="hidden sm:flex gap-1">
-            {[...Array(story.rating)].map((_, i) => (
-              <svg
-                key={i}
-                className="h-5 w-5 text-[#15803d]"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            ))}
-          </div>
+          {story.rating && story.rating > 0 && (
+            <div className="hidden sm:flex gap-1">
+              {[...Array(story.rating)].map((_, i) => (
+                <svg
+                  key={i}
+                  className="h-5 w-5 text-[#15803d]"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -207,35 +222,79 @@ const ClientStoryCard = ({ story }) => {
         </div>
 
         {/* Results */}
-        <div className="rounded-xl bg-white/5 p-6">
-          <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-[#16a34a]">
-            Results Achieved
-          </h4>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {story.achievements.map((achievement, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <svg
-                  className="mt-0.5 h-5 w-5 shrink-0 text-[#16a34a]"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span className="text-sm text-white/80">{achievement}</span>
-              </div>
-            ))}
+        {story.achievements && story.achievements.length > 0 && (
+          <div className="rounded-xl bg-white/5 p-6">
+            <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-[#16a34a]">
+              Results Achieved
+            </h4>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {story.achievements.map((achievement, index) => (
+                <div key={index} className="flex items-start gap-2">
+                  <svg
+                    className="mt-0.5 h-5 w-5 shrink-0 text-[#16a34a]"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-sm text-white/80">{achievement}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 };
 
 const Clients = () => {
+  const [clientStories, setClientStories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+
+  useEffect(() => {
+    const loadClients = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchClientsShowcase();
+        if (data && data.length > 0) {
+          setClientStories(data);
+        } else {
+          // Use fallback data if no data from API
+          setClientStories(FALLBACK_CLIENT_STORIES);
+        }
+      } catch (err) {
+        console.error("Error loading clients:", err);
+        setError(err.message);
+        // Use fallback data on error
+        setClientStories(FALLBACK_CLIENT_STORIES);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadClients();
+  }, []);
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentStories = clientStories.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(clientStories.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    // Scroll to top of the page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="relative min-h-screen">
       {/* Hero Section */}
@@ -261,14 +320,101 @@ const Clients = () => {
       {/* Content Section */}
       <section className="relative px-4 pb-32 sm:px-6 lg:px-12">
         <div className="mx-auto max-w-7xl">
+          {/* Loading State */}
+          {loading && (
+            <div className="py-20 text-center">
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-[#15803d]" />
+              <p className="text-lg text-white/60">Loading client stories...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && clientStories.length === 0 && (
+            <div className="rounded-2xl border border-white/10 bg-black/40 p-12 text-center backdrop-blur-xl">
+              <p className="mb-4 text-lg text-white/60">
+                Unable to load client stories. Please try again later.
+              </p>
+            </div>
+          )}
+
           {/* Client Stories */}
-          <div className="space-y-8">
-            {CLIENT_STORIES.map((story, index) => (
-              <RevealOnScroll key={story.id} delay={index * 0.1}>
-                <ClientStoryCard story={story} />
-              </RevealOnScroll>
-            ))}
-          </div>
+          {!loading && clientStories.length > 0 && (
+            <>
+              <div className="space-y-8">
+                {currentStories.map((story, index) => (
+                  <RevealOnScroll key={story.id} delay={index * 0.1}>
+                    <ClientStoryCard story={story} />
+                  </RevealOnScroll>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {clientStories.length > itemsPerPage && (
+                <div className="mt-12 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-semibold text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex gap-2">
+                    {[...Array(totalPages)].map((_, index) => {
+                      const pageNumber = index + 1;
+                      // Show first page, last page, current page, and pages around current
+                      if (
+                        pageNumber === 1 ||
+                        pageNumber === totalPages ||
+                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                      ) {
+                        return (
+                          <button
+                            key={pageNumber}
+                            onClick={() => handlePageChange(pageNumber)}
+                            className={`rounded-lg px-4 py-2 font-semibold transition-all ${
+                              currentPage === pageNumber
+                                ? "bg-gradient-to-r from-[#15803d] to-[#16a34a] text-white shadow-lg"
+                                : "border border-white/10 bg-white/5 text-white hover:bg-white/10"
+                            }`}
+                          >
+                            {pageNumber}
+                          </button>
+                        );
+                      } else if (
+                        pageNumber === currentPage - 2 ||
+                        pageNumber === currentPage + 2
+                      ) {
+                        return (
+                          <span key={pageNumber} className="px-2 text-white/40">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-semibold text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && clientStories.length === 0 && (
+            <div className="rounded-2xl border border-white/10 bg-black/40 p-12 text-center backdrop-blur-xl">
+              <p className="text-lg text-white/60">
+                No client stories available at the moment. Check back soon!
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

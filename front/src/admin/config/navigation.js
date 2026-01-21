@@ -129,6 +129,12 @@ export const getNavigationByRole = (role, isMasterSales = false) => {
             icon: Image,
             description: "Manage community showcase",
           },
+          {
+            title: "Clients Showcase",
+            url: "/admin/clients-showcase",
+            icon: Users,
+            description: "Manage client success stories",
+          },
         ],
       },
       {

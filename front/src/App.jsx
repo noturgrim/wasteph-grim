@@ -60,8 +60,8 @@ const CTASection = lazy(() => import("./components/sections/CTASection"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 
-// Lazy load clients page (Currently redirected to Coming Soon)
-// const Clients = lazy(() => import("./pages/Clients"));
+// Lazy load clients page
+const Clients = lazy(() => import("./pages/Clients"));
 
 // Coming Soon page
 const ComingSoon = lazy(() => import("./pages/ComingSoon"));
@@ -269,10 +269,7 @@ const PublicApp = () => {
                   <Route path="/" element={<HomeContent />} />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/:slug" element={<BlogPost />} />
-                  <Route
-                    path="/clients"
-                    element={<ComingSoon pageName="Our Clients" />}
-                  />
+                  <Route path="/clients" element={<Clients />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

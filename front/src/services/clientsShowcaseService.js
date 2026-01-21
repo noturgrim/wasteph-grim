@@ -1,6 +1,6 @@
 /**
- * Showcase API Service
- * Handles fetching showcase items from backend
+ * Clients Showcase API Service
+ * Handles fetching client showcase items from backend
  */
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -9,32 +9,31 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 const pendingRequests = new Map();
 
 /**
- * Fetch active showcases (public)
- * @param {number} limit - Number of showcases to fetch
- * @returns {Promise<Array>} Array of showcase objects
+ * Fetch active client showcases (public)
+ * @returns {Promise<Array>} Array of client showcase objects
  */
-export const fetchShowcases = async (limit = 6) => {
+export const fetchClientsShowcase = async () => {
   try {
-    const response = await fetch(`${API_URL}/showcases?limit=${limit}`);
+    const response = await fetch(`${API_URL}/clients-showcase`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch showcases: ${response.statusText}`);
+      throw new Error(`Failed to fetch clients showcase: ${response.statusText}`);
     }
 
     const data = await response.json();
     return data.data || [];
   } catch (error) {
-    console.error("Error fetching showcases:", error);
+    console.error("Error fetching clients showcase:", error);
     throw error;
   }
 };
 
 /**
- * Fetch all showcases (admin - includes inactive)
- * @returns {Promise<Array>} Array of showcase objects
+ * Fetch all client showcases (admin - includes inactive)
+ * @returns {Promise<Array>} Array of client showcase objects
  */
-export const fetchAllShowcases = async () => {
-  const cacheKey = 'fetchAllShowcases';
+export const fetchAllClientsShowcase = async () => {
+  const cacheKey = 'fetchAllClientsShowcase';
   
   // Check if there's already a pending request
   if (pendingRequests.has(cacheKey)) {
@@ -45,19 +44,19 @@ export const fetchAllShowcases = async () => {
   // Create new request
   const requestPromise = (async () => {
     try {
-      console.log('🚀 Making API call to /showcases/all');
-      const response = await fetch(`${API_URL}/showcases/all`, {
+      console.log('🚀 Making API call to /clients-showcase/all');
+      const response = await fetch(`${API_URL}/clients-showcase/all`, {
         credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch showcases: ${response.statusText}`);
+        throw new Error(`Failed to fetch clients showcase: ${response.statusText}`);
       }
 
       const data = await response.json();
       return data.data || [];
     } catch (error) {
-      console.error("Error fetching all showcases:", error);
+      console.error("Error fetching all clients showcase:", error);
       throw error;
     } finally {
       // Keep the pending request cached for a brief moment to catch rapid successive calls
@@ -74,123 +73,123 @@ export const fetchAllShowcases = async () => {
 };
 
 /**
- * Create new showcase
- * @param {Object} showcaseData - Showcase data
- * @returns {Promise<Object>} Created showcase
+ * Create new client showcase
+ * @param {Object} clientData - Client showcase data
+ * @returns {Promise<Object>} Created client showcase
  */
-export const createShowcase = async (showcaseData) => {
+export const createClientShowcase = async (clientData) => {
   try {
-    const response = await fetch(`${API_URL}/showcases`, {
+    const response = await fetch(`${API_URL}/clients-showcase`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "include",
-      body: JSON.stringify(showcaseData),
+      body: JSON.stringify(clientData),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Failed to create showcase");
+      throw new Error(error.message || "Failed to create client showcase");
     }
 
     const data = await response.json();
     return data.data;
   } catch (error) {
-    console.error("Error creating showcase:", error);
+    console.error("Error creating client showcase:", error);
     throw error;
   }
 };
 
 /**
- * Update showcase
- * @param {string} id - Showcase ID
- * @param {Object} showcaseData - Updated showcase data
- * @returns {Promise<Object>} Updated showcase
+ * Update client showcase
+ * @param {string} id - Client showcase ID
+ * @param {Object} clientData - Updated client showcase data
+ * @returns {Promise<Object>} Updated client showcase
  */
-export const updateShowcase = async (id, showcaseData) => {
+export const updateClientShowcase = async (id, clientData) => {
   try {
-    const response = await fetch(`${API_URL}/showcases/${id}`, {
+    const response = await fetch(`${API_URL}/clients-showcase/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "include",
-      body: JSON.stringify(showcaseData),
+      body: JSON.stringify(clientData),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Failed to update showcase");
+      throw new Error(error.message || "Failed to update client showcase");
     }
 
     const data = await response.json();
     return data.data;
   } catch (error) {
-    console.error("Error updating showcase:", error);
+    console.error("Error updating client showcase:", error);
     throw error;
   }
 };
 
 /**
- * Delete showcase
- * @param {string} id - Showcase ID
- * @returns {Promise<Object>} Deleted showcase
+ * Delete client showcase
+ * @param {string} id - Client showcase ID
+ * @returns {Promise<Object>} Deleted client showcase
  */
-export const deleteShowcase = async (id) => {
+export const deleteClientShowcase = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/showcases/${id}`, {
+    const response = await fetch(`${API_URL}/clients-showcase/${id}`, {
       method: "DELETE",
       credentials: "include",
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Failed to delete showcase");
+      throw new Error(error.message || "Failed to delete client showcase");
     }
 
     const data = await response.json();
     return data.data;
   } catch (error) {
-    console.error("Error deleting showcase:", error);
+    console.error("Error deleting client showcase:", error);
     throw error;
   }
 };
 
 /**
- * Toggle showcase active status
- * @param {string} id - Showcase ID
- * @returns {Promise<Object>} Updated showcase
+ * Toggle client showcase active status
+ * @param {string} id - Client showcase ID
+ * @returns {Promise<Object>} Updated client showcase
  */
-export const toggleShowcaseStatus = async (id) => {
+export const toggleClientShowcaseStatus = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/showcases/${id}/toggle`, {
+    const response = await fetch(`${API_URL}/clients-showcase/${id}/toggle`, {
       method: "PATCH",
       credentials: "include",
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Failed to toggle showcase status");
+      throw new Error(error.message || "Failed to toggle client showcase status");
     }
 
     const data = await response.json();
     return data.data;
   } catch (error) {
-    console.error("Error toggling showcase status:", error);
+    console.error("Error toggling client showcase status:", error);
     throw error;
   }
 };
 
 /**
  * Update display order
- * @param {string} id - Showcase ID
+ * @param {string} id - Client showcase ID
  * @param {number} displayOrder - New display order
- * @returns {Promise<Object>} Updated showcase
+ * @returns {Promise<Object>} Updated client showcase
  */
 export const updateDisplayOrder = async (id, displayOrder) => {
   try {
-    const response = await fetch(`${API_URL}/showcases/${id}/order`, {
+    const response = await fetch(`${API_URL}/clients-showcase/${id}/order`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
