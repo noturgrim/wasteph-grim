@@ -309,7 +309,7 @@ const ServicesSlideshow = () => {
 
       {/* Showcase Detail Dialog */}
       <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && handleCloseDialog()}>
-        <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-hidden !border-[#16a34a]/40 !bg-[#0a2818] !text-white">
+        <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-hidden !border-[#16a34a]/40 !bg-[#0a2818] !text-white lg:max-w-5xl">
           {selectedEvent && (
             <>
               <DialogHeader className="border-b border-[#15803d]/20 pb-4">
@@ -318,7 +318,7 @@ const ServicesSlideshow = () => {
                     {selectedEvent.title}
                   </DialogTitle>
                   
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2 rounded-full border border-[#15803d]/40 bg-[#15803d]/10 px-3 py-1">
                       <svg
                         className="h-4 w-4 text-[#16a34a]"
@@ -346,48 +346,53 @@ const ServicesSlideshow = () => {
               </DialogHeader>
 
               <div className="overflow-y-auto px-1 py-4" style={{ maxHeight: "calc(90vh - 200px)" }}>
-                {/* Image */}
-                {selectedEvent.image && (
-                  <div className="mb-6 overflow-hidden rounded-lg border border-[#15803d]/20">
-                    <img
-                      src={selectedEvent.image}
-                      alt={selectedEvent.title}
-                      className="h-auto w-full object-cover"
+                {/* Two Column Layout - Image Left, Content Right */}
+                <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+                  {/* Image - Left Side */}
+                  {selectedEvent.image && (
+                    <div className="flex items-center justify-center overflow-hidden rounded-lg border border-[#15803d]/20 bg-black/20 lg:w-1/2 lg:flex-shrink-0">
+                      <img
+                        src={selectedEvent.image}
+                        alt={selectedEvent.title}
+                        className="h-auto w-full object-contain"
+                      />
+                    </div>
+                  )}
+
+                  {/* Description - Right Side */}
+                  <div className={`flex flex-col ${selectedEvent.image ? 'lg:w-1/2' : 'w-full'}`}>
+                    <div 
+                      className="prose max-w-none prose-headings:text-white prose-p:text-white/90 prose-p:leading-relaxed prose-strong:text-white prose-strong:font-bold prose-em:text-[#16a34a] prose-em:italic prose-ul:list-disc prose-ul:pl-6 prose-ul:text-white/90 prose-ol:list-decimal prose-ol:pl-6 prose-ol:text-white/90 prose-li:text-white/90 prose-li:my-1 [&>*]:text-white/90 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1"
+                      dangerouslySetInnerHTML={{ __html: selectedEvent.description }}
                     />
-                  </div>
-                )}
 
-                {/* Description */}
-                <div 
-                  className="prose max-w-none prose-headings:text-white prose-p:text-white/90 prose-p:leading-relaxed prose-strong:text-white prose-strong:font-bold prose-em:text-[#16a34a] prose-em:italic prose-ul:text-white/90 prose-ol:text-white/90 prose-li:text-white/90 [&>*]:text-white/90"
-                  dangerouslySetInnerHTML={{ __html: selectedEvent.description }}
-                />
-
-                {/* External Link Button */}
-                {selectedEvent.link && (
-                  <div className="mt-8 flex justify-center border-t border-[#15803d]/20 pt-6">
-                    <a
-                      href={selectedEvent.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#15803d] to-[#16a34a] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#15803d]/20 transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#15803d]/40"
-                    >
-                      <span>Read Full Article</span>
-                      <svg
-                        className="h-4 w-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        aria-hidden="true"
-                      >
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                    </a>
+                    {/* External Link Button */}
+                    {selectedEvent.link && (
+                      <div className="mt-auto pt-6">
+                        <a
+                          href={selectedEvent.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#15803d] to-[#16a34a] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#15803d]/20 transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#15803d]/40"
+                        >
+                          <span>Read Full Article</span>
+                          <svg
+                            className="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            aria-hidden="true"
+                          >
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                            <polyline points="15 3 21 3 21 9" />
+                            <line x1="10" y1="14" x2="21" y2="3" />
+                          </svg>
+                        </a>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </>
           )}
