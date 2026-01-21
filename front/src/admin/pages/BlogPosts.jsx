@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Plus, Search, Edit, Trash2, Eye, Calendar, Tag, Loader2 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { toast } from "../utils/toast";

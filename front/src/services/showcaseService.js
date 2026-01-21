@@ -5,6 +5,9 @@
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+// Request deduplication cache
+const pendingRequests = new Map();
+
 /**
  * Fetch active showcases (public)
  * @param {number} limit - Number of showcases to fetch
@@ -32,24 +35,46 @@ export const fetchShowcases = async (limit = 6) => {
  * @returns {Promise<Array>} Array of showcase objects
  */
 export const fetchAllShowcases = async (token) => {
-  try {
-    const response = await fetch(`${API_URL}/showcases/all`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch showcases: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.data || [];
-  } catch (error) {
-    console.error("Error fetching all showcases:", error);
-    throw error;
+  const cacheKey = 'fetchAllShowcases';
+  
+  // Check if there's already a pending request
+  if (pendingRequests.has(cacheKey)) {
+    console.log('🔄 Deduplicating request - returning existing promise');
+    return pendingRequests.get(cacheKey);
   }
+
+  // Create new request
+  const requestPromise = (async () => {
+    try {
+      console.log('🚀 Making API call to /showcases/all');
+      const response = await fetch(`${API_URL}/showcases/all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch showcases: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.data || [];
+    } catch (error) {
+      console.error("Error fetching all showcases:", error);
+      throw error;
+    } finally {
+      // Keep the pending request cached for a brief moment to catch rapid successive calls
+      setTimeout(() => {
+        pendingRequests.delete(cacheKey);
+      }, 100);
+    }
+  })();
+
+  // Store the pending request
+  pendingRequests.set(cacheKey, requestPromise);
+  
+  return requestPromise;
 };
 
 /**

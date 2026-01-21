@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { toast } from "../utils/toast";
@@ -41,12 +41,16 @@ const Showcase = () => {
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
   const [togglingId, setTogglingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
-    loadShowcases();
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      loadShowcases();
+    }
   }, []);
 
-  const loadShowcases = async () => {
+  const loadShowcases = async (forceRefresh = false) => {
     try {
       setLoading(true);
       const data = await fetchAllShowcases();
@@ -74,12 +78,14 @@ const Showcase = () => {
 
   const handleAddSuccess = () => {
     setIsAddDialogOpen(false);
+    hasFetchedRef.current = false;
     loadShowcases();
     toast.success("Showcase created successfully");
   };
 
   const handleEditSuccess = () => {
     setEditingShowcase(null);
+    hasFetchedRef.current = false;
     loadShowcases();
     toast.success("Showcase updated successfully");
   };
@@ -91,6 +97,7 @@ const Showcase = () => {
       toast.success(
         `Showcase ${showcase.isActive ? "deactivated" : "activated"} successfully`
       );
+      hasFetchedRef.current = false;
       loadShowcases();
     } catch (error) {
       console.error("Error toggling showcase status:", error);
@@ -108,6 +115,7 @@ const Showcase = () => {
       await deleteShowcase(deletingShowcase.id);
       toast.success("Showcase deleted successfully");
       setDeletingShowcase(null);
+      hasFetchedRef.current = false;
       loadShowcases();
     } catch (error) {
       console.error("Error deleting showcase:", error);

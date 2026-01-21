@@ -1,5 +1,8 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+// Request deduplication cache
+const pendingRequests = new Map();
+
 /**
  * Fetch all published blog posts (public)
  */
@@ -66,30 +69,52 @@ export async function fetchPostsByCategory(category, limit = 10) {
  * Fetch all blog posts with filters (admin)
  */
 export async function fetchAllPosts(filters = {}) {
-  try {
-    const params = new URLSearchParams();
-    if (filters.status) params.append("status", filters.status);
-    if (filters.category) params.append("category", filters.category);
-    if (filters.search) params.append("search", filters.search);
-
-    const response = await fetch(
-      `${API_BASE_URL}/blog/admin/all?${params.toString()}`,
-      {
-        credentials: "include",
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to fetch blog posts");
-    }
-
-    const data = await response.json();
-    return data.data;
-  } catch (error) {
-    console.error("Error fetching all posts:", error);
-    throw error;
+  const params = new URLSearchParams();
+  if (filters.status) params.append("status", filters.status);
+  if (filters.category) params.append("category", filters.category);
+  if (filters.search) params.append("search", filters.search);
+  
+  const cacheKey = `fetchAllPosts-${params.toString()}`;
+  
+  // Check if there's already a pending request
+  if (pendingRequests.has(cacheKey)) {
+    console.log('🔄 Deduplicating blog request - returning existing promise');
+    return pendingRequests.get(cacheKey);
   }
+
+  // Create new request
+  const requestPromise = (async () => {
+    try {
+      console.log('🚀 Making API call to /blog/admin/all');
+      const response = await fetch(
+        `${API_BASE_URL}/blog/admin/all?${params.toString()}`,
+        {
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to fetch blog posts");
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.error("Error fetching all posts:", error);
+      throw error;
+    } finally {
+      // Keep the pending request cached for a brief moment to catch rapid successive calls
+      setTimeout(() => {
+        pendingRequests.delete(cacheKey);
+      }, 100);
+    }
+  })();
+
+  // Store the pending request
+  pendingRequests.set(cacheKey, requestPromise);
+  
+  return requestPromise;
 }
 
 /**
@@ -195,20 +220,42 @@ export async function deletePost(id) {
  * Fetch blog statistics (admin)
  */
 export async function fetchBlogStats() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/blog/admin/stats`, {
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to fetch blog statistics");
-    }
-
-    const data = await response.json();
-    return data.data;
-  } catch (error) {
-    console.error("Error fetching blog stats:", error);
-    throw error;
+  const cacheKey = 'fetchBlogStats';
+  
+  // Check if there's already a pending request
+  if (pendingRequests.has(cacheKey)) {
+    console.log('🔄 Deduplicating blog stats request - returning existing promise');
+    return pendingRequests.get(cacheKey);
   }
+
+  // Create new request
+  const requestPromise = (async () => {
+    try {
+      console.log('🚀 Making API call to /blog/admin/stats');
+      const response = await fetch(`${API_BASE_URL}/blog/admin/stats`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to fetch blog statistics");
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.error("Error fetching blog stats:", error);
+      throw error;
+    } finally {
+      // Keep the pending request cached for a brief moment to catch rapid successive calls
+      setTimeout(() => {
+        pendingRequests.delete(cacheKey);
+      }, 100);
+    }
+  })();
+
+  // Store the pending request
+  pendingRequests.set(cacheKey, requestPromise);
+  
+  return requestPromise;
 }
