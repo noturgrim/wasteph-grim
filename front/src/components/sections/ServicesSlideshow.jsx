@@ -347,20 +347,22 @@ const ServicesSlideshow = () => {
 
               <div className="overflow-y-auto px-1 py-4" style={{ maxHeight: "calc(90vh - 200px)" }}>
                 {/* Two Column Layout - Image Left, Content Right */}
-                <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-                  {/* Image - Left Side */}
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+                  {/* Image - Left Side - Sticky on large screens */}
                   {selectedEvent.image && (
-                    <div className="flex items-center justify-center overflow-hidden rounded-lg border border-[#15803d]/20 bg-black/20 lg:w-1/2 lg:flex-shrink-0">
-                      <img
-                        src={selectedEvent.image}
-                        alt={selectedEvent.title}
-                        className="h-auto w-full object-contain"
-                      />
+                    <div className="flex-shrink-0 lg:sticky lg:top-0 lg:w-1/2">
+                      <div className="overflow-hidden rounded-lg border border-[#15803d]/20 bg-black/20">
+                        <img
+                          src={selectedEvent.image}
+                          alt={selectedEvent.title}
+                          className="h-auto w-full object-contain"
+                        />
+                      </div>
                     </div>
                   )}
 
-                  {/* Description - Right Side */}
-                  <div className={`flex flex-col ${selectedEvent.image ? 'lg:w-1/2' : 'w-full'}`}>
+                  {/* Description - Right Side - Scrollable content */}
+                  <div className={`flex min-h-0 flex-col ${selectedEvent.image ? 'lg:w-1/2' : 'w-full'}`}>
                     <div 
                       className="prose max-w-none prose-headings:text-white prose-p:text-white/90 prose-p:leading-relaxed prose-strong:text-white prose-strong:font-bold prose-em:text-[#16a34a] prose-em:italic prose-ul:list-disc prose-ul:pl-6 prose-ul:text-white/90 prose-ol:list-decimal prose-ol:pl-6 prose-ol:text-white/90 prose-li:text-white/90 prose-li:my-1 [&>*]:text-white/90 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1"
                       dangerouslySetInnerHTML={{ __html: selectedEvent.description }}
@@ -368,7 +370,7 @@ const ServicesSlideshow = () => {
 
                     {/* External Link Button */}
                     {selectedEvent.link && (
-                      <div className="mt-auto pt-6">
+                      <div className="mt-6 pt-6 lg:mt-8">
                         <a
                           href={selectedEvent.link}
                           target="_blank"
