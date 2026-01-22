@@ -1,5 +1,5 @@
 import { db } from "../db/index.js";
-import { inquiryTable, activityLogTable, leadTable, proposalTable } from "../db/schema.js";
+import { inquiryTable, activityLogTable, leadTable, proposalTable, serviceTable } from "../db/schema.js";
 import { eq, desc, and, or, like, inArray, count, sql } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 
@@ -45,8 +45,31 @@ class InquiryService {
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    // Build base query
-    let query = db.select().from(inquiryTable);
+    // Build base query with service join
+    let query = db
+      .select({
+        id: inquiryTable.id,
+        name: inquiryTable.name,
+        email: inquiryTable.email,
+        phone: inquiryTable.phone,
+        company: inquiryTable.company,
+        location: inquiryTable.location,
+        message: inquiryTable.message,
+        serviceId: inquiryTable.serviceId,
+        status: inquiryTable.status,
+        source: inquiryTable.source,
+        assignedTo: inquiryTable.assignedTo,
+        notes: inquiryTable.notes,
+        createdAt: inquiryTable.createdAt,
+        updatedAt: inquiryTable.updatedAt,
+        service: {
+          id: serviceTable.id,
+          name: serviceTable.name,
+          description: serviceTable.description,
+        },
+      })
+      .from(inquiryTable)
+      .leftJoin(serviceTable, eq(inquiryTable.serviceId, serviceTable.id));
     const conditions = [];
 
     // Status filter - support multiple statuses (comma-separated)
@@ -115,7 +138,10 @@ class InquiryService {
     }
 
     // Get total count for pagination
-    let countQuery = db.select({ value: count() }).from(inquiryTable);
+    let countQuery = db
+      .select({ value: count() })
+      .from(inquiryTable)
+      .leftJoin(serviceTable, eq(inquiryTable.serviceId, serviceTable.id));
     if (conditions.length > 0) {
       countQuery = countQuery.where(and(...conditions));
     }
@@ -228,7 +254,14 @@ class InquiryService {
    * @throws {AppError} If inquiry not found
    */
   async updateInquiry(inquiryId, updateData, userId, metadata = {}) {
-    const { name, email, phone, company, location, message, source, status, assignedTo, notes, serviceType } = updateData;
+    const { name, email, phone, company, location, message, source, status, assignedTo, notes, serviceType, serviceId } = updateData;
+
+    // Fetch the current inquiry before updating to track changes
+    const oldInquiry = await this.getInquiryById(inquiryId);
+
+    // Convert empty strings to null for UUID fields
+    const normalizedAssignedTo = assignedTo === "" ? null : assignedTo;
+    const normalizedServiceId = serviceId === "" ? null : serviceId;
 
     const [inquiry] = await db
       .update(inquiryTable)
@@ -241,9 +274,10 @@ class InquiryService {
         ...(message && { message }),
         ...(source && { source }),
         ...(status && { status }),
-        ...(assignedTo !== undefined && { assignedTo }),
+        ...(normalizedAssignedTo !== undefined && { assignedTo: normalizedAssignedTo }),
         ...(notes !== undefined && { notes }),
         ...(serviceType !== undefined && { serviceType }),
+        ...(normalizedServiceId !== undefined && { serviceId: normalizedServiceId }),
         updatedAt: new Date(),
       })
       .where(eq(inquiryTable.id, inquiryId))
@@ -253,16 +287,49 @@ class InquiryService {
       throw new AppError("Inquiry not found", 404);
     }
 
-    // Log activity
-    await this.logActivity({
-      userId,
-      action: "inquiry_updated",
-      entityType: "inquiry",
-      entityId: inquiry.id,
-      details: { name, email, phone, company, location, message, source, status, assignedTo, notes, serviceType },
-      ipAddress: metadata.ipAddress,
-      userAgent: metadata.userAgent,
-    });
+    // Track specific field changes
+    const changes = {};
+
+    if (name && name !== oldInquiry.name) {
+      changes.name = { from: oldInquiry.name, to: name };
+    }
+    if (email && email !== oldInquiry.email) {
+      changes.email = { from: oldInquiry.email, to: email };
+    }
+    if (phone !== undefined && phone !== oldInquiry.phone) {
+      changes.phone = { from: oldInquiry.phone, to: phone };
+    }
+    if (company !== undefined && company !== oldInquiry.company) {
+      changes.company = { from: oldInquiry.company, to: company };
+    }
+    if (location !== undefined && location !== oldInquiry.location) {
+      changes.location = { from: oldInquiry.location, to: location };
+    }
+    if (source && source !== oldInquiry.source) {
+      changes.source = { from: oldInquiry.source, to: source };
+    }
+    if (status && status !== oldInquiry.status) {
+      changes.status = { from: oldInquiry.status, to: status };
+    }
+    if (normalizedAssignedTo !== undefined && normalizedAssignedTo !== oldInquiry.assignedTo) {
+      changes.assignedTo = { from: oldInquiry.assignedTo, to: normalizedAssignedTo };
+    }
+    if (normalizedServiceId !== undefined && normalizedServiceId !== oldInquiry.serviceId) {
+      changes.serviceId = { from: oldInquiry.serviceId, to: normalizedServiceId };
+    }
+
+    // Only log activity if there were actual changes
+    if (Object.keys(changes).length > 0) {
+      await this.logActivity({
+        userId,
+        action: "inquiry_updated",
+        entityType: "inquiry",
+        entityId: inquiry.id,
+        details: { changes },
+        ipAddress: metadata.ipAddress,
+        userAgent: metadata.userAgent,
+      });
+    }
 
     return inquiry;
   }
