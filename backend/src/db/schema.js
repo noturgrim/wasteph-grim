@@ -65,6 +65,15 @@ export const proposalStatusEnum = pgEnum("proposal_status", [
   "cancelled",    // Cancelled by sales or admin
 ]);
 
+// Contract status - tracks contract request workflow
+export const contractStatusEnum = pgEnum("contract_status", [
+  "pending_request",   // Auto-created, waiting for Sales to request
+  "requested",         // Sales requested contract from Admin
+  "ready_for_sales",   // Admin uploaded contract, not sent to Sales yet
+  "sent_to_sales",     // Admin sent to Sales, waiting for Sales to send to client
+  "sent_to_client",    // Sales sent to client (final status)
+]);
+
 // Proposal Template Types
 export const proposalTemplateTypeEnum = pgEnum("proposal_template_type", [
   "compactor_hauling",
@@ -381,6 +390,58 @@ export const proposalTable = pgTable("proposal", {
     table.status,
     table.requestedBy
   ),
+}));
+
+// Contracts - Contract requests from approved proposals
+export const contractsTable = pgTable("contracts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+
+  // Link to original proposal (one-to-one relationship)
+  proposalId: uuid("proposal_id")
+    .notNull()
+    .unique()
+    .references(() => proposalTable.id, { onDelete: "cascade" }),
+
+  // Contract Status
+  status: contractStatusEnum("status")
+    .notNull()
+    .default("pending_request"),
+
+  // Sales Request
+  requestedBy: text("requested_by")
+    .references(() => userTable.id), // Sales user who requested
+  requestedAt: timestamp("requested_at", { withTimezone: true }),
+  requestNotes: text("request_notes"), // Sales notes when requesting
+
+  // Admin Contract Upload
+  contractUploadedBy: text("contract_uploaded_by")
+    .references(() => userTable.id), // Admin who uploaded
+  contractUploadedAt: timestamp("contract_uploaded_at", { withTimezone: true }),
+  contractPdfUrl: text("contract_pdf_url"), // Path to uploaded PDF
+  adminNotes: text("admin_notes"), // Admin notes for Sales
+
+  // Send to Sales
+  sentToSalesBy: text("sent_to_sales_by")
+    .references(() => userTable.id), // Admin who sent to Sales
+  sentToSalesAt: timestamp("sent_to_sales_at", { withTimezone: true }),
+
+  // Send to Client
+  sentToClientBy: text("sent_to_client_by")
+    .references(() => userTable.id), // Sales who sent to client
+  sentToClientAt: timestamp("sent_to_client_at", { withTimezone: true }),
+  clientEmail: text("client_email"), // Email address used
+
+  // Timestamps
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  proposalIdIdx: index("contracts_proposal_id_idx").on(table.proposalId),
+  statusIdx: index("contracts_status_idx").on(table.status),
+  requestedByIdx: index("contracts_requested_by_idx").on(table.requestedBy),
 }));
 
 // Showcase Table

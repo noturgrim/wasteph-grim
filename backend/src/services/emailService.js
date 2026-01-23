@@ -569,6 +569,179 @@ class EmailService {
       return false;
     }
   }
+
+  /**
+   * Send contract to client via email
+   * @param {string} to - Client email address
+   * @param {Object} proposalData - Proposal data
+   * @param {Object} inquiryData - Inquiry data
+   * @param {Buffer} pdfBuffer - Contract PDF buffer
+   * @returns {Promise<Object>} Email result
+   */
+  async sendContractToClientEmail(to, proposalData, inquiryData, pdfBuffer) {
+    try {
+      // Handle both old format and new format
+      const isNewFormat = !!proposalData.editedHtmlContent;
+      const clientName = isNewFormat
+        ? proposalData.clientName || inquiryData.name
+        : inquiryData.name;
+
+      // Generate email HTML
+      const htmlContent = this.generateContractEmailHTML(clientName);
+
+      // Send email with PDF attachment
+      console.log(`📤 Sending contract email to: ${to}`);
+      console.log(`   From: ${process.env.SMTP_USER}`);
+      console.log(`   PDF attached: ${pdfBuffer ? `Yes (${pdfBuffer.length} bytes)` : "No"}`);
+
+      const info = await this.transporter.sendMail({
+        from: process.env.SMTP_USER,
+        to,
+        subject: "Contract from WastePH",
+        html: htmlContent,
+        attachments: [
+          {
+            filename: "WastePH_Contract.pdf",
+            content: pdfBuffer,
+            contentType: "application/pdf",
+          },
+        ],
+      });
+
+      console.log(`✅ Contract email sent successfully!`);
+      console.log(`   Message ID: ${info.messageId}`);
+
+      return {
+        success: true,
+        messageId: info.messageId,
+      };
+    } catch (error) {
+      console.error("❌ Contract email send error:", error.message);
+      console.error("   Full error:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Generate contract email HTML
+   * @param {string} clientName - Client name
+   * @returns {string} HTML content
+   */
+  generateContractEmailHTML(clientName) {
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #106934;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      color: #106934;
+      margin: 0 0 10px 0;
+      font-size: 28px;
+    }
+    .header p {
+      color: #666;
+      margin: 0;
+      font-size: 14px;
+    }
+    .content {
+      margin-bottom: 30px;
+    }
+    .content p {
+      margin: 15px 0;
+    }
+    .highlight-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .highlight-box p {
+      margin: 0;
+      color: #166534;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #ddd;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+    .footer strong {
+      color: #106934;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📄 Your Contract is Ready!</h1>
+      <p>WastePH - Professional Waste Management Solutions</p>
+    </div>
+
+    <div class="content">
+      <p>Dear ${clientName},</p>
+
+      <p>Thank you for your continued interest in our services. We are pleased to provide you with your finalized contract.</p>
+
+      <div class="highlight-box">
+        <p><strong>📎 Your contract is attached to this email as a PDF document.</strong></p>
+        <p style="margin-top: 10px; font-size: 14px;">Please review the contract carefully and contact us if you have any questions.</p>
+      </div>
+
+      <p>If you would like to proceed with the services outlined in the contract, please sign and return the contract to us at your earliest convenience.</p>
+
+      <p>We look forward to serving you and providing excellent waste management solutions for your needs.</p>
+
+      <p style="margin-top: 30px;">
+        <strong>Best regards,</strong><br>
+        The WastePH Team
+      </p>
+    </div>
+
+    <div class="footer">
+      <p><strong>WastePH</strong> | Professional Waste Management Services</p>
+      <p>For questions or assistance, please contact our sales team.</p>
+      <p style="margin-top: 15px; color: #999; font-size: 11px;">
+        This email was sent automatically. Please do not reply to this email.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+  }
 }
 
 export default new EmailService();

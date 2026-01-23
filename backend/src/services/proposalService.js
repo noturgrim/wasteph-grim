@@ -746,6 +746,14 @@ class ProposalService {
       userAgent: null,
     });
 
+    // Auto-create contract record with pending_request status
+    const contractService = (await import("./contractService.js")).default;
+    await contractService.createContract(
+      proposalId,
+      updatedProposal.requestedBy, // Sales user who created proposal
+      { ipAddress, userAgent: null }
+    );
+
     return updatedProposal;
   }
 
