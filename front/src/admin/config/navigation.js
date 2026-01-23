@@ -10,6 +10,7 @@ import {
   FileEdit,
   ScrollText,
   Image,
+  FileSignature,
 } from "lucide-react";
 
 /**
@@ -21,7 +22,7 @@ import {
  */
 
 // Sales Pipeline items (accessible by both roles)
-// Order: Leads (pool) → Inquiries (claimed) → Potentials → Clients
+// Order: Leads (pool) → Inquiries (claimed) → Clients
 const salesPipelineItems = [
   {
     title: "Leads",
@@ -34,12 +35,6 @@ const salesPipelineItems = [
     url: "/admin/inquiries",
     icon: UserPlus,
     description: "Claimed leads and inquiries",
-  },
-  {
-    title: "Potentials",
-    url: "/admin/potentials",
-    icon: FileText,
-    description: "Potential client prospects",
   },
   {
     title: "Clients",
@@ -71,6 +66,17 @@ export const getNavigationByRole = (role, isMasterSales = false) => {
     {
       label: "Sales Pipeline",
       items: salesPipelineItems,
+    },
+    {
+      label: "Contracts",
+      items: [
+        {
+          title: "Contract Requests",
+          url: "/admin/contract-requests",
+          icon: FileSignature,
+          description: "Manage contract requests",
+        },
+      ],
     },
   ];
 
@@ -111,6 +117,12 @@ export const getNavigationByRole = (role, isMasterSales = false) => {
             url: "/admin/proposals",
             icon: ScrollText,
             description: "Review and approve proposals",
+          },
+          {
+            title: "Contract Requests",
+            url: "/admin/contract-requests",
+            icon: FileSignature,
+            description: "Manage contract requests",
           },
         ],
       },

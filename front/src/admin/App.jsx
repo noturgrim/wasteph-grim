@@ -8,13 +8,13 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Inquiries from "./pages/Inquiries";
 import Leads from "./pages/Leads";
-import Potentials from "./pages/Potentials";
 import Clients from "./pages/Clients";
 import BlogPosts from "./pages/BlogPosts";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import ProposalTemplates from "./pages/ProposalTemplates";
 import Proposals from "./pages/Proposals";
+import ContractRequests from "./pages/ContractRequests";
 import Showcase from "./pages/Showcase";
 import ClientsShowcase from "./pages/ClientsShowcase";
 import InAppBrowserBanner from "../components/common/InAppBrowserBanner";
@@ -42,7 +42,6 @@ const CRMApp = () => {
             {/* Sales Pipeline - accessible by all roles */}
             <Route path="inquiries" element={<Inquiries />} />
             <Route path="leads" element={<Leads />} />
-            <Route path="potentials" element={<Potentials />} />
             <Route path="clients" element={<Clients />} />
 
             {/* Tools - Master Sales only */}
@@ -57,6 +56,7 @@ const CRMApp = () => {
                 </ProtectedRoute>
               }
             />
+            <Route path="contract-requests" element={<ContractRequests />} />
             <Route
               path="blog"
               element={

@@ -424,6 +424,72 @@ class ApiClient {
   async suggestTemplateForInquiry(inquiryId) {
     return this.request(`/proposal-templates/suggest/${inquiryId}`);
   }
+
+  // Contract endpoints
+  async getContracts(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append("status", filters.status);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+
+    const queryString = params.toString();
+    return this.request(`/contracts${queryString ? `?${queryString}` : ""}`);
+  }
+
+  async getContractById(id) {
+    return this.request(`/contracts/${id}`);
+  }
+
+  async requestContract(id, requestNotes) {
+    return this.request(`/contracts/${id}/request`, {
+      method: "POST",
+      body: JSON.stringify({ requestNotes }),
+    });
+  }
+
+  async uploadContractPdf(id, pdfFile, adminNotes) {
+    const formData = new FormData();
+    formData.append("contractPdf", pdfFile);
+    if (adminNotes) formData.append("adminNotes", adminNotes);
+
+    const response = await fetch(`${this.baseURL}/contracts/${id}/upload-pdf`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+      // Don't set Content-Type header - browser will set it with boundary
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to upload contract");
+    }
+
+    return response.json();
+  }
+
+  async sendContractToSales(id) {
+    return this.request(`/contracts/${id}/send-to-sales`, {
+      method: "POST",
+    });
+  }
+
+  async sendContractToClient(id, clientEmail) {
+    return this.request(`/contracts/${id}/send-to-client`, {
+      method: "POST",
+      body: JSON.stringify({ clientEmail }),
+    });
+  }
+
+  async downloadContractPdf(id) {
+    const url = `${this.baseURL}/contracts/${id}/contract-pdf`;
+    window.open(url, "_blank");
+  }
+
+  async previewContractPdf(id) {
+    const url = `${this.baseURL}/contracts/${id}/preview-pdf`;
+    window.open(url, "_blank");
+  }
 }
 
 // Export singleton instance

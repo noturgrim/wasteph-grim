@@ -1,0 +1,324 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { api } from "../services/api";
+import { toast } from "../utils/toast";
+import { SlidersHorizontal, X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import { DataTable } from "../components/DataTable";
+import { FacetedFilter } from "../components/FacetedFilter";
+import { SearchInput } from "../components/SearchInput";
+import { createColumns } from "../components/contracts/columns";
+import { RequestContractDialog } from "../components/contracts/RequestContractDialog";
+import { UploadContractDialog } from "../components/contracts/UploadContractDialog";
+import { SendToClientDialog } from "../components/contracts/SendToClientDialog";
+
+export default function ContractRequests() {
+  const { user } = useAuth();
+  const [contracts, setContracts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Column visibility
+  const [columnVisibility, setColumnVisibility] = useState({
+    clientName: true,
+    clientEmail: true,
+    salesPerson: true,
+    status: true,
+    createdAt: true,
+  });
+
+  // Users for display
+  const [users, setUsers] = useState([]);
+
+  // Dialogs
+  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isSendToClientDialogOpen, setIsSendToClientDialogOpen] = useState(false);
+  const [selectedContract, setSelectedContract] = useState(null);
+
+  // Fetch users on mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Fetch filtered contracts
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on filter change
+    fetchContracts(1);
+  }, [statusFilter, searchTerm]);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await api.getUsers();
+      const userData = response.data || response;
+      setUsers(userData);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    }
+  };
+
+  const fetchContracts = async (page = pagination.page) => {
+    setIsLoading(true);
+    try {
+      const filters = {
+        page,
+        limit: pagination.limit,
+        ...(statusFilter.length > 0 && { status: statusFilter.join(",") }),
+        ...(searchTerm && { search: searchTerm }),
+      };
+
+      const response = await api.getContracts(filters);
+      const data = response.data || [];
+      const meta = response.pagination || {
+        total: data.length,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      };
+
+      setContracts(data);
+      setPagination(meta);
+    } catch (error) {
+      toast.error("Failed to fetch contracts");
+      console.error("Fetch contracts error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRequestContract = (contract) => {
+    setSelectedContract(contract);
+    setIsRequestDialogOpen(true);
+  };
+
+  const handleUploadContract = (contract) => {
+    setSelectedContract(contract);
+    setIsUploadDialogOpen(true);
+  };
+
+  const handleSendToClient = (contract) => {
+    setSelectedContract(contract);
+    setIsSendToClientDialogOpen(true);
+  };
+
+  const handleSendToSales = async (contract) => {
+    if (!window.confirm("Are you sure you want to send this contract to sales?")) {
+      return;
+    }
+
+    try {
+      await api.sendContractToSales(contract.contract.id);
+      toast.success("Contract sent to sales successfully");
+      fetchContracts();
+    } catch (error) {
+      toast.error(error.message || "Failed to send contract to sales");
+    }
+  };
+
+  const handleViewContract = (contract) => {
+    api.previewContractPdf(contract.contract.id);
+  };
+
+  const confirmRequestContract = async (requestNotes) => {
+    try {
+      await api.requestContract(selectedContract.contract.id, requestNotes);
+      toast.success("Contract requested successfully");
+      setIsRequestDialogOpen(false);
+      fetchContracts();
+    } catch (error) {
+      toast.error(error.message || "Failed to request contract");
+    }
+  };
+
+  const confirmUploadContract = async (pdfFile, adminNotes, sendToSales) => {
+    try {
+      await api.uploadContractPdf(selectedContract.contract.id, pdfFile, adminNotes);
+
+      if (sendToSales) {
+        await api.sendContractToSales(selectedContract.contract.id);
+        toast.success("Contract uploaded and sent to sales successfully");
+      } else {
+        toast.success("Contract uploaded successfully");
+      }
+
+      setIsUploadDialogOpen(false);
+      fetchContracts();
+    } catch (error) {
+      toast.error(error.message || "Failed to upload contract");
+    }
+  };
+
+  const confirmSendToClient = async (clientEmail) => {
+    try {
+      await api.sendContractToClient(selectedContract.contract.id, clientEmail);
+      toast.success("Contract sent to client successfully");
+      setIsSendToClientDialogOpen(false);
+      fetchContracts();
+    } catch (error) {
+      toast.error(error.message || "Failed to send contract to client");
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+    fetchContracts(newPage);
+  };
+
+  const handleToggleColumn = (columnKey) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }));
+  };
+
+  // Create columns with handlers
+  const allColumns = createColumns({
+    users,
+    userRole: user?.role,
+    onRequestContract: handleRequestContract,
+    onUploadContract: handleUploadContract,
+    onSendToSales: handleSendToSales,
+    onSendToClient: handleSendToClient,
+    onViewContract: handleViewContract,
+  });
+
+  // Filter columns based on visibility
+  const columns = allColumns.filter(column => {
+    if (!column.accessorKey) return true; // Always show actions column
+    return columnVisibility[column.accessorKey];
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Contract Requests</h1>
+        <p className="text-muted-foreground">
+          Manage contract requests from approved proposals
+        </p>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {/* Search */}
+          <SearchInput
+            placeholder="Search by client name, email, or company..."
+            value={searchTerm}
+            onChange={setSearchTerm}
+          />
+
+          {/* Status Filter */}
+          <FacetedFilter
+            title="Status"
+            options={[
+              { value: "pending_request", label: "Pending Request" },
+              { value: "requested", label: "Requested" },
+              { value: "ready_for_sales", label: "Ready for Sales" },
+              { value: "sent_to_sales", label: "Sent to Sales" },
+              { value: "sent_to_client", label: "Sent to Client" },
+            ]}
+            selectedValues={statusFilter}
+            onSelectionChange={setStatusFilter}
+            getCount={(status) => contracts.filter(c => c.contract?.status === status).length}
+          />
+
+          {/* Clear filters */}
+          {(statusFilter.length > 0 || searchTerm) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setStatusFilter([]);
+                setSearchTerm("");
+              }}
+              className="h-8 px-2 lg:px-3"
+            >
+              Reset
+              <X className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          {/* Column Visibility */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                Columns
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {Object.entries(columnVisibility).map(([key, value]) => (
+                <DropdownMenuCheckboxItem
+                  key={key}
+                  checked={value}
+                  onCheckedChange={() => handleToggleColumn(key)}
+                  className="capitalize"
+                >
+                  {key.replace(/([A-Z])/g, " $1").trim()}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Table */}
+      <DataTable
+        columns={columns}
+        data={contracts}
+        isLoading={isLoading}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+      />
+
+      {/* Dialogs */}
+      <RequestContractDialog
+        open={isRequestDialogOpen}
+        onOpenChange={setIsRequestDialogOpen}
+        contract={selectedContract}
+        onConfirm={confirmRequestContract}
+      />
+
+      <UploadContractDialog
+        open={isUploadDialogOpen}
+        onOpenChange={setIsUploadDialogOpen}
+        contract={selectedContract}
+        users={users}
+        onConfirm={confirmUploadContract}
+      />
+
+      <SendToClientDialog
+        open={isSendToClientDialogOpen}
+        onOpenChange={setIsSendToClientDialogOpen}
+        contract={selectedContract}
+        onConfirm={confirmSendToClient}
+      />
+    </div>
+  );
+}
