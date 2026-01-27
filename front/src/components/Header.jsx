@@ -500,10 +500,10 @@ const Header = () => {
       <nav className="pointer-events-auto fixed bottom-0 inset-x-0 z-50 lg:hidden">
         {/* Safe area padding for notched devices */}
         <div className="bg-gradient-to-t from-black/40 via-black/20 to-transparent pb-safe">
-          <div className="mx-auto max-w-md px-4 pb-2">
+          <div className="mx-auto max-w-md px-3 pb-2">
             <div className="overflow-hidden rounded-2xl border border-white/5 bg-black/70 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
-              <div className="flex items-center justify-around px-1 py-2">
-                {navItems.slice(0, 5).map((item) => {
+              <div className="flex items-center justify-around px-0.5 py-2">
+                {navItems.slice(0, 3).map((item) => {
                   const isActive = activeSection === item.targetId;
                   const shortLabel =
                     item.label === "About Us"
@@ -517,12 +517,12 @@ const Header = () => {
                       key={item.targetId}
                       type="button"
                       onClick={() => handleNavClick(item)}
-                      className="group relative flex flex-1 flex-col items-center gap-1 px-1 py-2 transition-all duration-200"
+                      className="group relative flex flex-1 flex-col items-center gap-0.5 px-0.5 py-1.5 transition-all duration-200"
                       aria-label={item.label}
                     >
                       {/* Active indicator pill */}
                       {isActive && (
-                        <div className="absolute inset-1 rounded-xl bg-gradient-to-br from-[#15803d]/20 to-[#16a34a]/10" />
+                        <div className="absolute inset-0.5 rounded-xl bg-gradient-to-br from-[#15803d]/20 to-[#16a34a]/10" />
                       )}
 
                       <div
@@ -535,7 +535,7 @@ const Header = () => {
                         {getIcon(item.icon)}
                       </div>
                       <span
-                        className={`relative z-10 text-[10px] font-semibold transition-all duration-200 ${
+                        className={`relative z-10 text-[9px] font-semibold transition-all duration-200 ${
                           isActive ? "text-[#16a34a]" : "text-white/60"
                         }`}
                       >
@@ -545,16 +545,70 @@ const Header = () => {
                   );
                 })}
 
+                {/* Blog Button */}
+                <Link
+                  to="/blog"
+                  className="group relative flex flex-1 flex-col items-center gap-0.5 px-0.5 py-1.5 transition-all duration-200"
+                  aria-label="Blog"
+                >
+                  <div className="relative z-10 text-white/50 transition-all duration-200 group-active:scale-95">
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                  </div>
+                  <span className="relative z-10 text-[9px] font-semibold text-white/60 transition-all duration-200">
+                    Blog
+                  </span>
+                </Link>
+
+                {/* Showcase Button */}
+                <button
+                  type="button"
+                  onClick={() => handleNavClick(navItems[4])}
+                  className="group relative flex flex-1 flex-col items-center gap-0.5 px-0.5 py-1.5 transition-all duration-200"
+                  aria-label="Showcase"
+                >
+                  {/* Active indicator pill */}
+                  {activeSection === "community-showcase" && (
+                    <div className="absolute inset-0.5 rounded-xl bg-gradient-to-br from-[#15803d]/20 to-[#16a34a]/10" />
+                  )}
+
+                  <div
+                    className={`relative z-10 transition-all duration-200 ${
+                      activeSection === "community-showcase"
+                        ? "scale-110 text-[#16a34a]"
+                        : "text-white/50 group-active:scale-95"
+                    }`}
+                  >
+                    {getIcon("showcase")}
+                  </div>
+                  <span
+                    className={`relative z-10 text-[9px] font-semibold transition-all duration-200 ${
+                      activeSection === "community-showcase"
+                        ? "text-[#16a34a]"
+                        : "text-white/60"
+                    }`}
+                  >
+                    Showcase
+                  </span>
+                </button>
+
                 {/* Contact Button */}
                 <button
                   type="button"
                   onClick={() => handleNavClick(navItems[5])}
-                  className="group relative flex flex-1 flex-col items-center gap-1 px-1 py-2 transition-all duration-200"
+                  className="group relative flex flex-1 flex-col items-center gap-0.5 px-0.5 py-1.5 transition-all duration-200"
                   aria-label="Contact"
                 >
                   {/* Active indicator pill */}
                   {activeSection === "contact" && (
-                    <div className="absolute inset-1 rounded-xl bg-gradient-to-br from-[#15803d]/20 to-[#16a34a]/10" />
+                    <div className="absolute inset-0.5 rounded-xl bg-gradient-to-br from-[#15803d]/20 to-[#16a34a]/10" />
                   )}
 
                   <div
@@ -567,7 +621,7 @@ const Header = () => {
                     {getIcon("contact")}
                   </div>
                   <span
-                    className={`relative z-10 text-[10px] font-semibold transition-all duration-200 ${
+                    className={`relative z-10 text-[9px] font-semibold transition-all duration-200 ${
                       activeSection === "contact"
                         ? "text-[#16a34a]"
                         : "text-white/60"
