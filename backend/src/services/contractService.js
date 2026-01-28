@@ -200,12 +200,12 @@ class ContractService {
   /**
    * Sales requests contract from admin
    * @param {string} contractId - Contract UUID
-   * @param {string} requestNotes - Optional notes from sales
+   * @param {Object} contractDetails - Contract details from sales
    * @param {string} userId - Sales user ID
    * @param {Object} metadata - Request metadata
    * @returns {Promise<Object>} Updated contract
    */
-  async requestContract(contractId, requestNotes, userId, metadata = {}) {
+  async requestContract(contractId, contractDetails, userId, metadata = {}) {
     // Get contract
     const contractData = await this.getContractById(contractId);
     const contract = contractData.contract;
@@ -220,7 +220,27 @@ class ContractService {
       throw new AppError("You can only request contracts for your own proposals", 403);
     }
 
-    // Update contract
+    // Extract contract details
+    const {
+      contractType,
+      clientName,
+      companyName,
+      clientEmailContract,
+      clientAddress,
+      contractDuration,
+      serviceAddress,
+      actualAddress,
+      collectionSchedule,
+      collectionScheduleOther,
+      wasteAllowance,
+      specialClauses,
+      signatories,
+      ratePerKg,
+      clientRequests,
+      requestNotes,
+    } = contractDetails;
+
+    // Update contract with details
     const [updatedContract] = await db
       .update(contractsTable)
       .set({
@@ -228,6 +248,22 @@ class ContractService {
         requestedBy: userId,
         requestedAt: new Date(),
         requestNotes,
+        // Contract details
+        contractType,
+        clientName,
+        companyName,
+        clientEmailContract,
+        clientAddress,
+        contractDuration,
+        serviceAddress,
+        actualAddress,
+        collectionSchedule,
+        collectionScheduleOther,
+        wasteAllowance,
+        specialClauses,
+        signatories: signatories ? JSON.stringify(signatories) : null,
+        ratePerKg,
+        clientRequests,
         updatedAt: new Date(),
       })
       .where(eq(contractsTable.id, contractId))
@@ -239,7 +275,7 @@ class ContractService {
       action: "contract_requested",
       entityType: "contract",
       entityId: contractId,
-      details: { requestNotes },
+      details: { requestNotes, contractType, clientName },
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });

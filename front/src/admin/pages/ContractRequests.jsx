@@ -140,9 +140,9 @@ export default function ContractRequests() {
     api.previewContractPdf(contract.contract.id);
   };
 
-  const confirmRequestContract = async (requestNotes) => {
+  const confirmRequestContract = async (contractDetails) => {
     try {
-      await api.requestContract(selectedContract.contract.id, requestNotes);
+      await api.requestContract(selectedContract.contract.id, contractDetails);
       toast.success("Contract requested successfully");
       setIsRequestDialogOpen(false);
       fetchContracts();

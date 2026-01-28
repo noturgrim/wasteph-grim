@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
+import { validateRequestContract } from "../middleware/contractValidation.js";
 import multer from "multer";
 import * as controller from "../controllers/contractController.js";
 
@@ -28,7 +29,7 @@ router.get("/", controller.getAllContracts);
 router.get("/:id", controller.getContractById);
 
 // SALES OPERATIONS
-router.post("/:id/request", controller.requestContract);
+router.post("/:id/request", validateRequestContract, controller.requestContract);
 router.post("/:id/send-to-client", controller.sendToClient);
 
 // ADMIN OPERATIONS

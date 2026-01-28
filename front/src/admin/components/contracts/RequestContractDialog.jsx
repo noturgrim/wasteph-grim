@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,18 +9,163 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FileText, Loader2, Plus, X } from "lucide-react";
+import { toast } from "../../utils/toast";
+
+const CONTRACT_TYPES = [
+  { value: "long_term_variable", label: "LONG TERM GARBAGE VARIABLE CHARGE" },
+  { value: "long_term_fixed", label: "LONG TERM GARBAGE FIXED CHARGE (MORE THAN 50,000 PHP / MONTH)" },
+  { value: "fixed_rate_term", label: "FIXED RATE TERM" },
+  { value: "garbage_bins", label: "GARBAGE BINS" },
+  { value: "garbage_bins_disposal", label: "GARBAGE BINS WITH DISPOSAL" },
+];
+
+const COLLECTION_SCHEDULES = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "bi_weekly", label: "Bi-Weekly" },
+  { value: "other", label: "Others (specify)" },
+];
 
 export function RequestContractDialog({ open, onOpenChange, contract, onConfirm }) {
-  const [requestNotes, setRequestNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    contractType: "",
+    clientName: "",
+    companyName: "",
+    clientEmailContract: "",
+    clientAddress: "",
+    contractDuration: "",
+    serviceAddress: "",
+    actualAddress: "",
+    collectionSchedule: "",
+    collectionScheduleOther: "",
+    wasteAllowance: "",
+    specialClauses: "",
+    signatories: [{ name: "", position: "" }],
+    ratePerKg: "",
+    clientRequests: "",
+    requestNotes: "",
+  });
+
+  // Auto-fill data from proposal/inquiry when dialog opens
+  useEffect(() => {
+    if (contract && open) {
+      const inquiry = contract.inquiry || {};
+      const proposal = contract.proposal || {};
+      
+      // Parse proposal data if it exists
+      let proposalData = {};
+      if (proposal.proposalData) {
+        try {
+          proposalData = typeof proposal.proposalData === 'string' 
+            ? JSON.parse(proposal.proposalData) 
+            : proposal.proposalData;
+        } catch (e) {
+          console.error("Failed to parse proposal data:", e);
+        }
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        clientName: proposalData.clientName || inquiry.name || "",
+        companyName: proposalData.clientCompany || inquiry.company || "",
+        clientEmailContract: proposalData.clientEmail || inquiry.email || "",
+        serviceAddress: inquiry.location || "",
+      }));
+    }
+  }, [contract, open]);
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSignatoryChange = (index, field, value) => {
+    const newSignatories = [...formData.signatories];
+    newSignatories[index][field] = value;
+    setFormData(prev => ({ ...prev, signatories: newSignatories }));
+  };
+
+  const addSignatory = () => {
+    setFormData(prev => ({
+      ...prev,
+      signatories: [...prev.signatories, { name: "", position: "" }],
+    }));
+  };
+
+  const removeSignatory = (index) => {
+    if (formData.signatories.length > 1) {
+      const newSignatories = formData.signatories.filter((_, i) => i !== index);
+      setFormData(prev => ({ ...prev, signatories: newSignatories }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = [];
+
+    if (!formData.contractType) errors.push("Contract type is required");
+    if (!formData.clientName) errors.push("Client name is required");
+    if (!formData.clientEmailContract) errors.push("Client email is required");
+    if (!formData.serviceAddress) errors.push("Service address is required");
+    if (!formData.collectionSchedule) errors.push("Collection schedule is required");
+    if (formData.collectionSchedule === "other" && !formData.collectionScheduleOther) {
+      errors.push("Please specify the collection schedule");
+    }
+    if (!formData.specialClauses) errors.push("Special clauses field is required");
+    if (!formData.ratePerKg) errors.push("Rate per kg is required");
+    if (!formData.clientRequests) errors.push("Client requests field is required");
+    
+    // Validate signatories
+    const hasEmptySignatory = formData.signatories.some(
+      sig => !sig.name.trim() || !sig.position.trim()
+    );
+    if (hasEmptySignatory) {
+      errors.push("All signatories must have a name and position");
+    }
+
+    if (errors.length > 0) {
+      toast.error(errors[0]);
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSubmit = async () => {
+    if (!validateForm()) return;
+
     setIsSubmitting(true);
     try {
-      await onConfirm(requestNotes);
-      setRequestNotes(""); // Reset after success
+      await onConfirm(formData);
+      // Reset form after successful submission
+      setFormData({
+        contractType: "",
+        clientName: "",
+        companyName: "",
+        clientEmailContract: "",
+        clientAddress: "",
+        contractDuration: "",
+        serviceAddress: "",
+        actualAddress: "",
+        collectionSchedule: "",
+        collectionScheduleOther: "",
+        wasteAllowance: "",
+        specialClauses: "",
+        signatories: [{ name: "", position: "" }],
+        ratePerKg: "",
+        clientRequests: "",
+        requestNotes: "",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -28,61 +173,334 @@ export function RequestContractDialog({ open, onOpenChange, contract, onConfirm 
 
   const handleClose = (isOpen) => {
     if (!isOpen && !isSubmitting) {
-      setRequestNotes(""); // Reset on close
+      // Reset form on close
+      setFormData({
+        contractType: "",
+        clientName: "",
+        companyName: "",
+        clientEmailContract: "",
+        clientAddress: "",
+        contractDuration: "",
+        serviceAddress: "",
+        actualAddress: "",
+        collectionSchedule: "",
+        collectionScheduleOther: "",
+        wasteAllowance: "",
+        specialClauses: "",
+        signatories: [{ name: "", position: "" }],
+        ratePerKg: "",
+        clientRequests: "",
+        requestNotes: "",
+      });
     }
     onOpenChange(isOpen);
   };
 
   if (!contract) return null;
 
-  const clientName = contract.inquiry?.name || "N/A";
-  const clientEmail = contract.inquiry?.email || "N/A";
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-600" />
             Request Contract
           </DialogTitle>
           <DialogDescription>
-            Request admin to create a contract for this approved proposal.
+            Fill in the contract details for admin to create the contract document.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Proposal Summary */}
-          <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Client</p>
-              <p className="font-semibold">{clientName}</p>
-              <p className="text-sm text-muted-foreground">{clientEmail}</p>
+        <div className="space-y-6">
+          {/* Contract Type - Required */}
+          <div>
+            <Label htmlFor="contractType">
+              Contract Type <span className="text-red-500">*</span>
+            </Label>
+            <Select value={formData.contractType} onValueChange={(value) => handleChange("contractType", value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select contract type" />
+              </SelectTrigger>
+              <SelectContent>
+                {CONTRACT_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Client Name - Required */}
+          <div>
+            <Label htmlFor="clientName">
+              Client Name <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="clientName"
+              value={formData.clientName}
+              onChange={(e) => handleChange("clientName", e.target.value)}
+              placeholder="Contact person name"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Contact person or representative name
+            </p>
+          </div>
+
+          {/* Company Name - Optional */}
+          <div>
+            <Label htmlFor="companyName">
+              Company Name <span className="text-muted-foreground">(Optional)</span>
+            </Label>
+            <Input
+              id="companyName"
+              value={formData.companyName}
+              onChange={(e) => handleChange("companyName", e.target.value)}
+              placeholder="Full CORPORATE NAME"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Full corporate or company name if different from client name
+            </p>
+          </div>
+
+          {/* Client Email - Required */}
+          <div>
+            <Label htmlFor="clientEmailContract">
+              Client E-Mail <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="clientEmailContract"
+              type="email"
+              value={formData.clientEmailContract}
+              onChange={(e) => handleChange("clientEmailContract", e.target.value)}
+              placeholder="client@company.com"
+              className="mt-1"
+            />
+          </div>
+
+          {/* Client Address - Optional */}
+          <div>
+            <Label htmlFor="clientAddress">
+              Client Address
+            </Label>
+            <Input
+              id="clientAddress"
+              value={formData.clientAddress}
+              onChange={(e) => handleChange("clientAddress", e.target.value)}
+              placeholder="Client's business or billing address"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Client's business or billing address
+            </p>
+          </div>
+
+          {/* Contract Duration */}
+          <div>
+            <Label htmlFor="contractDuration">
+              Effectivity of Contract Duration
+            </Label>
+            <Input
+              id="contractDuration"
+              value={formData.contractDuration}
+              onChange={(e) => handleChange("contractDuration", e.target.value)}
+              placeholder="e.g., January 1, 2024 - December 31, 2024"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Duration or length of when contract is to be live and ends
+            </p>
+          </div>
+
+          {/* Service Address - Required */}
+          <div>
+            <Label htmlFor="serviceAddress">
+              Service Address <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="serviceAddress"
+              value={formData.serviceAddress}
+              onChange={(e) => handleChange("serviceAddress", e.target.value)}
+              placeholder="Service location address"
+              className="mt-1"
+            />
+          </div>
+
+          {/* Actual Address */}
+          <div>
+            <Label htmlFor="actualAddress">
+              Actual Address
+            </Label>
+            <Input
+              id="actualAddress"
+              value={formData.actualAddress}
+              onChange={(e) => handleChange("actualAddress", e.target.value)}
+              placeholder="If Google Maps does not detect location"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Actual address if Google Maps does not detect location
+            </p>
+          </div>
+
+          {/* Collection Schedule - Required */}
+          <div>
+            <Label htmlFor="collectionSchedule">
+              Schedule of Garbage Collection <span className="text-red-500">*</span>
+            </Label>
+            <Select value={formData.collectionSchedule} onValueChange={(value) => handleChange("collectionSchedule", value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select schedule" />
+              </SelectTrigger>
+              <SelectContent>
+                {COLLECTION_SCHEDULES.map((schedule) => (
+                  <SelectItem key={schedule.value} value={schedule.value}>
+                    {schedule.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {formData.collectionSchedule === "other" && (
+              <Input
+                value={formData.collectionScheduleOther}
+                onChange={(e) => handleChange("collectionScheduleOther", e.target.value)}
+                placeholder="Specify schedule"
+                className="mt-2"
+              />
+            )}
+          </div>
+
+          {/* Waste Allowance */}
+          <div>
+            <Label htmlFor="wasteAllowance">
+              Waste Allowance
+            </Label>
+            <Input
+              id="wasteAllowance"
+              value={formData.wasteAllowance}
+              onChange={(e) => handleChange("wasteAllowance", e.target.value)}
+              placeholder="Allocated amount for fixed clients"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Allocated amount for fixed clients
+            </p>
+          </div>
+
+          {/* Special Clauses - Required */}
+          <div>
+            <Label htmlFor="specialClauses">
+              Special Clauses or Requests <span className="text-red-500">*</span>
+            </Label>
+            <Textarea
+              id="specialClauses"
+              value={formData.specialClauses}
+              onChange={(e) => handleChange("specialClauses", e.target.value)}
+              placeholder="Does the client have any special clauses or requests?"
+              rows={3}
+              className="mt-1"
+            />
+          </div>
+
+          {/* Signatories - Required */}
+          <div>
+            <Label>
+              Signatories and their Position <span className="text-red-500">*</span>
+            </Label>
+            <div className="space-y-3 mt-2">
+              {formData.signatories.map((signatory, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={signatory.name}
+                    onChange={(e) => handleSignatoryChange(index, "name", e.target.value)}
+                    placeholder="Name"
+                    className="flex-1"
+                  />
+                  <Input
+                    value={signatory.position}
+                    onChange={(e) => handleSignatoryChange(index, "position", e.target.value)}
+                    placeholder="Position"
+                    className="flex-1"
+                  />
+                  {formData.signatories.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeSignatory(index)}
+                      className="shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSignatory}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Signatory
+              </Button>
             </div>
           </div>
 
-          {/* Request Notes (Optional) */}
+          {/* Rate Per Kg - Required */}
+          <div>
+            <Label htmlFor="ratePerKg">
+              Rate per KG <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="ratePerKg"
+              value={formData.ratePerKg}
+              onChange={(e) => handleChange("ratePerKg", e.target.value)}
+              placeholder="e.g., PHP 3.50/kg food - VAT ex."
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Specify type of waste - whether VAT exclusive or inclusive (e.g., PHP 3.50/kg food - VAT ex.)
+            </p>
+          </div>
+
+          {/* Client Requests - Required */}
+          <div>
+            <Label htmlFor="clientRequests">
+              Client Requests <span className="text-red-500">*</span>
+            </Label>
+            <Textarea
+              id="clientRequests"
+              value={formData.clientRequests}
+              onChange={(e) => handleChange("clientRequests", e.target.value)}
+              placeholder="If any, please provide client requests of modifications through here"
+              rows={3}
+              className="mt-1"
+            />
+          </div>
+
+          {/* Request Notes - Optional */}
           <div>
             <Label htmlFor="requestNotes">
               Request Notes <span className="text-muted-foreground">(Optional)</span>
             </Label>
             <Textarea
               id="requestNotes"
-              value={requestNotes}
-              onChange={(e) => setRequestNotes(e.target.value)}
-              placeholder="Add any notes or special requirements for admin..."
-              rows={3}
+              value={formData.requestNotes}
+              onChange={(e) => handleChange("requestNotes", e.target.value)}
+              placeholder="Add any additional notes for admin..."
+              rows={2}
               className="mt-1"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              These notes will help admin understand any special requirements for the contract.
-            </p>
           </div>
 
           {/* Info */}
           <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
             <p className="text-sm text-green-900 dark:text-green-100">
-              <strong>Note:</strong> Admin will be notified and will prepare the contract document for you.
+              <strong>Note:</strong> Admin will be notified and will prepare the contract document based on the details you provide.
             </p>
           </div>
         </div>

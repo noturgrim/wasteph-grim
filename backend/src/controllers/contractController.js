@@ -64,7 +64,7 @@ export const getContractById = async (req, res, next) => {
 export const requestContract = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { requestNotes } = req.body;
+    const contractDetails = req.body; // All contract details from form
 
     // Only sales can request contracts
     if (req.user.role !== "sales") {
@@ -78,7 +78,7 @@ export const requestContract = async (req, res, next) => {
 
     const contract = await contractService.requestContract(
       id,
-      requestNotes,
+      contractDetails,
       req.user.id,
       metadata
     );

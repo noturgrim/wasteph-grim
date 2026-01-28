@@ -441,10 +441,10 @@ class ApiClient {
     return this.request(`/contracts/${id}`);
   }
 
-  async requestContract(id, requestNotes) {
+  async requestContract(id, contractDetails) {
     return this.request(`/contracts/${id}/request`, {
       method: "POST",
-      body: JSON.stringify({ requestNotes }),
+      body: JSON.stringify(contractDetails),
     });
   }
 

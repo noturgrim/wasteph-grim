@@ -74,6 +74,24 @@ export const contractStatusEnum = pgEnum("contract_status", [
   "sent_to_client",    // Sales sent to client (final status)
 ]);
 
+// Contract type enum
+export const contractTypeEnum = pgEnum("contract_type", [
+  "long_term_variable",  // LONG TERM GARBAGE VARIABLE CHARGE
+  "long_term_fixed",     // LONG TERM GARBAGE FIXED CHARGE (MORE THAN 50,000 PHP / MONTH)
+  "fixed_rate_term",     // FIXED RATE TERM
+  "garbage_bins",        // GARBAGE BINS
+  "garbage_bins_disposal", // GARBAGE BINS WITH DISPOSAL
+]);
+
+// Schedule of garbage collection enum
+export const collectionScheduleEnum = pgEnum("collection_schedule", [
+  "daily",
+  "weekly",
+  "monthly",
+  "bi_weekly",
+  "other",
+]);
+
 // Proposal Template Types
 export const proposalTemplateTypeEnum = pgEnum("proposal_template_type", [
   "compactor_hauling",
@@ -413,6 +431,23 @@ export const contractsTable = pgTable("contracts", {
   requestedAt: timestamp("requested_at", { withTimezone: true }),
   requestNotes: text("request_notes"), // Sales notes when requesting
 
+  // Contract Details (filled by Sales when requesting)
+  contractType: contractTypeEnum("contract_type"), // Type of contract
+  clientName: text("client_name"), // Contact person name
+  companyName: text("company_name"), // Full corporate name (optional)
+  clientEmailContract: text("client_email_contract"), // Client email for contract form
+  clientAddress: text("client_address"), // Client address
+  contractDuration: text("contract_duration"), // Effectivity of contract duration
+  serviceAddress: text("service_address"), // Service address (required)
+  actualAddress: text("actual_address"), // If Google Maps doesn't detect location
+  collectionSchedule: collectionScheduleEnum("collection_schedule"),
+  collectionScheduleOther: text("collection_schedule_other"), // If "other" is selected
+  wasteAllowance: text("waste_allowance"), // Allocated amount for fixed clients
+  specialClauses: text("special_clauses"), // Special clauses or requests
+  signatories: text("signatories"), // JSON array of signatories with positions
+  ratePerKg: text("rate_per_kg"), // Rate specifications (e.g., "PHP 3.50/kg food - VAT ex.")
+  clientRequests: text("client_requests"), // Client requests for modifications
+
   // Admin Contract Upload
   contractUploadedBy: text("contract_uploaded_by")
     .references(() => userTable.id), // Admin who uploaded
@@ -429,7 +464,7 @@ export const contractsTable = pgTable("contracts", {
   sentToClientBy: text("sent_to_client_by")
     .references(() => userTable.id), // Sales who sent to client
   sentToClientAt: timestamp("sent_to_client_at", { withTimezone: true }),
-  clientEmail: text("client_email"), // Email address used
+  clientEmail: text("client_email"), // Email address used to send (keep existing field)
 
   // Timestamps
   createdAt: timestamp("created_at", { withTimezone: true })
