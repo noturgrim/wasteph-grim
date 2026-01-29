@@ -526,6 +526,26 @@ export default function Inquiries() {
         </DropdownMenu>
       </div>
 
+      {/* Status Legend */}
+      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground bg-muted/30 dark:bg-muted/20 rounded-lg p-3 border">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+          <span>Cold (Needs info)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+          <span>Warm (In progress)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+          <span>Hot (Ready to close)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+          <span>Won (Graduated)</span>
+        </div>
+      </div>
+
       {/* Table */}
       <DataTable
         columns={columns}
@@ -533,6 +553,47 @@ export default function Inquiries() {
         isLoading={isLoading}
         emptyMessage="No inquiries found"
         showViewOptions={false}
+        getRowClassName={(inquiry) => {
+          const status = inquiry.status;
+          const hasInfo = inquiry.isInformationComplete !== false;
+
+          // HOT - Red border (Information gathered, ready to close)
+          if (
+            hasInfo &&
+            ["negotiating", "submitted_proposal"].includes(status)
+          ) {
+            return "[&>td:first-child]:border-l-4 [&>td:first-child]:border-l-red-500 dark:[&>td:first-child]:border-l-red-400";
+          }
+
+          // WARM - Orange border (Active work in progress)
+          if (
+            ["to_call", "submitted_company_profile"].includes(status) ||
+            (!hasInfo && ["negotiating", "submitted_proposal"].includes(status))
+          ) {
+            return "[&>td:first-child]:border-l-4 [&>td:first-child]:border-l-orange-500 dark:[&>td:first-child]:border-l-orange-400";
+          }
+
+          // COLD - Blue border (Early stage, needs information)
+          if (
+            ["initial_comms", "waiting_for_feedback"].includes(status) ||
+            !hasInfo
+          ) {
+            return "[&>td:first-child]:border-l-4 [&>td:first-child]:border-l-blue-500 dark:[&>td:first-child]:border-l-blue-400";
+          }
+
+          // SUCCESS - Green border (Won)
+          if (status === "on_boarded") {
+            return "[&>td:first-child]:border-l-4 [&>td:first-child]:border-l-green-500 dark:[&>td:first-child]:border-l-green-400";
+          }
+
+          // DECLINED - Gray border
+          if (status === "declined" || status === "na") {
+            return "[&>td:first-child]:border-l-4 [&>td:first-child]:border-l-gray-400 dark:[&>td:first-child]:border-l-gray-600";
+          }
+
+          // Default
+          return "";
+        }}
       />
 
       {/* Pagination */}

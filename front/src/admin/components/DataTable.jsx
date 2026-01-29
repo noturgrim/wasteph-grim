@@ -31,6 +31,7 @@ export function DataTable({
   isLoading = false,
   emptyMessage = "No data found",
   showViewOptions = false,
+  getRowClassName,
 }) {
   const table = useReactTable({
     data,
@@ -124,7 +125,7 @@ export function DataTable({
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -133,7 +134,10 @@ export function DataTable({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+              <TableRow
+                key={row.id}
+                className={getRowClassName ? getRowClassName(row.original) : ""}
+              >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
