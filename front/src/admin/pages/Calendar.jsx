@@ -33,6 +33,7 @@ import { ViewEventDialog } from "../components/calendar/ViewEventDialog";
 
 export default function Calendar() {
   const { user } = useAuth();
+  const isMasterSales = user?.isMasterSales || false;
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +54,7 @@ export default function Calendar() {
       const response = await api.getCalendarEvents({
         startDate: monthStart.toISOString(),
         endDate: monthEnd.toISOString(),
+        viewAll: isMasterSales, // Master Sales sees all events
       });
 
       setEvents(response.data || []);
@@ -222,27 +224,35 @@ export default function Calendar() {
 
                   {/* Events for this day */}
                   <div className="space-y-1">
-                    {dayEvents.slice(0, 3).map((event) => (
-                      <button
-                        key={event.id}
-                        onClick={() => handleEventClick(event)}
-                        className={`w-full text-left p-1.5 rounded text-xs ${getStatusColor(
-                          event.status,
-                        )} hover:opacity-80 transition-opacity`}
-                      >
-                        <div className="flex items-center gap-1">
-                          {getStatusIcon(event.status)}
-                          <span className="truncate font-medium">
-                            {event.title}
-                          </span>
-                        </div>
-                        {event.startTime && (
-                          <div className="text-xs opacity-75 mt-0.5">
-                            {event.startTime}
+                    {dayEvents.slice(0, 3).map((event) => {
+                      const isOwnEvent = event.userId === user?.id;
+                      return (
+                        <button
+                          key={event.id}
+                          onClick={() => handleEventClick(event)}
+                          className={`w-full text-left p-1.5 rounded text-xs ${getStatusColor(
+                            event.status,
+                          )} hover:opacity-80 transition-opacity`}
+                        >
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(event.status)}
+                            <span className="truncate font-medium">
+                              {event.title}
+                            </span>
                           </div>
-                        )}
-                      </button>
-                    ))}
+                          {event.startTime && (
+                            <div className="text-xs opacity-75 mt-0.5">
+                              {event.startTime}
+                            </div>
+                          )}
+                          {isMasterSales && !isOwnEvent && event.user?.name && (
+                            <div className="text-xs opacity-60 mt-0.5 truncate">
+                              {event.user.name}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                     {dayEvents.length > 3 && (
                       <div className="text-xs text-muted-foreground pl-1.5">
                         +{dayEvents.length - 3} more
@@ -285,6 +295,7 @@ export default function Calendar() {
         event={selectedEvent}
         onUpdate={handleEventUpdated}
         onDelete={handleEventDeleted}
+        isReadOnly={isMasterSales && selectedEvent?.userId !== user?.id}
       />
     </div>
   );

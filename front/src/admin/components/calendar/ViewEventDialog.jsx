@@ -31,6 +31,7 @@ export function ViewEventDialog({
   event,
   onUpdate,
   onDelete,
+  isReadOnly = false,
 }) {
   const navigate = useNavigate();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -122,6 +123,18 @@ export function ViewEventDialog({
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* Assigned To (for Master Sales viewing other's events) */}
+            {isReadOnly && event.user && (
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-2">
+                  Assigned To
+                </h4>
+                <p className="text-sm text-foreground">
+                  {event.user.name} ({event.user.email})
+                </p>
+              </div>
+            )}
+
             {/* Description */}
             {event.description && (
               <div>
@@ -216,45 +229,59 @@ export function ViewEventDialog({
           </div>
 
           <DialogFooter className="flex items-center justify-between sm:justify-between">
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowDeleteDialog(true)}
-              disabled={
-                isDeleting || isCompleting || event.status === "cancelled"
-              }
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              {event.status === "cancelled" ? "Cancelled" : "Cancel Event"}
-            </Button>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isDeleting || isCompleting}
-              >
-                Close
-              </Button>
-              {event.status === "scheduled" && (
+            {!isReadOnly ? (
+              <>
                 <Button
-                  onClick={handleComplete}
-                  disabled={isDeleting || isCompleting}
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={
+                    isDeleting || isCompleting || event.status === "cancelled"
+                  }
                 >
-                  {isCompleting ? (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2 animate-spin" />
-                      Marking...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Mark Complete
-                    </>
-                  )}
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {event.status === "cancelled" ? "Cancelled" : "Cancel Event"}
                 </Button>
-              )}
-            </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={isDeleting || isCompleting}
+                  >
+                    Close
+                  </Button>
+                  {event.status === "scheduled" && (
+                    <Button
+                      onClick={handleComplete}
+                      disabled={isDeleting || isCompleting}
+                    >
+                      {isCompleting ? (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2 animate-spin" />
+                          Marking...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Mark Complete
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-between w-full">
+                <Badge variant="outline" className="text-xs">
+                  View Only - This is {event.user?.name || "another user"}'s
+                  event
+                </Badge>
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  Close
+                </Button>
+              </div>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

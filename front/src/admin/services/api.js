@@ -502,6 +502,8 @@ class ApiClient {
     if (filters.endDate) params.append("endDate", filters.endDate);
     if (filters.status) params.append("status", filters.status);
     if (filters.inquiryId) params.append("inquiryId", filters.inquiryId);
+    if (filters.viewAll !== undefined)
+      params.append("viewAll", filters.viewAll);
     if (filters.page) params.append("page", filters.page);
     if (filters.limit) params.append("limit", filters.limit);
 

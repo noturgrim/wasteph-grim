@@ -27,14 +27,18 @@ export const createEvent = async (req, res, next) => {
 /**
  * Route: GET /api/calendar-events
  * Get calendar events with filters
+ * Master Sales can view all events with viewAll=true
  */
 export const getEvents = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { startDate, endDate, status, inquiryId, page, limit } = req.query;
+    const isMasterSales = req.user.isMasterSales; // Use isMasterSales field from database
+    const { startDate, endDate, status, inquiryId, viewAll, page, limit } =
+      req.query;
 
     const result = await calendarEventService.getEvents({
       userId,
+      viewAll: isMasterSales && viewAll === "true", // Only Master Sales can view all
       startDate,
       endDate,
       status,
@@ -88,10 +92,15 @@ export const updateEvent = async (req, res, next) => {
     const userId = req.user.id;
     const updateData = req.body;
 
-    const event = await calendarEventService.updateEvent(id, updateData, userId, {
-      ipAddress: req.ip,
-      userAgent: req.get("user-agent"),
-    });
+    const event = await calendarEventService.updateEvent(
+      id,
+      updateData,
+      userId,
+      {
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      },
+    );
 
     res.json({
       success: true,

@@ -3,6 +3,7 @@ import {
   calendarEventTable,
   activityLogTable,
   inquiryTable,
+  userTable,
 } from "../db/schema.js";
 import { eq, and, gte, lte, desc, count, sql } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
@@ -75,10 +76,12 @@ class CalendarEventService {
 
   /**
    * Get events for a user with optional filters
+   * If viewAll is true (Master Sales), return all users' events
    */
   async getEvents(options = {}) {
     const {
       userId,
+      viewAll = false,
       startDate,
       endDate,
       status,
@@ -89,11 +92,13 @@ class CalendarEventService {
 
     const conditions = [];
 
-    // User filter (required)
-    if (userId) {
-      conditions.push(eq(calendarEventTable.userId, userId));
-    } else {
-      throw new AppError("User ID is required", 400);
+    // User filter - only apply if not viewing all events
+    if (!viewAll) {
+      if (userId) {
+        conditions.push(eq(calendarEventTable.userId, userId));
+      } else {
+        throw new AppError("User ID is required", 400);
+      }
     }
 
     // Date range filter
@@ -133,15 +138,17 @@ class CalendarEventService {
         notes: calendarEventTable.notes,
         createdAt: calendarEventTable.createdAt,
         updatedAt: calendarEventTable.updatedAt,
-        // Include inquiry info if linked
-        inquiry: {
-          id: inquiryTable.id,
-          name: inquiryTable.name,
-          company: inquiryTable.company,
-          status: inquiryTable.status,
-        },
+        // Include user info (flattened)
+        userFirstName: userTable.firstName,
+        userLastName: userTable.lastName,
+        userEmail: userTable.email,
+        // Include inquiry info (flattened)
+        inquiryName: inquiryTable.name,
+        inquiryCompany: inquiryTable.company,
+        inquiryStatus: inquiryTable.status,
       })
       .from(calendarEventTable)
+      .leftJoin(userTable, eq(calendarEventTable.userId, userTable.id))
       .leftJoin(
         inquiryTable,
         eq(calendarEventTable.inquiryId, inquiryTable.id),
@@ -162,10 +169,43 @@ class CalendarEventService {
 
     // Apply pagination and ordering
     const offset = (page - 1) * limit;
-    const events = await query
+    const results = await query
       .orderBy(calendarEventTable.scheduledDate)
       .limit(limit)
       .offset(offset);
+
+    // Transform flattened results to nested structure
+    const events = results.map((event) => ({
+      id: event.id,
+      userId: event.userId,
+      inquiryId: event.inquiryId,
+      title: event.title,
+      description: event.description,
+      eventType: event.eventType,
+      scheduledDate: event.scheduledDate,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      status: event.status,
+      completedAt: event.completedAt,
+      notes: event.notes,
+      createdAt: event.createdAt,
+      updatedAt: event.updatedAt,
+      user: event.userFirstName
+        ? {
+            id: event.userId,
+            name: `${event.userFirstName} ${event.userLastName}`,
+            email: event.userEmail,
+          }
+        : null,
+      inquiry: event.inquiryId
+        ? {
+            id: event.inquiryId,
+            name: event.inquiryName,
+            company: event.inquiryCompany,
+            status: event.inquiryStatus,
+          }
+        : null,
+    }));
 
     return {
       data: events,
@@ -182,7 +222,7 @@ class CalendarEventService {
    * Get event by ID
    */
   async getEventById(eventId) {
-    const [event] = await db
+    const [result] = await db
       .select({
         id: calendarEventTable.id,
         userId: calendarEventTable.userId,
@@ -198,21 +238,57 @@ class CalendarEventService {
         notes: calendarEventTable.notes,
         createdAt: calendarEventTable.createdAt,
         updatedAt: calendarEventTable.updatedAt,
-        inquiry: {
-          id: inquiryTable.id,
-          name: inquiryTable.name,
-          company: inquiryTable.company,
-          status: inquiryTable.status,
-        },
+        // Flattened user info
+        userFirstName: userTable.firstName,
+        userLastName: userTable.lastName,
+        userEmail: userTable.email,
+        // Flattened inquiry info
+        inquiryName: inquiryTable.name,
+        inquiryCompany: inquiryTable.company,
+        inquiryStatus: inquiryTable.status,
       })
       .from(calendarEventTable)
+      .leftJoin(userTable, eq(calendarEventTable.userId, userTable.id))
       .leftJoin(inquiryTable, eq(calendarEventTable.inquiryId, inquiryTable.id))
       .where(eq(calendarEventTable.id, eventId))
       .limit(1);
 
-    if (!event) {
+    if (!result) {
       throw new AppError("Event not found", 404);
     }
+
+    // Transform to nested structure
+    const event = {
+      id: result.id,
+      userId: result.userId,
+      inquiryId: result.inquiryId,
+      title: result.title,
+      description: result.description,
+      eventType: result.eventType,
+      scheduledDate: result.scheduledDate,
+      startTime: result.startTime,
+      endTime: result.endTime,
+      status: result.status,
+      completedAt: result.completedAt,
+      notes: result.notes,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+      user: result.userFirstName
+        ? {
+            id: result.userId,
+            name: `${result.userFirstName} ${result.userLastName}`,
+            email: result.userEmail,
+          }
+        : null,
+      inquiry: result.inquiryId
+        ? {
+            id: result.inquiryId,
+            name: result.inquiryName,
+            company: result.inquiryCompany,
+            status: result.inquiryStatus,
+          }
+        : null,
+    };
 
     return event;
   }
