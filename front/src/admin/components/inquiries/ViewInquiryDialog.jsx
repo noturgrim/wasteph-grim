@@ -86,8 +86,13 @@ export function ViewInquiryDialog({ open, onOpenChange, inquiry, users = [], onP
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
-                <div className="mt-1">
+                <div className="mt-1 flex flex-wrap items-center gap-2">
                   <StatusBadge status={inquiry.status} />
+                  {inquiry.isInformationComplete === false && (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-xs">
+                      Info Needed
+                    </Badge>
+                  )}
                 </div>
               </div>
               <div>
@@ -157,6 +162,17 @@ export function ViewInquiryDialog({ open, onOpenChange, inquiry, users = [], onP
         </div>
 
         <DialogFooter className="px-6 py-4 border-t shrink-0 flex-col sm:flex-row gap-2">
+          {/* Show warning if information is incomplete */}
+          {inquiry.isInformationComplete === false && (
+            <div className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950 px-3 py-2 rounded-md space-y-1">
+              <p className="font-semibold">Information Incomplete</p>
+              <p className="text-xs">
+                This inquiry was created from a lead pool. Please visit the client site or contact them to gather complete information, 
+                then edit the inquiry and mark "Information Complete" before requesting a proposal.
+              </p>
+            </div>
+          )}
+
           {/* Show info for pending/approved proposals */}
           {inquiry.proposalStatus === "pending" && (
             <div className="text-sm text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-950 px-3 py-2 rounded-md">

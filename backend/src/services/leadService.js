@@ -217,6 +217,7 @@ class LeadService {
 
     // Create inquiry from lead data
     // Use provided source if available, otherwise leave as null (can be set later)
+    // Set isInformationComplete to false since lead data is incomplete
     const [inquiry] = await db
       .insert(inquiryTable)
       .values({
@@ -229,6 +230,7 @@ class LeadService {
         status: "initial_comms",
         source: source || null,
         assignedTo: userId,
+        isInformationComplete: false, // Mark as incomplete - needs site visit/contact
       })
       .returning();
 

@@ -89,7 +89,17 @@ export const createColumns = ({ users = [], onView, onEdit, onDelete, onRequestP
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
-      return <StatusBadge status={status} />;
+      const isIncomplete = row.original.isInformationComplete === false;
+      return (
+        <div className="flex items-center gap-2">
+          <StatusBadge status={status} />
+          {isIncomplete && (
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-xs">
+              Info Needed
+            </Badge>
+          )}
+        </div>
+      );
     },
   },
   {
@@ -187,10 +197,12 @@ export const createColumns = ({ users = [], onView, onEdit, onDelete, onRequestP
     id: "actions",
     cell: ({ row }) => {
       const inquiry = row.original;
+      const canRequestProposal = inquiry.isInformationComplete !== false;
 
       return (
         <div className="flex items-center gap-2">
           {/* Request Proposal Button - only show if NO proposal exists OR proposal was rejected */}
+          {/* Also check if information is complete (for inquiries from claimed leads) */}
           {!inquiry.proposalStatus &&
            inquiry.status !== "submitted_proposal" &&
            inquiry.status !== "declined" &&
@@ -199,7 +211,9 @@ export const createColumns = ({ users = [], onView, onEdit, onDelete, onRequestP
               variant="ghost"
               size="sm"
               onClick={() => onRequestProposal(inquiry)}
-              className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+              disabled={!canRequestProposal}
+              className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!canRequestProposal ? "Complete inquiry information first" : "Request proposal"}
             >
               <FileText className="h-4 w-4 mr-1" />
               Proposal

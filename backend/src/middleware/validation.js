@@ -45,8 +45,9 @@ export const inquiryValidation = [
   body("message").trim().notEmpty().withMessage("Message is required"),
   body("source")
     .optional()
-    .isIn(["website", "facebook", "email", "phone", "walk-in", "cold-approach"])
+    .isIn(["website", "facebook", "email", "phone", "walk-in", "cold-approach", "referral"])
     .withMessage("Invalid source value"),
+  body("isInformationComplete").optional().isBoolean().withMessage("isInformationComplete must be a boolean"),
 ];
 
 // Lead validation

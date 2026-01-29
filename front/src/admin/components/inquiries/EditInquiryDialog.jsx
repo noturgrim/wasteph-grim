@@ -18,7 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, AlertCircle } from "lucide-react";
 import { api } from "../../services/api";
 
 export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], isMasterSales = false, onSubmit, isSubmitting }) {
@@ -34,6 +35,7 @@ export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], isM
     assignedTo: "",
     serviceId: "",
     notes: "",
+    isInformationComplete: true,
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -69,6 +71,7 @@ export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], isM
         assignedTo: inquiry.assignedTo || "",
         serviceId: inquiry.serviceId || "",
         notes: inquiry.notes || "",
+        isInformationComplete: inquiry.isInformationComplete !== false,
       });
     }
   }, [inquiry, open]);
@@ -302,6 +305,38 @@ export function EditInquiryDialog({ open, onOpenChange, inquiry, users = [], isM
               {formErrors.message && (
                 <p className="text-sm text-red-500 mt-1">{formErrors.message}</p>
               )}
+            </div>
+          </div>
+
+          {/* Information Complete Checkbox */}
+          <div className="grid grid-cols-[120px_1fr] items-start gap-4">
+            <div className="text-right pt-2"></div>
+            <div className="flex items-start space-x-3 rounded-md border p-4 bg-muted/30">
+              <Checkbox
+                id="edit-info-complete"
+                checked={formData.isInformationComplete}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isInformationComplete: checked })
+                }
+              />
+              <div className="space-y-1 leading-none">
+                <Label
+                  htmlFor="edit-info-complete"
+                  className="font-medium cursor-pointer"
+                >
+                  Information Complete
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Check this after visiting the client site or gathering all required information. 
+                  You can only request a proposal when information is complete.
+                </p>
+                {!formData.isInformationComplete && (
+                  <div className="flex items-center gap-1 text-xs text-amber-600 mt-2">
+                    <AlertCircle className="h-3 w-3" />
+                    <span>Proposal requests are disabled until information is complete</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -146,6 +146,7 @@ export const inquiryTable = pgTable("inquiry", {
   source: text("source").default("website"),
   assignedTo: text("assigned_to").references(() => userTable.id),
   notes: text("notes"),
+  isInformationComplete: boolean("is_information_complete").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

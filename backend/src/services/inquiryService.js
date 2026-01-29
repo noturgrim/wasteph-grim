@@ -1,5 +1,11 @@
 import { db } from "../db/index.js";
-import { inquiryTable, activityLogTable, leadTable, proposalTable, serviceTable } from "../db/schema.js";
+import {
+  inquiryTable,
+  activityLogTable,
+  leadTable,
+  proposalTable,
+  serviceTable,
+} from "../db/schema.js";
 import { eq, desc, and, or, like, inArray, count, sql } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 
@@ -11,12 +17,12 @@ class InquiryService {
   // Map service names from database to frontend format (snake_case)
   serviceNameToFrontend(serviceName) {
     const reverseMapping = {
-      'Fixed Monthly Rate': 'fixed_monthly_rate',
-      'Hazardous Waste': 'hazardous_waste',
-      'Clearing Project': 'clearing_project',
-      'Long Term Garbage': 'long_term_garbage',
-      'One-time Hauling': 'onetime_hauling',
-      'Purchase of Recyclables': 'purchase_of_recyclables',
+      "Fixed Monthly Rate": "fixed_monthly_rate",
+      "Hazardous Waste": "hazardous_waste",
+      "Clearing Project": "clearing_project",
+      "Long Term Garbage": "long_term_garbage",
+      "One-time Hauling": "onetime_hauling",
+      "Purchase of Recyclables": "purchase_of_recyclables",
     };
     return reverseMapping[serviceName] || serviceName;
   }
@@ -52,7 +58,16 @@ class InquiryService {
    * @returns {Promise<Object>} Object with data and pagination info
    */
   async getAllInquiries(options = {}) {
-    const { status, assignedTo, search, source, serviceType, month, page = 1, limit = 10 } = options;
+    const {
+      status,
+      assignedTo,
+      search,
+      source,
+      serviceType,
+      month,
+      page = 1,
+      limit = 10,
+    } = options;
 
     // Calculate offset
     const offset = (page - 1) * limit;
@@ -73,6 +88,7 @@ class InquiryService {
         source: inquiryTable.source,
         assignedTo: inquiryTable.assignedTo,
         notes: inquiryTable.notes,
+        isInformationComplete: inquiryTable.isInformationComplete,
         createdAt: inquiryTable.createdAt,
         updatedAt: inquiryTable.updatedAt,
         service: {
@@ -87,7 +103,7 @@ class InquiryService {
 
     // Status filter - support multiple statuses (comma-separated)
     if (status) {
-      const statuses = status.split(',').map(s => s.trim());
+      const statuses = status.split(",").map((s) => s.trim());
       if (statuses.length === 1) {
         conditions.push(eq(inquiryTable.status, statuses[0]));
       } else {
@@ -102,7 +118,7 @@ class InquiryService {
 
     // Source filter - support multiple sources (comma-separated)
     if (source) {
-      const sources = source.split(',').map(s => s.trim());
+      const sources = source.split(",").map((s) => s.trim());
       if (sources.length === 1) {
         conditions.push(eq(inquiryTable.source, sources[0]));
       } else {
@@ -112,29 +128,31 @@ class InquiryService {
 
     // Service filter - lookup service UUIDs by names, then filter by IDs
     if (serviceType) {
-      const serviceNames = serviceType.split(',').map(s => s.trim());
-      
+      const serviceNames = serviceType.split(",").map((s) => s.trim());
+
       // Map frontend snake_case values to actual service names in database
       const serviceNameMapping = {
-        'fixed_monthly_rate': 'Fixed Monthly Rate',
-        'hazardous_waste': 'Hazardous Waste',
-        'clearing_project': 'Clearing Project',
-        'long_term_garbage': 'Long Term Garbage',
-        'onetime_hauling': 'One-time Hauling',
-        'purchase_of_recyclables': 'Purchase of Recyclables',
+        fixed_monthly_rate: "Fixed Monthly Rate",
+        hazardous_waste: "Hazardous Waste",
+        clearing_project: "Clearing Project",
+        long_term_garbage: "Long Term Garbage",
+        onetime_hauling: "One-time Hauling",
+        purchase_of_recyclables: "Purchase of Recyclables",
       };
-      
+
       // Convert to actual service names
-      const actualServiceNames = serviceNames.map(name => serviceNameMapping[name] || name);
-      
+      const actualServiceNames = serviceNames.map(
+        (name) => serviceNameMapping[name] || name,
+      );
+
       // First, get the service IDs for these service names
       const services = await db
         .select({ id: serviceTable.id })
         .from(serviceTable)
         .where(inArray(serviceTable.name, actualServiceNames));
-      
-      const serviceIds = services.map(s => s.id);
-      
+
+      const serviceIds = services.map((s) => s.id);
+
       // Only add filter if we found matching services
       if (serviceIds.length > 0) {
         if (serviceIds.length === 1) {
@@ -152,21 +170,21 @@ class InquiryService {
         or(
           like(inquiryTable.name, searchTerm),
           like(inquiryTable.email, searchTerm),
-          like(inquiryTable.company, searchTerm)
-        )
+          like(inquiryTable.company, searchTerm),
+        ),
       );
     }
 
     // Month filter (format: "YYYY-MM")
     if (month) {
-      const [year, monthNum] = month.split('-').map(Number);
+      const [year, monthNum] = month.split("-").map(Number);
       const startDate = new Date(year, monthNum - 1, 1);
       const endDate = new Date(year, monthNum, 0, 23, 59, 59, 999); // Last day of month
       conditions.push(
         and(
           sql`${inquiryTable.createdAt} >= ${startDate}`,
-          sql`${inquiryTable.createdAt} <= ${endDate}`
-        )
+          sql`${inquiryTable.createdAt} <= ${endDate}`,
+        ),
       );
     }
 
@@ -192,7 +210,7 @@ class InquiryService {
       .offset(offset);
 
     // Fetch proposal status for each inquiry
-    const inquiryIds = inquiries.map(inq => inq.id);
+    const inquiryIds = inquiries.map((inq) => inq.id);
     let proposalStatuses = [];
 
     if (inquiryIds.length > 0) {
@@ -212,7 +230,7 @@ class InquiryService {
 
     // Create a map of inquiry ID to proposal status (most recent)
     const proposalMap = {};
-    proposalStatuses.forEach(p => {
+    proposalStatuses.forEach((p) => {
       if (!proposalMap[p.inquiryId]) {
         proposalMap[p.inquiryId] = {
           proposalId: p.proposalId,
@@ -224,13 +242,16 @@ class InquiryService {
     });
 
     // Attach proposal data to inquiries and convert serviceType to frontend format
-    const inquiriesWithProposals = inquiries.map(inquiry => ({
+    const inquiriesWithProposals = inquiries.map((inquiry) => ({
       ...inquiry,
-      serviceType: inquiry.serviceType ? this.serviceNameToFrontend(inquiry.serviceType) : null,
+      serviceType: inquiry.serviceType
+        ? this.serviceNameToFrontend(inquiry.serviceType)
+        : null,
       proposalId: proposalMap[inquiry.id]?.proposalId || null,
       proposalStatus: proposalMap[inquiry.id]?.proposalStatus || null,
       proposalCreatedAt: proposalMap[inquiry.id]?.proposalCreatedAt || null,
-      proposalRejectionReason: proposalMap[inquiry.id]?.proposalRejectionReason || null,
+      proposalRejectionReason:
+        proposalMap[inquiry.id]?.proposalRejectionReason || null,
     }));
 
     return {
@@ -293,7 +314,21 @@ class InquiryService {
    * @throws {AppError} If inquiry not found
    */
   async updateInquiry(inquiryId, updateData, userId, metadata = {}) {
-    const { name, email, phone, company, location, message, source, status, assignedTo, notes, serviceType, serviceId } = updateData;
+    const {
+      name,
+      email,
+      phone,
+      company,
+      location,
+      message,
+      source,
+      status,
+      assignedTo,
+      notes,
+      serviceType,
+      serviceId,
+      isInformationComplete,
+    } = updateData;
 
     // Fetch the current inquiry before updating to track changes
     const oldInquiry = await this.getInquiryById(inquiryId);
@@ -313,10 +348,15 @@ class InquiryService {
         ...(message && { message }),
         ...(source && { source }),
         ...(status && { status }),
-        ...(normalizedAssignedTo !== undefined && { assignedTo: normalizedAssignedTo }),
+        ...(normalizedAssignedTo !== undefined && {
+          assignedTo: normalizedAssignedTo,
+        }),
         ...(notes !== undefined && { notes }),
         ...(serviceType !== undefined && { serviceType }),
-        ...(normalizedServiceId !== undefined && { serviceId: normalizedServiceId }),
+        ...(normalizedServiceId !== undefined && {
+          serviceId: normalizedServiceId,
+        }),
+        ...(isInformationComplete !== undefined && { isInformationComplete }),
         updatedAt: new Date(),
       })
       .where(eq(inquiryTable.id, inquiryId))
@@ -350,11 +390,32 @@ class InquiryService {
     if (status && status !== oldInquiry.status) {
       changes.status = { from: oldInquiry.status, to: status };
     }
-    if (normalizedAssignedTo !== undefined && normalizedAssignedTo !== oldInquiry.assignedTo) {
-      changes.assignedTo = { from: oldInquiry.assignedTo, to: normalizedAssignedTo };
+    if (
+      normalizedAssignedTo !== undefined &&
+      normalizedAssignedTo !== oldInquiry.assignedTo
+    ) {
+      changes.assignedTo = {
+        from: oldInquiry.assignedTo,
+        to: normalizedAssignedTo,
+      };
     }
-    if (normalizedServiceId !== undefined && normalizedServiceId !== oldInquiry.serviceId) {
-      changes.serviceId = { from: oldInquiry.serviceId, to: normalizedServiceId };
+    if (
+      normalizedServiceId !== undefined &&
+      normalizedServiceId !== oldInquiry.serviceId
+    ) {
+      changes.serviceId = {
+        from: oldInquiry.serviceId,
+        to: normalizedServiceId,
+      };
+    }
+    if (
+      isInformationComplete !== undefined &&
+      isInformationComplete !== oldInquiry.isInformationComplete
+    ) {
+      changes.isInformationComplete = {
+        from: oldInquiry.isInformationComplete,
+        to: isInformationComplete,
+      };
     }
 
     // Only log activity if there were actual changes
@@ -412,7 +473,15 @@ class InquiryService {
    * @returns {Promise<Object>} Created inquiry
    */
   async createInquiryManual(inquiryData, userId, metadata = {}) {
-    const { name, email, phone, company, message, source = "phone", serviceType } = inquiryData;
+    const {
+      name,
+      email,
+      phone,
+      company,
+      message,
+      source = "phone",
+      serviceType,
+    } = inquiryData;
 
     const [inquiry] = await db
       .insert(inquiryTable)
@@ -440,7 +509,6 @@ class InquiryService {
 
     return inquiry;
   }
-
 
   /**
    * Assign inquiry to a user
@@ -495,7 +563,7 @@ class InquiryService {
     // 2. Validate inquiry can be converted (warn if not qualified)
     if (inquiry.status !== "qualified") {
       console.warn(
-        `Converting inquiry ${inquiryId} with status '${inquiry.status}' (recommended: 'qualified')`
+        `Converting inquiry ${inquiryId} with status '${inquiry.status}' (recommended: 'qualified')`,
       );
     }
 
@@ -533,7 +601,8 @@ class InquiryService {
 
     // 6. Create service requests if provided
     if (serviceRequests && serviceRequests.length > 0) {
-      const serviceRequestService = (await import("./serviceRequestService.js")).default;
+      const serviceRequestService = (await import("./serviceRequestService.js"))
+        .default;
 
       for (const serviceRequest of serviceRequests) {
         await serviceRequestService.createServiceRequest({
@@ -555,7 +624,10 @@ class InquiryService {
       action: "inquiry_converted_to_lead",
       entityType: "inquiry",
       entityId: inquiry.id,
-      details: { leadId: lead.id, serviceRequestsCount: serviceRequests.length },
+      details: {
+        leadId: lead.id,
+        serviceRequestsCount: serviceRequests.length,
+      },
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
@@ -565,7 +637,10 @@ class InquiryService {
       action: "lead_created_from_inquiry",
       entityType: "lead",
       entityId: lead.id,
-      details: JSON.stringify({ inquiryId: inquiry.id, serviceRequestsCount: serviceRequests.length }),
+      details: JSON.stringify({
+        inquiryId: inquiry.id,
+        serviceRequestsCount: serviceRequests.length,
+      }),
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
@@ -579,8 +654,15 @@ class InquiryService {
    * @returns {Promise<void>}
    */
   async logActivity(activityData) {
-    const { userId, action, entityType, entityId, details, ipAddress, userAgent } =
-      activityData;
+    const {
+      userId,
+      action,
+      entityType,
+      entityId,
+      details,
+      ipAddress,
+      userAgent,
+    } = activityData;
 
     await db.insert(activityLogTable).values({
       userId,
