@@ -351,37 +351,33 @@ export function EditInquiryDialog({
           </div>
 
           {/* Information Complete Checkbox */}
-          <div className="grid grid-cols-[120px_1fr] items-start gap-4">
-            <div className="text-right pt-2"></div>
-            <div className="flex items-start space-x-3 rounded-md border p-4 bg-muted/30">
-              <Checkbox
-                id="edit-info-complete"
-                checked={formData.isInformationComplete}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, isInformationComplete: checked })
-                }
-              />
-              <div className="space-y-1 leading-none">
-                <Label
-                  htmlFor="edit-info-complete"
-                  className="font-medium cursor-pointer"
-                >
-                  Information Complete
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Check this after visiting the client site or gathering all
-                  required information. You can only request a proposal when
-                  information is complete.
-                </p>
-                {!formData.isInformationComplete && (
-                  <div className="flex items-center gap-1 text-xs text-amber-600 mt-2">
-                    <span>
-                      Proposal requests are disabled until information is
-                      complete
-                    </span>
-                  </div>
-                )}
-              </div>
+          <div className="flex items-start space-x-3 rounded-md border p-4 bg-muted/30 dark:bg-muted/20">
+            <Checkbox
+              id="edit-info-complete"
+              checked={formData.isInformationComplete}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, isInformationComplete: checked })
+              }
+            />
+            <div className="space-y-1 leading-none flex-1">
+              <Label
+                htmlFor="edit-info-complete"
+                className="font-medium cursor-pointer"
+              >
+                Information Complete
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Check this after visiting the client site or gathering all
+                required information. You can only request a proposal when
+                information is complete.
+              </p>
+              {!formData.isInformationComplete && (
+                <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-500 mt-2">
+                  <span>
+                    Proposal requests are disabled until information is complete
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -409,27 +405,23 @@ export function EditInquiryDialog({
             </div>
           )}
 
-          <DialogFooter className="mt-6 flex-col sm:flex-row gap-2">
+          <div className="mt-6 flex flex-col gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsScheduleDialogOpen(true)}
-              className="w-full sm:w-auto"
+              className="w-full"
             >
               <Calendar className="mr-2 h-4 w-4" />
               Schedule Event
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full sm:w-auto"
-            >
+            <Button type="submit" disabled={isSubmitting} className="w-full">
               {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Save changes
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
 
