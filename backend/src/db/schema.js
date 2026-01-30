@@ -135,6 +135,7 @@ export const sessionTable = pgTable("session", {
 // Business Tables
 export const inquiryTable = pgTable("inquiry", {
   id: uuid("id").primaryKey().defaultRandom(),
+  inquiryNumber: text("inquiry_number").unique(), // Temporarily nullable for migration
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),

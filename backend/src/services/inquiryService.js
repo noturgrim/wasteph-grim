@@ -8,6 +8,7 @@ import {
 } from "../db/schema.js";
 import { eq, desc, and, or, like, inArray, count, sql } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
+import { generateInquiryNumber } from "../utils/inquiryNumberGenerator.js";
 
 /**
  * InquiryService - Business logic layer for inquiry operations
@@ -36,9 +37,13 @@ class InquiryService {
     const { name, email, phone, company, message, serviceType } = inquiryData;
     const { source = "website" } = options;
 
+    // Generate unique inquiry number
+    const inquiryNumber = await generateInquiryNumber();
+
     const [inquiry] = await db
       .insert(inquiryTable)
       .values({
+        inquiryNumber,
         name,
         email,
         phone,
@@ -76,6 +81,7 @@ class InquiryService {
     let query = db
       .select({
         id: inquiryTable.id,
+        inquiryNumber: inquiryTable.inquiryNumber,
         name: inquiryTable.name,
         email: inquiryTable.email,
         phone: inquiryTable.phone,
@@ -483,9 +489,13 @@ class InquiryService {
       serviceType,
     } = inquiryData;
 
+    // Generate unique inquiry number
+    const inquiryNumber = await generateInquiryNumber();
+
     const [inquiry] = await db
       .insert(inquiryTable)
       .values({
+        inquiryNumber,
         name,
         email,
         phone,

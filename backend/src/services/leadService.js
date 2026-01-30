@@ -2,6 +2,7 @@ import { db } from "../db/index.js";
 import { leadTable, activityLogTable, inquiryTable } from "../db/schema.js";
 import { eq, desc, and, or, like, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
+import { generateInquiryNumber } from "../utils/inquiryNumberGenerator.js";
 
 /**
  * LeadService - Business logic layer for lead operations
@@ -215,12 +216,16 @@ class LeadService {
       throw new AppError("Lead has already been claimed", 400);
     }
 
+    // Generate unique inquiry number
+    const inquiryNumber = await generateInquiryNumber();
+
     // Create inquiry from lead data
     // Use provided source if available, otherwise leave as null (can be set later)
     // Set isInformationComplete to false since lead data is incomplete
     const [inquiry] = await db
       .insert(inquiryTable)
       .values({
+        inquiryNumber,
         name: existingLead.clientName,
         email: existingLead.email || "noemail@wasteph.com", // Required field fallback
         phone: existingLead.phone,
