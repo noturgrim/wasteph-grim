@@ -411,10 +411,20 @@ class CalendarEventService {
   }
 
   /**
-   * Mark event as completed
+   * Mark event as completed with optional notes/report
    */
-  async completeEvent(eventId, userId, metadata = {}) {
-    return this.updateEvent(eventId, { status: "completed" }, userId, metadata);
+  async completeEvent(eventId, userId, notes = null, metadata = {}) {
+    const updateData = {
+      status: "completed",
+      completedAt: new Date(),
+    };
+    
+    // Update notes if provided
+    if (notes !== null && notes !== undefined) {
+      updateData.notes = notes;
+    }
+    
+    return this.updateEvent(eventId, updateData, userId, metadata);
   }
 }
 

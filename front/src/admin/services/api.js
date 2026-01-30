@@ -568,9 +568,10 @@ class ApiClient {
     });
   }
 
-  async completeCalendarEvent(id) {
+  async completeCalendarEvent(id, data = {}) {
     return this.request(`/calendar-events/${id}/complete`, {
       method: "POST",
+      body: JSON.stringify(data),
     });
   }
 
