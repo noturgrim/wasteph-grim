@@ -6,9 +6,9 @@ dotenv.config();
 export default defineConfig({
   schema: "./src/db/schema.js",
   out: "./drizzle",
-  driver: "pg",
+  dialect: "postgresql",
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL,
+    url: process.env.DATABASE_URL,
     ssl: {
       rejectUnauthorized: false,
     },
