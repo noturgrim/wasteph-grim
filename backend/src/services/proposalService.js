@@ -7,8 +7,7 @@ import proposalTemplateService from "./proposalTemplateService.js";
 import emailService from "./emailService.js";
 import pdfService from "./pdfService.js";
 import counterService from "./counterService.js";
-import fs from "fs/promises";
-import path from "path";
+import { uploadObject, getObject } from "./s3Service.js";
 import crypto from "crypto";
 
 /**
@@ -628,36 +627,28 @@ class ProposalService {
   }
 
   /**
-   * Save PDF buffer to file system
+   * Save PDF buffer to S3
    * @param {Buffer} pdfBuffer - PDF buffer
    * @param {string} proposalId - Proposal UUID
-   * @returns {Promise<string>} File path
+   * @returns {Promise<string>} S3 object key
    */
   async savePDF(pdfBuffer, proposalId) {
-    const storagePath =
-      process.env.PDF_STORAGE_PATH || "./storage/proposals";
-    const fileName = `${proposalId}.pdf`;
-    const filePath = path.join(storagePath, fileName);
-
-    // Ensure directory exists
-    await fs.mkdir(storagePath, { recursive: true });
-
-    // Write PDF to file
-    await fs.writeFile(filePath, pdfBuffer);
-
-    return filePath;
+    const dateFolder = new Date().toISOString().split("T")[0];
+    const key = `proposals/${dateFolder}/${proposalId}.pdf`;
+    await uploadObject(key, pdfBuffer, "application/pdf");
+    return key;
   }
 
   /**
-   * Read PDF from file system
-   * @param {string} pdfPath - Path to PDF file
+   * Read PDF from S3
+   * @param {string} key - S3 object key
    * @returns {Promise<Buffer>} PDF buffer
    */
-  async readPDF(pdfPath) {
+  async readPDF(key) {
     try {
-      return await fs.readFile(pdfPath);
+      return await getObject(key);
     } catch (error) {
-      throw new AppError("PDF file not found", 404);
+      throw new AppError("PDF file not found in S3", 404);
     }
   }
 

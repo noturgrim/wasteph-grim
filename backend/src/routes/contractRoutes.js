@@ -73,4 +73,7 @@ router.get("/:id/contract-pdf", controller.downloadContractPdf);
 router.get("/:id/pdf", controller.downloadContractPdf); // Alias for easier access
 router.get("/:id/preview-pdf", controller.previewContractPdf);
 
+// CUSTOM TEMPLATE DOWNLOAD (proxied from S3)
+router.get("/:id/custom-template", controller.downloadCustomTemplate);
+
 export default router;
