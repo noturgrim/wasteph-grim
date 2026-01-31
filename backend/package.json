@@ -25,12 +25,15 @@
     "migrate:backfill-numbers": "node src/scripts/backfillInquiryNumbers.js",
     "migrate:create-contract-templates": "node src/scripts/createContractTemplatesTable.js",
     "migrate:add-contract-template-fields": "node src/scripts/addContractTemplateFields.js",
-    "seed:contract-templates": "node src/scripts/seedContractTemplates.js"
+    "seed:contract-templates": "node src/scripts/seedContractTemplates.js",
+    "migrate:to-s3": "node src/scripts/migrateToS3.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.0.0",
     "@lucia-auth/adapter-postgresql": "^3.0.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",

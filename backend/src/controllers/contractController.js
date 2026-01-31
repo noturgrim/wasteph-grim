@@ -1,4 +1,5 @@
 import contractService from "../services/contractService.js";
+import { getObject } from "../services/s3Service.js";
 import { AppError } from "../middleware/errorHandler.js";
 
 /**
@@ -395,6 +396,52 @@ export const previewContractPdf = async (req, res, next) => {
 
     // Send PDF
     res.send(pdfBuffer);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Download custom contract template (proxied from S3)
+ * GET /api/contracts/:id/custom-template
+ */
+export const downloadCustomTemplate = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const contractData = await contractService.getContractById(id);
+
+    // Permission check: sales can only download their own contracts
+    if (
+      req.user.role === "sales" &&
+      !req.user.isMasterSales &&
+      contractData.proposal.requestedBy !== req.user.id
+    ) {
+      throw new AppError("Access denied", 403);
+    }
+
+    if (!contractData.contract.customTemplateUrl) {
+      throw new AppError("No custom template found for this contract", 404);
+    }
+
+    const key = contractData.contract.customTemplateUrl;
+    const buffer = await getObject(key);
+
+    // Determine content type from key extension
+    let contentType = "application/octet-stream";
+    if (key.endsWith(".pdf")) contentType = "application/pdf";
+    else if (key.endsWith(".docx"))
+      contentType =
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    else if (key.endsWith(".doc")) contentType = "application/msword";
+
+    const filename = key.split("/").pop();
+    res.setHeader("Content-Type", contentType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${filename}"`
+    );
+    res.send(buffer);
   } catch (error) {
     next(error);
   }

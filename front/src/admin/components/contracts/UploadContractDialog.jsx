@@ -66,8 +66,7 @@ export function UploadContractDialog({
   // Auto-download custom template when dialog opens
   useEffect(() => {
     if (open && contract?.contract?.customTemplateUrl) {
-      const baseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
-      const url = `${baseUrl}${contract.contract.customTemplateUrl}`;
+      const url = `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/contracts/${contract.contract.id}/custom-template`;
       const a = document.createElement("a");
       a.href = url;
       a.download = true;

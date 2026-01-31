@@ -12,13 +12,7 @@ import emailService from "./emailService.js";
 import inquiryService from "./inquiryService.js";
 import contractTemplateService from "./contractTemplateService.js";
 import pdfService from "./pdfService.js";
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { uploadObject, getObject } from "./s3Service.js";
 
 /**
  * ContractService - Business logic for contract operations
@@ -689,19 +683,11 @@ class ContractService {
    * @returns {Promise<string>} PDF file path
    */
   async saveContractPdf(pdfBuffer, contractId) {
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(__dirname, "../../uploads/contracts");
-    await fs.mkdir(uploadsDir, { recursive: true });
-
-    // Generate filename
     const filename = `contract-${contractId}-${Date.now()}.pdf`;
-    const filepath = path.join(uploadsDir, filename);
-
-    // Write file
-    await fs.writeFile(filepath, pdfBuffer);
-
-    // Return relative path
-    return `/uploads/contracts/${filename}`;
+    const dateFolder = new Date().toISOString().split("T")[0];
+    const key = `contracts/${dateFolder}/${filename}`;
+    await uploadObject(key, pdfBuffer, "application/pdf");
+    return key;
   }
 
   /**
@@ -711,27 +697,22 @@ class ContractService {
    * @returns {Promise<string>} File URL path
    */
   async saveCustomTemplate(fileBuffer, contractId) {
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(__dirname, "../../uploads/contract-templates");
-    await fs.mkdir(uploadsDir, { recursive: true });
-
-    // Determine file extension from buffer (simple check)
-    let ext = ".pdf"; // default
+    let ext = ".pdf";
+    let contentType = "application/pdf";
     if (fileBuffer[0] === 0x50 && fileBuffer[1] === 0x4B) {
-      ext = ".docx"; // ZIP-based format (DOCX)
+      ext = ".docx";
+      contentType =
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     } else if (fileBuffer[0] === 0xD0 && fileBuffer[1] === 0xCF) {
-      ext = ".doc"; // DOC format
+      ext = ".doc";
+      contentType = "application/msword";
     }
 
-    // Generate filename
     const filename = `template-${contractId}-${Date.now()}${ext}`;
-    const filepath = path.join(uploadsDir, filename);
-
-    // Write file
-    await fs.writeFile(filepath, fileBuffer);
-
-    // Return relative path
-    return `/uploads/contract-templates/${filename}`;
+    const dateFolder = new Date().toISOString().split("T")[0];
+    const key = `contract-templates/${dateFolder}/${filename}`;
+    await uploadObject(key, fileBuffer, contentType);
+    return key;
   }
 
   /**
@@ -740,7 +721,6 @@ class ContractService {
    * @returns {Promise<Buffer>} PDF file buffer
    */
   async getContractPdf(contractId) {
-    // Get contract
     const contractData = await this.getContractById(contractId);
     const contract = contractData.contract;
 
@@ -748,14 +728,10 @@ class ContractService {
       throw new AppError("Contract PDF not found", 404);
     }
 
-    // Read PDF file
-    const filepath = path.join(__dirname, "../..", contract.contractPdfUrl);
-
     try {
-      const pdfBuffer = await fs.readFile(filepath);
-      return pdfBuffer;
+      return await getObject(contract.contractPdfUrl);
     } catch (error) {
-      throw new AppError("Failed to read contract PDF file", 500);
+      throw new AppError("Failed to read contract PDF from S3", 500);
     }
   }
 

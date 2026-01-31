@@ -4,13 +4,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
 import { testConnection } from "./db/index.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Import routes
 import authRoutes from "./routes/authRoutes.js";
@@ -69,10 +64,6 @@ if (process.env.NODE_ENV === "development") {
 } else {
   app.use(morgan("combined"));
 }
-
-// Serve uploaded files as static assets
-const uploadsPath = path.join(__dirname, "../uploads");
-app.use("/uploads", express.static(uploadsPath));
 
 // Health check route
 app.get("/health", (req, res) => {
