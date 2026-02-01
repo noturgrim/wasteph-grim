@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -68,11 +68,12 @@ export function GenerateContractDialog({
   const [isGenerated, setIsGenerated] = useState(false);
   const [editedData, setEditedData] = useState({});
   const [originalData, setOriginalData] = useState({});
-  const [isHtmlEditorMode, setIsHtmlEditorMode] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [renderedHtml, setRenderedHtml] = useState("");
   const [savedHtml, setSavedHtml] = useState("");
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
   const [hasUnsavedHtmlChanges, setHasUnsavedHtmlChanges] = useState(false);
+  const templateStructureRef = useRef({ head: "", bodyTag: "", styles: "" });
 
   // Initialize data when dialog opens
   useEffect(() => {
@@ -115,7 +116,7 @@ export function GenerateContractDialog({
       setOriginalData(data);
       setAdminNotes("");
       setPdfPreviewUrl("");
-      setIsHtmlEditorMode(false);
+      setIsEditModalOpen(false);
       setRenderedHtml("");
       setSavedHtml("");
       setHasUnsavedHtmlChanges(false);
@@ -268,9 +269,35 @@ export function GenerateContractDialog({
       setIsLoadingHtml(true);
       const response = await api.getRenderedContractHtml(contract.contract.id);
       if (response.success) {
-        setRenderedHtml(response.data.html);
-        setSavedHtml(response.data.html);
-        setIsHtmlEditorMode(true);
+        const fullHtml = response.data.html;
+
+        // Extract template structure (head, styles, body) for the editor
+        const headMatch = fullHtml.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+        const bodyTagMatch = fullHtml.match(/<body[^>]*>/i);
+        const bodyMatch = fullHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+
+        if (headMatch && bodyMatch) {
+          const styleMatch = headMatch[0].match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+          const inlineStyles = styleMatch
+            ? styleMatch.map((s) => s.replace(/<\/?style[^>]*>/gi, "")).join("\n")
+            : "";
+
+          templateStructureRef.current = {
+            head: headMatch[0],
+            bodyTag: bodyTagMatch ? bodyTagMatch[0] : "<body>",
+            styles: inlineStyles,
+          };
+
+          setRenderedHtml(bodyMatch[1]);
+          setSavedHtml(fullHtml);
+        } else {
+          // Fallback: no head/body structure, use as-is
+          templateStructureRef.current = { head: "", bodyTag: "", styles: "" };
+          setRenderedHtml(fullHtml);
+          setSavedHtml(fullHtml);
+        }
+
+        setIsEditModalOpen(true);
       }
     } catch (error) {
       toast.error(error.message || "Failed to load contract HTML");
@@ -280,7 +307,14 @@ export function GenerateContractDialog({
   };
 
   const handleEditorSave = ({ html }) => {
-    setSavedHtml(html);
+    const { head, bodyTag } = templateStructureRef.current;
+
+    let fullHtml = html;
+    if (head && bodyTag) {
+      fullHtml = `<!DOCTYPE html>\n<html>\n${head}\n${bodyTag}\n  ${html}\n</body>\n</html>`;
+    }
+
+    setSavedHtml(fullHtml);
   };
 
   const handleSaveAndRegenerate = async () => {
@@ -295,6 +329,7 @@ export function GenerateContractDialog({
       toast.success("Contract regenerated successfully");
       setIsGenerated(true);
       setHasUnsavedHtmlChanges(false);
+      setIsEditModalOpen(false);
       await loadGeneratedPdf();
     } catch (error) {
       toast.error(error.message || "Failed to regenerate contract");
@@ -313,6 +348,7 @@ export function GenerateContractDialog({
     : "Unknown";
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl! w-full max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -338,48 +374,14 @@ export function GenerateContractDialog({
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      {isHtmlEditorMode ? (
-                        <Code2 className="h-4 w-4" />
-                      ) : (
-                        <Edit className="h-4 w-4" />
-                      )}
-                      {isHtmlEditorMode ? "Edit Contract HTML" : "Edit Contract Details"}
+                      <Edit className="h-4 w-4" />
+                      Edit Contract Details
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">
                       Sales Person: {salesPersonName}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {isGenerated && !isHtmlEditorMode && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleEditContract}
-                        disabled={isLoadingHtml}
-                      >
-                        {isLoadingHtml ? (
-                          <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                        ) : (
-                          <Code2 className="h-3.5 w-3.5 mr-1" />
-                        )}
-                        Edit Contract
-                      </Button>
-                    )}
-                    {isHtmlEditorMode && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setIsHtmlEditorMode(false);
-                          setHasUnsavedHtmlChanges(false);
-                        }}
-                      >
-                        <Edit className="h-3.5 w-3.5 mr-1" />
-                        Back to Fields
-                      </Button>
-                    )}
                     {isGenerated && (
                       <Badge className="bg-green-600">Generated</Badge>
                     )}
@@ -387,16 +389,7 @@ export function GenerateContractDialog({
                 </div>
               </div>
 
-              {/* Editable Fields / HTML Editor */}
-              {isHtmlEditorMode ? (
-                <ProposalHtmlEditor
-                  content={renderedHtml}
-                  templateStyles=""
-                  onChange={handleEditorSave}
-                  onUnsavedChange={setHasUnsavedHtmlChanges}
-                  className="min-h-[500px]"
-                />
-              ) : (
+              {/* Editable Fields */}
               <div className="space-y-4">
           {/* Contract Type */}
           <div className="space-y-2">
@@ -652,7 +645,6 @@ export function GenerateContractDialog({
             </p>
           </div>
               </div>
-              )}
             </div>
           </div>
 
@@ -662,9 +654,27 @@ export function GenerateContractDialog({
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Contract PDF
               </h3>
-              {isGenerated && (
-                <Badge className="bg-green-600">Generated</Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {isGenerated && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEditContract}
+                    disabled={isLoadingHtml}
+                  >
+                    {isLoadingHtml ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <Code2 className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    Edit Contract
+                  </Button>
+                )}
+                {isGenerated && (
+                  <Badge className="bg-green-600">Generated</Badge>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 min-h-[500px] border rounded-lg overflow-hidden bg-gray-50 mt-2">
@@ -711,22 +721,6 @@ export function GenerateContractDialog({
             Cancel
           </Button>
 
-          {isHtmlEditorMode && (
-            <Button
-              onClick={handleSaveAndRegenerate}
-              variant="outline"
-              disabled={isSubmitting || hasUnsavedHtmlChanges || !savedHtml}
-              className="border-green-600 text-green-700 hover:bg-green-50"
-            >
-              {isSubmitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
-              )}
-              Save &amp; Regenerate
-            </Button>
-          )}
-
           <Button
             onClick={handleSendToSales}
             className="bg-green-600 hover:bg-green-700"
@@ -738,5 +732,61 @@ export function GenerateContractDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Edit Contract HTML Modal */}
+    <Dialog open={isEditModalOpen} onOpenChange={(val) => {
+      if (!val) {
+        setIsEditModalOpen(false);
+        setHasUnsavedHtmlChanges(false);
+      }
+    }}>
+      <DialogContent className="max-w-4xl! w-full max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Code2 className="h-5 w-5 text-blue-600" />
+            Edit Contract HTML
+          </DialogTitle>
+          <DialogDescription>
+            Edit the contract content directly. Save your changes, then regenerate the PDF.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <ProposalHtmlEditor
+            content={renderedHtml}
+            templateStyles={templateStructureRef.current.styles}
+            onChange={handleEditorSave}
+            onUnsavedChange={setHasUnsavedHtmlChanges}
+          />
+        </div>
+
+        <DialogFooter className="gap-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsEditModalOpen(false);
+              setHasUnsavedHtmlChanges(false);
+            }}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveAndRegenerate}
+            variant="outline"
+            disabled={isSubmitting || hasUnsavedHtmlChanges || !savedHtml}
+            className="border-green-600 text-green-700 hover:bg-green-50"
+          >
+            {isSubmitting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            Save &amp; Regenerate
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
