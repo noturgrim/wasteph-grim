@@ -348,10 +348,10 @@ class ContractService {
     // Validate status
     if (
       contract.status !== "requested" &&
-      contract.status !== "ready_for_sales"
+      contract.status !== "sent_to_sales"
     ) {
       throw new AppError(
-        "Can only upload contract when status is requested or ready_for_sales",
+        "Can only upload contract when status is requested or sent_to_sales",
         400,
       );
     }
@@ -361,9 +361,11 @@ class ContractService {
 
     // Prepare update object
     const updateData = {
-      status: "ready_for_sales",
+      status: "sent_to_sales",
       contractUploadedBy: userId,
       contractUploadedAt: new Date(),
+      sentToSalesBy: userId,
+      sentToSalesAt: new Date(),
       contractPdfUrl: pdfUrl,
       adminNotes,
       updatedAt: new Date(),
@@ -428,6 +430,7 @@ class ContractService {
     contractId,
     editedData = null,
     adminNotes = null,
+    editedHtmlContent = null,
     userId,
     metadata = {}
   ) {
@@ -438,10 +441,10 @@ class ContractService {
     // Validate status
     if (
       contract.status !== "requested" &&
-      contract.status !== "ready_for_sales"
+      contract.status !== "sent_to_sales"
     ) {
       throw new AppError(
-        "Can only generate contract when status is requested or ready_for_sales",
+        "Can only generate contract when status is requested or sent_to_sales",
         400
       );
     }
@@ -479,11 +482,10 @@ class ContractService {
 
     // Generate PDF from template
     let pdfBuffer;
-    if (contract.editedHtmlContent) {
-      // Use pre-rendered HTML if available
-      pdfBuffer = await pdfService.generateContractFromHTML(
-        contract.editedHtmlContent
-      );
+    const htmlToUse = editedHtmlContent || contract.editedHtmlContent;
+    if (htmlToUse) {
+      // Use pre-rendered HTML if available (from request body or previously saved)
+      pdfBuffer = await pdfService.generateContractFromHTML(htmlToUse);
     } else {
       // Generate from template
       pdfBuffer = await pdfService.generateContractPDF(
@@ -497,13 +499,20 @@ class ContractService {
 
     // Prepare update object
     const updateData = {
-      status: "ready_for_sales",
+      status: "sent_to_sales",
       contractUploadedBy: userId,
       contractUploadedAt: new Date(),
+      sentToSalesBy: userId,
+      sentToSalesAt: new Date(),
       contractPdfUrl: pdfUrl,
       adminNotes,
       updatedAt: new Date(),
     };
+
+    // Save edited HTML content if provided
+    if (editedHtmlContent) {
+      updateData.editedHtmlContent = editedHtmlContent;
+    }
 
     // If admin edited contract data, update it
     if (editedData) {

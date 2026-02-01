@@ -22,8 +22,9 @@ import { RequestContractDialog } from "../components/contracts/RequestContractDi
 import { UploadContractDialog } from "../components/contracts/UploadContractDialog";
 import { GenerateContractDialog } from "../components/contracts/GenerateContractDialog";
 import { SendToClientDialog } from "../components/contracts/SendToClientDialog";
-import { SendToSalesDialog } from "../components/contracts/SendToSalesDialog";
 import { ViewContractDetailsDialog } from "../components/contracts/ViewContractDetailsDialog";
+import { UploadHardboundDialog } from "../components/contracts/UploadHardboundDialog";
+import { PDFViewer } from "../components/PDFViewer";
 
 export default function ContractRequests() {
   const { user } = useAuth();
@@ -61,7 +62,10 @@ export default function ContractRequests() {
   const [isSendToClientDialogOpen, setIsSendToClientDialogOpen] =
     useState(false);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
-  const [isSendToSalesDialogOpen, setIsSendToSalesDialogOpen] = useState(false);
+  const [isUploadHardboundDialogOpen, setIsUploadHardboundDialogOpen] = useState(false);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [pdfViewerUrl, setPdfViewerUrl] = useState("");
+  const [pdfViewerName, setPdfViewerName] = useState("");
   const [selectedContract, setSelectedContract] = useState(null);
 
   // Fetch users on mount
@@ -119,14 +123,13 @@ export default function ContractRequests() {
     setIsRequestDialogOpen(true);
   };
 
-  const handleUploadContract = (contract) => {
+  const handleSubmitContract = (contract) => {
     setSelectedContract(contract);
-    setIsUploadDialogOpen(true);
-  };
-
-  const handleGenerateContract = (contract) => {
-    setSelectedContract(contract);
-    setIsGenerateDialogOpen(true);
+    if (contract.contract?.templateId) {
+      setIsGenerateDialogOpen(true);
+    } else {
+      setIsUploadDialogOpen(true);
+    }
   };
 
   const handleSendToClient = (contract) => {
@@ -134,53 +137,31 @@ export default function ContractRequests() {
     setIsSendToClientDialogOpen(true);
   };
 
-  const handleUploadHardbound = async (contract) => {
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "application/pdf";
-    fileInput.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      if (file.type !== "application/pdf") {
-        toast.error("Only PDF files are allowed");
-        return;
-      }
-
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("File size must be less than 10MB");
-        return;
-      }
-
-      try {
-        await api.uploadHardboundContract(contract.contract.id, file);
-        toast.success("Hardbound contract uploaded successfully");
-        fetchContracts();
-      } catch (error) {
-        toast.error(error.message || "Failed to upload hardbound contract");
-      }
-    };
-    fileInput.click();
-  };
-
-  const handleSendToSales = (contract) => {
+  const handleUploadHardbound = (contract) => {
     setSelectedContract(contract);
-    setIsSendToSalesDialogOpen(true);
+    setIsUploadHardboundDialogOpen(true);
   };
 
-  const confirmSendToSales = async () => {
+  const confirmUploadHardbound = async (file) => {
     try {
-      await api.sendContractToSales(selectedContract.contract.id);
-      toast.success("Contract sent to sales successfully");
-      setIsSendToSalesDialogOpen(false);
+      await api.uploadHardboundContract(selectedContract.contract.id, file);
+      toast.success("Hardbound contract uploaded successfully");
+      setIsUploadHardboundDialogOpen(false);
       fetchContracts();
     } catch (error) {
-      toast.error(error.message || "Failed to send contract to sales");
+      toast.error(error.message || "Failed to upload hardbound contract");
     }
   };
 
-  const handleViewContract = (contract) => {
-    api.previewContractPdf(contract.contract.id);
+  const handleViewContract = async (contract) => {
+    try {
+      const dataUrl = await api.previewContractPdf(contract.contract.id);
+      setPdfViewerUrl(dataUrl);
+      setPdfViewerName(`${contract.inquiry?.name || "Contract"} - Contract.pdf`);
+      setShowPdfViewer(true);
+    } catch (error) {
+      toast.error("Failed to load contract PDF");
+    }
   };
 
   const handleViewDetails = (contract) => {
@@ -214,7 +195,7 @@ export default function ContractRequests() {
   const confirmUploadContract = async (
     pdfFile,
     adminNotes,
-    sendToSales,
+    _sendToSales,
     editedData,
   ) => {
     try {
@@ -225,13 +206,7 @@ export default function ContractRequests() {
         editedData,
       );
 
-      if (sendToSales) {
-        await api.sendContractToSales(selectedContract.contract.id);
-        toast.success("Contract uploaded and sent to sales successfully");
-      } else {
-        toast.success("Contract uploaded successfully");
-      }
-
+      toast.success("Contract submitted successfully");
       setIsUploadDialogOpen(false);
       fetchContracts();
     } catch (error) {
@@ -267,9 +242,7 @@ export default function ContractRequests() {
     users,
     userRole: user?.role,
     onRequestContract: handleRequestContract,
-    onUploadContract: handleUploadContract,
-    onGenerateContract: handleGenerateContract,
-    onSendToSales: handleSendToSales,
+    onSubmitContract: handleSubmitContract,
     onSendToClient: handleSendToClient,
     onUploadHardbound: handleUploadHardbound,
     onViewContract: handleViewContract,
@@ -308,7 +281,6 @@ export default function ContractRequests() {
             options={[
               { value: "pending_request", label: "Pending Request" },
               { value: "requested", label: "Requested" },
-              { value: "ready_for_sales", label: "Ready for Sales" },
               { value: "sent_to_sales", label: "Sent to Sales" },
               { value: "sent_to_client", label: "Sent to Client" },
               { value: "signed", label: "Signed" },
@@ -396,15 +368,6 @@ export default function ContractRequests() {
         contract={selectedContract}
         users={users}
         onConfirm={confirmGenerateContract}
-        onSendToSales={handleSendToSales}
-      />
-
-      <SendToSalesDialog
-        open={isSendToSalesDialogOpen}
-        onOpenChange={setIsSendToSalesDialogOpen}
-        contract={selectedContract}
-        users={users}
-        onConfirm={confirmSendToSales}
       />
 
       <SendToClientDialog
@@ -420,6 +383,23 @@ export default function ContractRequests() {
         contract={selectedContract}
         users={users}
       />
+
+      <UploadHardboundDialog
+        open={isUploadHardboundDialogOpen}
+        onOpenChange={setIsUploadHardboundDialogOpen}
+        contract={selectedContract}
+        onConfirm={confirmUploadHardbound}
+      />
+
+      {showPdfViewer && pdfViewerUrl && (
+        <PDFViewer
+          fileUrl={pdfViewerUrl}
+          fileName={pdfViewerName}
+          title="Contract PDF"
+          onClose={() => setShowPdfViewer(false)}
+          isOpen={showPdfViewer}
+        />
+      )}
     </div>
   );
 }

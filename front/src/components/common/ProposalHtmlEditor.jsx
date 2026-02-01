@@ -10,11 +10,29 @@ import { Save, RotateCcw, AlertCircle } from "lucide-react";
  * @param {function} onUnsavedChange - Callback when unsaved status changes
  * @param {string} className - Additional CSS classes
  */
+// Scope CSS selectors so template styles only apply inside the editor
+const scopeStyles = (css, scopeSelector) => {
+  return css.replace(/([^{}]+)\{/g, (match, selectors) => {
+    const scoped = selectors
+      .split(",")
+      .map((selector) => {
+        const trimmed = selector.trim();
+        if (!trimmed || trimmed === "*") return `${scopeSelector} ${trimmed}`;
+        // Don't double-scope if already scoped
+        if (trimmed.startsWith(scopeSelector)) return trimmed;
+        return `${scopeSelector} ${trimmed}`;
+      })
+      .join(", ");
+    return `${scoped} {`;
+  });
+};
+
 const ProposalHtmlEditor = ({ content, templateStyles, onChange, onUnsavedChange, className = "" }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const editorRef = useRef(null);
   const originalContentRef = useRef(content || "");
   const savedContentRef = useRef(content || "");
+  const scopedStyles = templateStyles ? scopeStyles(templateStyles, ".proposal-editor-scope") : "";
 
   // Initialize editor content
   useEffect(() => {
@@ -78,15 +96,15 @@ const ProposalHtmlEditor = ({ content, templateStyles, onChange, onUnsavedChange
 
   return (
     <div className={`border border-gray-200 rounded-lg overflow-hidden flex flex-col ${className}`}>
-      {/* Inject template styles */}
-      {templateStyles && <style>{templateStyles}</style>}
+      {/* Inject scoped template styles */}
+      {scopedStyles && <style>{scopedStyles}</style>}
 
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 p-2 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center gap-2">
           <AlertCircle className="h-4 w-4 text-blue-600" />
           <span className="text-sm text-gray-600">
-            Edit the content below directly. Click "Save Changes" when done.
+            Edit the content below directly. Click "Save Changes" to confirm your edits before regenerating.
           </span>
         </div>
 
@@ -133,7 +151,7 @@ const ProposalHtmlEditor = ({ content, templateStyles, onChange, onUnsavedChange
           ref={editorRef}
           contentEditable
           onInput={handleInput}
-          className="p-4 focus:outline-none min-h-[300px] bg-white"
+          className="proposal-editor-scope p-4 focus:outline-none min-h-[300px] bg-white"
           style={{
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
