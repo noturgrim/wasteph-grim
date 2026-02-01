@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
 import { SlidersHorizontal, X } from "lucide-react";
@@ -22,6 +23,7 @@ import { EditClientDialog } from "../components/clients/EditClientDialog";
 import { DeleteConfirmationModal } from "../components/modals/DeleteConfirmationModal";
 
 export default function Clients() {
+  const { user } = useAuth();
   const [clients, setClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -144,6 +146,7 @@ export default function Clients() {
   };
 
   const allColumns = createClientColumns({
+    userRole: user?.role,
     onView: handleView,
     onEdit: handleEdit,
     onDelete: handleDelete,

@@ -26,7 +26,7 @@ const getStatusBadge = (status) => {
   );
 };
 
-export const createClientColumns = ({ onView, onEdit, onDelete }) => [
+export const createClientColumns = ({ userRole, onView, onEdit, onDelete }) => [
   {
     accessorKey: "companyName",
     header: ({ column }) => {
@@ -175,18 +175,22 @@ export const createClientColumns = ({ onView, onEdit, onDelete }) => [
               <Eye className="mr-2 h-4 w-4" />
               View Details
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(client)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onDelete(client)}
-              className="text-red-600 focus:text-red-600"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
+            {userRole === "admin" && (
+              <>
+                <DropdownMenuItem onClick={() => onEdit(client)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onDelete(client)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );
