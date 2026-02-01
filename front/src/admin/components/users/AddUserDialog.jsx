@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -35,11 +35,28 @@ export function AddUserDialog({ open, onOpenChange, onConfirm }) {
     lastName: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "sales",
     isMasterSales: false,
   });
   const [passwordErrors, setPasswordErrors] = useState([]);
   const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        role: "sales",
+        isMasterSales: false,
+      });
+      setPasswordErrors([]);
+      setTouched(false);
+    }
+  }, [open]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -51,8 +68,9 @@ export function AddUserDialog({ open, onOpenChange, onConfirm }) {
   };
 
   const isPasswordValid = formData.password && passwordErrors.length === 0;
+  const passwordsMatch = formData.password === formData.confirmPassword;
   const isFormValid =
-    formData.firstName && formData.lastName && formData.email && isPasswordValid;
+    formData.firstName && formData.lastName && formData.email && isPasswordValid && passwordsMatch;
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
@@ -74,6 +92,7 @@ export function AddUserDialog({ open, onOpenChange, onConfirm }) {
         lastName: "",
         email: "",
         password: "",
+        confirmPassword: "",
         role: "sales",
         isMasterSales: false,
       });
@@ -123,6 +142,7 @@ export function AddUserDialog({ open, onOpenChange, onConfirm }) {
             <Label>Email</Label>
             <Input
               type="email"
+              autoComplete="off"
               value={formData.email}
               onChange={(e) => handleChange("email", e.target.value)}
               placeholder="john@wasteph.com"
@@ -134,6 +154,7 @@ export function AddUserDialog({ open, onOpenChange, onConfirm }) {
             <Label>Password</Label>
             <Input
               type="password"
+              autoComplete="new-password"
               value={formData.password}
               onChange={(e) => handleChange("password", e.target.value)}
               placeholder="Create a strong password..."
@@ -147,6 +168,21 @@ export function AddUserDialog({ open, onOpenChange, onConfirm }) {
             )}
             {touched && passwordErrors.length === 0 && formData.password && (
               <p className="text-xs text-green-600 mt-1">Password meets all requirements</p>
+            )}
+          </div>
+
+          {/* Confirm Password */}
+          <div className="space-y-1">
+            <Label>Confirm Password</Label>
+            <Input
+              type="password"
+              autoComplete="new-password"
+              value={formData.confirmPassword}
+              onChange={(e) => handleChange("confirmPassword", e.target.value)}
+              placeholder="Re-enter your password..."
+            />
+            {formData.confirmPassword && !passwordsMatch && (
+              <p className="text-xs text-red-600 mt-1">Passwords do not match</p>
             )}
           </div>
 

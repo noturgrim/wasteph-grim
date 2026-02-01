@@ -43,6 +43,7 @@ export function EditUserDialog({ open, onOpenChange, user, currentUserId, onConf
         isMasterSales: user.isMasterSales || false,
         isActive: user.isActive !== undefined ? user.isActive : true,
         password: "",
+        confirmPassword: "",
       });
       setPasswordErrors([]);
     }
@@ -64,8 +65,10 @@ export function EditUserDialog({ open, onOpenChange, user, currentUserId, onConf
     }
   };
 
+  const passwordsMatch = !formData.password || formData.password === formData.confirmPassword;
+
   const handleSubmit = async () => {
-    if (formData.password && passwordErrors.length > 0) return;
+    if (formData.password && (passwordErrors.length > 0 || !passwordsMatch)) return;
 
     setIsSubmitting(true);
     try {
@@ -123,6 +126,7 @@ export function EditUserDialog({ open, onOpenChange, user, currentUserId, onConf
             <Label>Email</Label>
             <Input
               type="email"
+              autoComplete="off"
               value={formData.email}
               onChange={(e) => handleChange("email", e.target.value)}
             />
@@ -188,6 +192,7 @@ export function EditUserDialog({ open, onOpenChange, user, currentUserId, onConf
             <Label>New Password <span className="text-muted-foreground font-normal">(optional — leave blank to keep current)</span></Label>
             <Input
               type="password"
+              autoComplete="new-password"
               value={formData.password}
               onChange={(e) => handleChange("password", e.target.value)}
               placeholder="Enter new password..."
@@ -200,6 +205,23 @@ export function EditUserDialog({ open, onOpenChange, user, currentUserId, onConf
               </ul>
             )}
           </div>
+
+          {/* Confirm Password — only shown when changing password */}
+          {formData.password && (
+            <div className="space-y-1">
+              <Label>Confirm Password</Label>
+              <Input
+                type="password"
+                autoComplete="new-password"
+                value={formData.confirmPassword}
+                onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                placeholder="Re-enter new password..."
+              />
+              {formData.confirmPassword && !passwordsMatch && (
+                <p className="text-xs text-red-600 mt-1">Passwords do not match</p>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -208,7 +230,7 @@ export function EditUserDialog({ open, onOpenChange, user, currentUserId, onConf
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || (formData.password && passwordErrors.length > 0)}
+            disabled={isSubmitting || (formData.password && (passwordErrors.length > 0 || !passwordsMatch))}
           >
             {isSubmitting ? (
               <>
