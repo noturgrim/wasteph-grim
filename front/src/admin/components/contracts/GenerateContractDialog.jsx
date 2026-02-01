@@ -760,7 +760,11 @@ export function GenerateContractDialog({
           />
         </div>
 
-        <DialogFooter className="gap-2 mt-4">
+        <div className="text-xs text-gray-500 mt-3 px-1">
+          <strong>Save Changes</strong> confirms your edits in the editor above. <strong>Save &amp; Regenerate</strong> then submits the saved content and regenerates the contract PDF.
+        </div>
+
+        <DialogFooter className="gap-2 mt-2">
           <Button
             variant="outline"
             onClick={() => {

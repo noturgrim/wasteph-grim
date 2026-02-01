@@ -104,7 +104,7 @@ const ProposalHtmlEditor = ({ content, templateStyles, onChange, onUnsavedChange
         <div className="flex items-center gap-2">
           <AlertCircle className="h-4 w-4 text-blue-600" />
           <span className="text-sm text-gray-600">
-            Edit the content below directly. Click "Save Changes" when done.
+            Edit the content below directly. Click "Save Changes" to confirm your edits before regenerating.
           </span>
         </div>
 
