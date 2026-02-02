@@ -381,6 +381,7 @@ export const handleClientApproval = async (req, res, next) => {
       message: "Thank you! Your approval has been recorded.",
       data: {
         proposalId: proposal.id,
+        proposalNumber: proposal.proposalNumber,
         clientResponse: proposal.clientResponse,
         respondedAt: proposal.clientResponseAt,
       },
@@ -411,6 +412,7 @@ export const handleClientRejection = async (req, res, next) => {
       message: "Thank you for your response. We've recorded your decision.",
       data: {
         proposalId: proposal.id,
+        proposalNumber: proposal.proposalNumber,
         clientResponse: proposal.clientResponse,
         respondedAt: proposal.clientResponseAt,
       },
@@ -436,12 +438,40 @@ export const getProposalStatusPublic = async (req, res, next) => {
       success: true,
       data: {
         proposalId: proposal.id,
+        proposalNumber: proposal.proposalNumber,
         clientResponse: proposal.clientResponse,
         respondedAt: proposal.clientResponseAt,
         sentAt: proposal.sentAt,
         expiresAt: proposal.expiresAt,
+        status: proposal.status,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get proposal PDF for client (PUBLIC - no auth required)
+ * GET /api/proposals/public/:id/pdf
+ */
+export const getProposalPDFPublic = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { token } = req.query;
+
+    // Validate token
+    const proposal = await proposalService.validateResponseToken(id, token);
+
+    // Generate PDF
+    const pdfBuffer = await proposalService.generatePreviewPDF(id);
+
+    // Set headers for PDF response
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="proposal-${proposal.proposalNumber}.pdf"`);
+
+    // Send PDF
+    res.send(pdfBuffer);
   } catch (error) {
     next(error);
   }

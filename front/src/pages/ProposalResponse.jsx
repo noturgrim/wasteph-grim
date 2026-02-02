@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { CheckCircle, XCircle, Loader2, AlertCircle, FileText, AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -84,15 +84,10 @@ const ProposalResponse = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-lg">
-        <CardHeader className="text-center border-b">
-          <div className="flex justify-center mb-4">
-            <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-              <FileText className="h-8 w-8 text-green-700" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-md border-gray-200 shadow-md bg-white">
+        <CardHeader>
+          <CardTitle className="text-2xl text-[#0f4c2c]">
             {stage === "loading" && "Loading Proposal..."}
             {stage === "confirmation" && `${action === "approve" ? "Approve" : "Reject"} Proposal`}
             {stage === "processing" && "Processing Your Response..."}
@@ -100,13 +95,13 @@ const ProposalResponse = () => {
             {stage === "error" && "Unable to Process"}
           </CardTitle>
           {stage === "confirmation" && (
-            <CardDescription className="text-base mt-2">
-              Please confirm your decision for this proposal
+            <CardDescription className="text-[#374151]">
+              Please confirm your decision for Proposal {proposalDetails.proposalNumber || proposalId}
             </CardDescription>
           )}
         </CardHeader>
 
-        <CardContent className="space-y-6 mt-6">
+        <CardContent>
           {/* Loading State */}
           {stage === "loading" && (
             <div className="flex flex-col items-center justify-center py-12">
@@ -117,93 +112,78 @@ const ProposalResponse = () => {
 
           {/* Confirmation State */}
           {stage === "confirmation" && proposalDetails && (
-            <div className="space-y-6">
-              {/* Proposal Details */}
-              <div className="bg-white border rounded-lg p-5 space-y-4">
-                <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">
-                  Proposal Information
-                </h3>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Proposal ID:</span>
-                    <span className="font-medium">{proposalId?.substring(0, 8)}...</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Sent Date:</span>
-                    <span className="font-medium">
-                      {proposalDetails.sentAt ? new Date(proposalDetails.sentAt).toLocaleDateString() : "N/A"}
+            <div className="space-y-4">
+              {/* Proposal Details - Matching Quotation Design */}
+              <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-lg text-[#0f5132]">Proposal Details</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(`${API_URL}/proposals/public/${proposalId}/pdf?token=${token}`, '_blank')}
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 cursor-pointer text-xs"
+                  >
+                    <FileText className="h-3.5 w-3.5 mr-1.5" />
+                    View PDF
+                  </Button>
+                </div>
+
+                {/* Client Information */}
+                <div>
+                  <h4 className="text-sm font-bold text-[#1f2937]">
+                    Client Information
+                  </h4>
+                  <p className="text-sm text-gray-700 font-medium">
+                    Proposal Number: <span className="font-normal text-gray-600">{proposalDetails.proposalNumber || proposalId}</span>
+                  </p>
+                  <p className="text-sm text-gray-700 font-medium">
+                    Sent Date: <span className="font-normal text-gray-600">{proposalDetails.sentAt ? new Date(proposalDetails.sentAt).toLocaleDateString() : "N/A"}</span>
+                  </p>
+                  <p className="text-sm text-gray-700 font-medium">
+                    Expires: <span className="font-normal text-gray-600">{proposalDetails.expiresAt ? new Date(proposalDetails.expiresAt).toLocaleDateString() : "N/A"}</span>
+                  </p>
+                </div>
+
+                {/* Proposal Status */}
+                <div>
+                  <h4 className="text-sm font-bold text-[#1f2937]">
+                    Proposal Status
+                  </h4>
+                  <p className="text-sm">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      proposalDetails.clientResponse === "approved"
+                        ? "bg-green-100 text-green-800"
+                        : proposalDetails.clientResponse === "rejected"
+                        ? "bg-red-100 text-red-800"
+                        : proposalDetails.status === "sent"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}>
+                      {proposalDetails.clientResponse?.toUpperCase() || proposalDetails.status?.toUpperCase() || "PENDING"}
                     </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Expires:</span>
-                    <span className="font-medium">
-                      {proposalDetails.expiresAt ? new Date(proposalDetails.expiresAt).toLocaleDateString() : "N/A"}
-                    </span>
-                  </div>
-                  {proposalDetails.clientResponse && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Current Status:</span>
-                      <span className={`font-medium capitalize ${
-                        proposalDetails.clientResponse === "approved" ? "text-green-600" : "text-orange-600"
-                      }`}>
-                        {proposalDetails.clientResponse}
-                      </span>
-                    </div>
-                  )}
+                  </p>
                 </div>
               </div>
 
-              {/* Warning Box */}
-              <div className={`border rounded-lg p-4 ${
-                action === "approve" 
-                  ? "bg-amber-50 border-amber-200" 
-                  : "bg-orange-50 border-orange-200"
-              }`}>
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className={`h-5 w-5 mt-0.5 ${
-                    action === "approve" ? "text-amber-600" : "text-orange-600"
-                  }`} />
-                  <div className="flex-1">
-                    <p className={`text-sm font-medium ${
-                      action === "approve" ? "text-amber-900" : "text-orange-900"
-                    }`}>
-                      {action === "approve" 
+              {/* Warning Banner - Matching Quotation Design */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start space-x-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">
+                      {action === "approve"
                         ? "You are about to approve this proposal"
-                        : "You are about to reject this proposal"
+                        : "You are about to decline this proposal"
                       }
                     </p>
-                    <p className={`text-sm mt-1 ${
-                      action === "approve" ? "text-amber-700" : "text-orange-700"
-                    }`}>
+                    <p className="text-sm text-amber-700 mt-1">
                       {action === "approve"
                         ? "By approving, you agree to the terms and conditions outlined in the proposal."
-                        : "This action will notify our team that you have declined this proposal."
+                        : "If you decline, the proposal will be canceled. You can contact us if you change your mind."
                       }
                     </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 justify-end pt-4 border-t">
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  className="px-6"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleConfirm}
-                  className={`px-6 ${
-                    action === "approve"
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-orange-600 hover:bg-orange-700"
-                  }`}
-                >
-                  {action === "approve" ? "Confirm Approval" : "Confirm Rejection"}
-                </Button>
               </div>
             </div>
           )}
@@ -276,7 +256,7 @@ const ProposalResponse = () => {
               {responseData && (
                 <div className="border-t pt-4 mt-6 w-full">
                   <p className="text-xs text-gray-500 text-center">
-                    Response ID: {responseData.proposalId?.substring(0, 8)}...
+                    Proposal: {responseData.proposalNumber || responseData.proposalId}
                     <br />
                     Recorded at: {new Date(responseData.respondedAt).toLocaleString()}
                   </p>
@@ -322,20 +302,39 @@ const ProposalResponse = () => {
               <div className="text-sm text-gray-600 space-y-2">
                 <p className="text-center">
                   <strong className="text-green-700">Email:</strong>{" "}
-                  <a href="mailto:info@wasteph.com" className="text-blue-600 hover:underline">
-                    info@wasteph.com
-                  </a>
+                  <span className="text-gray-700">info@wasteph.com</span>
                 </p>
                 <p className="text-center">
                   <strong className="text-green-700">Phone:</strong>{" "}
-                  <a href="tel:+639562461503" className="text-blue-600 hover:underline">
-                    +63 956 246 1503
-                  </a>
+                  <span className="text-gray-700">+63 956 246 1503</span>
                 </p>
               </div>
             </div>
           )}
         </CardContent>
+
+        {/* Card Footer - Action Buttons for Confirmation */}
+        {stage === "confirmation" && proposalDetails && (
+          <CardFooter className="flex justify-between gap-3">
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              className="text-gray-700 hover:bg-gray-100 border-gray-300 cursor-pointer transition-colors"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              className={
+                action === "approve"
+                  ? "bg-[#16a34a] hover:bg-[#15803d] active:bg-[#166534] text-white transition-colors cursor-pointer"
+                  : "bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-colors cursor-pointer"
+              }
+            >
+              {action === "approve" ? "Confirm Approval" : "Confirm Decline"}
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     </div>
   );
