@@ -58,7 +58,7 @@ export function ViewEventDialog({
   const handleComplete = async () => {
     if (!completionReport.trim()) {
       toast.error(
-        "Please provide a summary or report before marking as completed",
+        "Please provide a summary or report before marking as completed"
       );
       return;
     }
@@ -192,7 +192,7 @@ export function ViewEventDialog({
             </div>
 
             {/* Linked Inquiry */}
-            {event.inquiry && (
+            {event.inquiryId && event.inquiryName && (
               <div>
                 <h4 className="text-sm font-semibold text-foreground mb-2">
                   Linked Inquiry
@@ -204,8 +204,32 @@ export function ViewEventDialog({
                   className="gap-2"
                 >
                   <span>
-                    {event.inquiry.name} -{" "}
-                    {event.inquiry.company || "No company"}
+                    {event.inquiryName} - {event.inquiryCompany || "No company"}
+                  </span>
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+
+            {/* Linked Client */}
+            {event.clientId && event.clientCompanyName && (
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-2">
+                  Linked Client
+                </h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigate("/admin/clients");
+                    onOpenChange(false);
+                  }}
+                  className="gap-2"
+                >
+                  <span>
+                    {event.clientCompanyName}
+                    {event.clientContactPerson &&
+                      ` - ${event.clientContactPerson}`}
                   </span>
                   <ExternalLink className="h-3 w-3" />
                 </Button>
@@ -233,7 +257,7 @@ export function ViewEventDialog({
                 <p className="text-sm text-muted-foreground">
                   {format(
                     parseISO(event.completedAt),
-                    "MMM dd, yyyy 'at' hh:mm a",
+                    "MMM dd, yyyy 'at' hh:mm a"
                   )}
                 </p>
               </div>

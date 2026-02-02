@@ -28,10 +28,13 @@ export function ScheduleEventDialog({
   open,
   onOpenChange,
   inquiryId = null,
+  onEventScheduled,
   onSuccess,
+  prefilledData = {},
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inquiries, setInquiries] = useState([]);
+  const [clients, setClients] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -39,25 +42,30 @@ export function ScheduleEventDialog({
     scheduledDate: new Date(),
     startTime: "",
     endTime: "",
-    inquiryId: inquiryId || "",
+    inquiryId: inquiryId || prefilledData.inquiryId || "",
+    clientId: prefilledData.clientId || "",
     notes: "",
   });
 
   const [formErrors, setFormErrors] = useState({});
 
-  // Load inquiries for linking
+  // Load inquiries and clients for linking
   useEffect(() => {
-    const loadInquiries = async () => {
+    const loadData = async () => {
       if (!open) return;
       try {
-        const response = await api.getInquiries({ limit: 100 });
-        setInquiries(response.data || []);
+        const [inquiriesRes, clientsRes] = await Promise.all([
+          api.getInquiries({ limit: 100 }),
+          api.getClients({ limit: 100 }),
+        ]);
+        setInquiries(inquiriesRes.data || []);
+        setClients(clientsRes.data || []);
       } catch (error) {
-        console.error("Failed to load inquiries:", error);
+        console.error("Failed to load data:", error);
       }
     };
 
-    loadInquiries();
+    loadData();
   }, [open]);
 
   // Reset form when dialog opens
@@ -70,11 +78,13 @@ export function ScheduleEventDialog({
         scheduledDate: new Date(),
         startTime: "",
         endTime: "",
-        inquiryId: inquiryId || "",
+        inquiryId: inquiryId || prefilledData?.inquiryId || "",
+        clientId: prefilledData?.clientId || "",
         notes: "",
       });
       setFormErrors({});
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, inquiryId]);
 
   const validateForm = () => {
@@ -99,7 +109,7 @@ export function ScheduleEventDialog({
 
     setIsSubmitting(true);
     try {
-      await api.createCalendarEvent({
+      const eventData = {
         title: formData.title,
         description: formData.description || undefined,
         eventType: formData.eventType || undefined,
@@ -110,8 +120,18 @@ export function ScheduleEventDialog({
           formData.inquiryId && formData.inquiryId !== "none"
             ? formData.inquiryId
             : undefined,
+        clientId:
+          formData.clientId && formData.clientId !== "none"
+            ? formData.clientId
+            : undefined,
         notes: formData.notes || undefined,
-      });
+      };
+
+      if (onEventScheduled) {
+        await onEventScheduled(eventData);
+      } else {
+        await api.createCalendarEvent(eventData);
+      }
 
       toast.success("Event scheduled successfully");
       onOpenChange(false);
@@ -243,27 +263,63 @@ export function ScheduleEventDialog({
             </div>
           </div>
 
-          {/* Link to Inquiry */}
-          <div className="space-y-2">
-            <Label htmlFor="inquiryId">Link to Inquiry (Optional)</Label>
-            <Select
-              value={formData.inquiryId}
-              onValueChange={(value) =>
-                setFormData({ ...formData, inquiryId: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select inquiry" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {inquiries.map((inquiry) => (
-                  <SelectItem key={inquiry.id} value={inquiry.id}>
-                    {inquiry.name} - {inquiry.company || "No company"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Link to Inquiry or Client */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="inquiryId">Link to Inquiry (Optional)</Label>
+              <Select
+                value={formData.inquiryId || "none"}
+                onValueChange={(value) => {
+                  const newInquiryId = value === "none" ? "" : value;
+                  setFormData({
+                    ...formData,
+                    inquiryId: newInquiryId,
+                    clientId: newInquiryId ? "" : formData.clientId,
+                  });
+                }}
+                disabled={!!formData.clientId && formData.clientId !== "none"}
+              >
+                <SelectTrigger id="inquiryId">
+                  <SelectValue placeholder="Select inquiry" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {inquiries.map((inquiry) => (
+                    <SelectItem key={inquiry.id} value={inquiry.id}>
+                      {inquiry.name} - {inquiry.company || "No company"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="clientId">Link to Client (Optional)</Label>
+              <Select
+                value={formData.clientId || "none"}
+                onValueChange={(value) => {
+                  const newClientId = value === "none" ? "" : value;
+                  setFormData({
+                    ...formData,
+                    clientId: newClientId,
+                    inquiryId: newClientId ? "" : formData.inquiryId,
+                  });
+                }}
+                disabled={!!formData.inquiryId && formData.inquiryId !== "none"}
+              >
+                <SelectTrigger id="clientId">
+                  <SelectValue placeholder="Select client" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.companyName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Notes */}
