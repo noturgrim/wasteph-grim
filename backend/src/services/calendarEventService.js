@@ -353,10 +353,13 @@ class CalendarEventService {
         title: event.title,
         eventType: event.eventType,
         scheduledDate: event.scheduledDate,
+        eventId: event.id, // Include eventId for navigation
         statusChanged:
           oldEvent.status !== event.status
             ? { from: oldEvent.status, to: event.status }
             : null,
+        // Include notes/report if event was marked as completed
+        notes: event.status === "completed" && event.notes ? event.notes : null,
       },
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
@@ -411,10 +414,20 @@ class CalendarEventService {
   }
 
   /**
-   * Mark event as completed
+   * Mark event as completed with optional notes/report
    */
-  async completeEvent(eventId, userId, metadata = {}) {
-    return this.updateEvent(eventId, { status: "completed" }, userId, metadata);
+  async completeEvent(eventId, userId, notes = null, metadata = {}) {
+    const updateData = {
+      status: "completed",
+      completedAt: new Date(),
+    };
+    
+    // Update notes if provided
+    if (notes !== null && notes !== undefined) {
+      updateData.notes = notes;
+    }
+    
+    return this.updateEvent(eventId, updateData, userId, metadata);
   }
 }
 

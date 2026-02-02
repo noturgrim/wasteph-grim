@@ -114,14 +114,15 @@ export const updateEvent = async (req, res, next) => {
 
 /**
  * Route: POST /api/calendar-events/:id/complete
- * Mark event as completed
+ * Mark event as completed with optional notes/report
  */
 export const completeEvent = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { notes } = req.body;
     const userId = req.user.id;
 
-    const event = await calendarEventService.completeEvent(id, userId, {
+    const event = await calendarEventService.completeEvent(id, userId, notes, {
       ipAddress: req.ip,
       userAgent: req.get("user-agent"),
     });

@@ -177,6 +177,13 @@ class ApiClient {
     });
   }
 
+  async bulkDeleteLeads(leadIds) {
+    return this.request("/leads/bulk-delete", {
+      method: "POST",
+      body: JSON.stringify({ leadIds }),
+    });
+  }
+
   // Potential endpoints
   async getPotentials() {
     return this.request("/potentials");
@@ -690,9 +697,10 @@ class ApiClient {
     });
   }
 
-  async completeCalendarEvent(id) {
+  async completeCalendarEvent(id, data = {}) {
     return this.request(`/calendar-events/${id}/complete`, {
       method: "POST",
+      body: JSON.stringify(data),
     });
   }
 

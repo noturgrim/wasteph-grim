@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +22,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { format, parseISO } from "date-fns";
-import { CheckCircle, XCircle, Trash2, ExternalLink } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Trash2,
+  ExternalLink,
+  FileText,
+} from "lucide-react";
 import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
 import { useNavigate } from "react-router-dom";
@@ -37,14 +45,32 @@ export function ViewEventDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [completionReport, setCompletionReport] = useState("");
 
   if (!event) return null;
 
+  const handleCompleteClick = () => {
+    setCompletionReport(event.notes || "");
+    setShowCompleteDialog(true);
+  };
+
   const handleComplete = async () => {
+    if (!completionReport.trim()) {
+      toast.error(
+        "Please provide a summary or report before marking as completed",
+      );
+      return;
+    }
+
     try {
       setIsCompleting(true);
-      await api.completeCalendarEvent(event.id);
+      await api.completeCalendarEvent(event.id, {
+        notes: completionReport,
+      });
       toast.success("Event marked as completed");
+      setShowCompleteDialog(false);
+      setCompletionReport("");
       if (onUpdate) onUpdate();
     } catch (error) {
       toast.error(error.message || "Failed to complete event");
@@ -190,7 +216,7 @@ export function ViewEventDialog({
             {event.notes && (
               <div>
                 <h4 className="text-sm font-semibold text-foreground mb-2">
-                  Notes
+                  Report
                 </h4>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {event.notes}
@@ -253,20 +279,11 @@ export function ViewEventDialog({
                   </Button>
                   {event.status === "scheduled" && (
                     <Button
-                      onClick={handleComplete}
+                      onClick={handleCompleteClick}
                       disabled={isDeleting || isCompleting}
                     >
-                      {isCompleting ? (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-2 animate-spin" />
-                          Marking...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Mark Complete
-                        </>
-                      )}
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Mark Complete
                     </Button>
                   )}
                 </div>
@@ -306,6 +323,83 @@ export function ViewEventDialog({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? "Cancelling..." : "Cancel Event"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Complete Event Dialog with Report */}
+      <AlertDialog
+        open={showCompleteDialog}
+        onOpenChange={setShowCompleteDialog}
+      >
+        <AlertDialogContent className="sm:max-w-[600px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Complete Event - Add Summary/Report
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Please provide a summary, rundown, or report of what happened
+              during this event before marking it as completed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 py-4">
+            <div className="space-y-2">
+              <Label
+                htmlFor="completion-report"
+                className="text-sm font-medium"
+              >
+                Event Report <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="completion-report"
+                value={completionReport}
+                onChange={(e) => setCompletionReport(e.target.value)}
+                placeholder="What happened during this event? (e.g., discussed pricing, conducted site visit, client agreed to proposal, etc.)"
+                rows={6}
+                className={
+                  !completionReport.trim()
+                    ? "border-amber-500 focus:ring-amber-500"
+                    : ""
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                This report will be saved and visible in the timeline.
+              </p>
+            </div>
+
+            {!completionReport.trim() && (
+              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                <XCircle className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  A summary or report is required to complete this event.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCompleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleComplete}
+              disabled={isCompleting || !completionReport.trim()}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isCompleting ? (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2 animate-spin" />
+                  Completing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Mark as Completed
+                </>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
