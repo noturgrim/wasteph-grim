@@ -8,7 +8,7 @@ import {
 } from "../db/schema.js";
 import { eq, desc, and, or, like, inArray, count, sql } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
-import { generateInquiryNumber } from "../utils/inquiryNumberGenerator.js";
+import counterService from "./counterService.js";
 
 /**
  * InquiryService - Business logic layer for inquiry operations
@@ -37,8 +37,8 @@ class InquiryService {
     const { name, email, phone, company, message, serviceType } = inquiryData;
     const { source = "website" } = options;
 
-    // Generate unique inquiry number
-    const inquiryNumber = await generateInquiryNumber();
+    // Generate inquiry number (format: INQ-YYYYMMDD-NNNN)
+    const inquiryNumber = await counterService.getNextInquiryNumber();
 
     const [inquiry] = await db
       .insert(inquiryTable)
@@ -225,6 +225,7 @@ class InquiryService {
         .select({
           inquiryId: proposalTable.inquiryId,
           proposalId: proposalTable.id,
+          proposalNumber: proposalTable.proposalNumber,
           status: proposalTable.status,
           createdAt: proposalTable.createdAt,
           rejectionReason: proposalTable.rejectionReason,
@@ -240,6 +241,7 @@ class InquiryService {
       if (!proposalMap[p.inquiryId]) {
         proposalMap[p.inquiryId] = {
           proposalId: p.proposalId,
+          proposalNumber: p.proposalNumber,
           proposalStatus: p.status,
           proposalCreatedAt: p.createdAt,
           proposalRejectionReason: p.rejectionReason,
@@ -254,6 +256,7 @@ class InquiryService {
         ? this.serviceNameToFrontend(inquiry.serviceType)
         : null,
       proposalId: proposalMap[inquiry.id]?.proposalId || null,
+      proposalNumber: proposalMap[inquiry.id]?.proposalNumber || null,
       proposalStatus: proposalMap[inquiry.id]?.proposalStatus || null,
       proposalCreatedAt: proposalMap[inquiry.id]?.proposalCreatedAt || null,
       proposalRejectionReason:
@@ -489,8 +492,8 @@ class InquiryService {
       serviceType,
     } = inquiryData;
 
-    // Generate unique inquiry number
-    const inquiryNumber = await generateInquiryNumber();
+    // Generate inquiry number (format: INQ-YYYYMMDD-NNNN)
+    const inquiryNumber = await counterService.getNextInquiryNumber();
 
     const [inquiry] = await db
       .insert(inquiryTable)

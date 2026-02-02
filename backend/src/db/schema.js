@@ -7,10 +7,11 @@ import {
   uuid,
   pgEnum,
   index,
+  unique,
 } from "drizzle-orm/pg-core";
 
 // Enums
-export const userRoleEnum = pgEnum("user_role", ["admin", "sales"]);
+export const userRoleEnum = pgEnum("user_role", ["admin", "sales", "social_media", "super_admin"]);
 export const inquiryStatusEnum = pgEnum("inquiry_status", [
   "submitted_proposal",
   "initial_comms",
@@ -63,6 +64,7 @@ export const proposalStatusEnum = pgEnum("proposal_status", [
   "accepted",     // Client accepted the proposal
   "rejected",     // Client rejected the proposal
   "cancelled",    // Cancelled by sales or admin
+  "expired",      // Proposal passed its validity period without client response
 ]);
 
 // Contract status - tracks contract request workflow
@@ -71,7 +73,9 @@ export const contractStatusEnum = pgEnum("contract_status", [
   "requested",         // Sales requested contract from Admin
   "ready_for_sales",   // Admin uploaded contract, not sent to Sales yet
   "sent_to_sales",     // Admin sent to Sales, waiting for Sales to send to client
-  "sent_to_client",    // Sales sent to client (final status)
+  "sent_to_client",    // Sales sent to client, waiting for client to upload signed copy
+  "signed",            // Client uploaded signed contract, client record auto-created
+  "hardbound_received", // Admin uploaded scanned hardbound copy (terminal status)
 ]);
 
 // Contract type enum
@@ -135,7 +139,7 @@ export const sessionTable = pgTable("session", {
 // Business Tables
 export const inquiryTable = pgTable("inquiry", {
   id: uuid("id").primaryKey().defaultRandom(),
-  inquiryNumber: text("inquiry_number").unique(), // Temporarily nullable for migration
+  inquiryNumber: text("inquiry_number").notNull().unique(), // Format: INQ-YYYYMMDD-NNNN
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
@@ -154,7 +158,9 @@ export const inquiryTable = pgTable("inquiry", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => ({
+  inquiryNumberIdx: index("inquiry_number_idx").on(table.inquiryNumber),
+}));
 
 export const inquiryNotesTable = pgTable("inquiry_notes", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -381,6 +387,7 @@ export const proposalTemplateTable = pgTable("proposal_template", {
 // Proposals
 export const proposalTable = pgTable("proposal", {
   id: uuid("id").primaryKey().defaultRandom(),
+  proposalNumber: text("proposal_number").notNull().unique(), // Format: PROP-YYYYMMDD-NNNN
 
   // Relationships
   inquiryId: uuid("inquiry_id")
@@ -411,6 +418,7 @@ export const proposalTable = pgTable("proposal", {
   sentAt: timestamp("sent_at", { withTimezone: true }), // When sent to client
   emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
   emailStatus: text("email_status"), // "sent", "failed"
+  expiresAt: timestamp("expires_at", { withTimezone: true }), // sentAt + validityDays
 
   // Client Response (from email buttons)
   clientResponse: text("client_response"), // "approved", "rejected", null
@@ -429,6 +437,7 @@ export const proposalTable = pgTable("proposal", {
     .notNull()
     .defaultNow(),
 }, (table) => ({
+  proposalNumberIdx: index("proposal_number_idx").on(table.proposalNumber),
   inquiryIdIdx: index("proposal_inquiry_id_idx").on(table.inquiryId),
   templateIdIdx: index("proposal_template_id_idx").on(table.templateId),
   statusIdx: index("proposal_status_idx").on(table.status),
@@ -479,6 +488,11 @@ export const contractsTable = pgTable("contracts", {
   clientRequests: text("client_requests"), // Client requests for modifications
   customTemplateUrl: text("custom_template_url"), // Path to client's custom contract template (if provided)
 
+  // Template-based Contract Generation
+  templateId: uuid("template_id").references(() => contractTemplatesTable.id), // System template used (if not using custom template)
+  contractData: text("contract_data"), // JSON with all contract data (for template rendering)
+  editedHtmlContent: text("edited_html_content"), // Pre-rendered HTML if admin edited contract
+
   // Admin Contract Upload
   contractUploadedBy: text("contract_uploaded_by")
     .references(() => userTable.id), // Admin who uploaded
@@ -497,6 +511,19 @@ export const contractsTable = pgTable("contracts", {
   sentToClientAt: timestamp("sent_to_client_at", { withTimezone: true }),
   clientEmail: text("client_email"), // Email address used to send (keep existing field)
 
+  // Client Submission (token-based upload from email link)
+  clientSubmissionToken: text("client_submission_token"), // Secure token for upload link
+  signedContractUrl: text("signed_contract_url"), // S3 key of client's signed PDF upload
+  signedAt: timestamp("signed_at", { withTimezone: true }),
+  signedByIp: text("signed_by_ip"), // Client IP for audit trail
+  clientId: uuid("client_id").references(() => clientTable.id), // Auto-created client record
+
+  // Hardbound Contract (admin uploads scanned physical copy)
+  hardboundContractUrl: text("hardbound_contract_url"), // S3 key of scanned hardbound PDF
+  hardboundUploadedBy: text("hardbound_uploaded_by")
+    .references(() => userTable.id),
+  hardboundUploadedAt: timestamp("hardbound_uploaded_at", { withTimezone: true }),
+
   // Timestamps
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -508,6 +535,27 @@ export const contractsTable = pgTable("contracts", {
   proposalIdIdx: index("contracts_proposal_id_idx").on(table.proposalId),
   statusIdx: index("contracts_status_idx").on(table.status),
   requestedByIdx: index("contracts_requested_by_idx").on(table.requestedBy),
+}));
+
+// Contract Templates - Templates for generating contracts
+export const contractTemplatesTable = pgTable("contract_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  htmlTemplate: text("html_template").notNull(),
+  templateType: contractTypeEnum("template_type"), // Links to contract type
+  isActive: boolean("is_active").notNull().default(true),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  nameIdx: index("contract_templates_name_idx").on(table.name),
+  typeIdx: index("contract_templates_type_idx").on(table.templateType),
+  isActiveIdx: index("contract_templates_is_active_idx").on(table.isActive),
 }));
 
 // Showcase Table
@@ -604,6 +652,24 @@ export const blogPostTable = pgTable("blog_post", {
   statusIdx: index("blog_post_status_idx").on(table.status),
   categoryIdx: index("blog_post_category_idx").on(table.category),
   publishedAtIdx: index("blog_post_published_at_idx").on(table.publishedAt),
+}));
+
+// Counters Table - For generating sequential numbers (INQ-YYYYMMDD-NNNN, PROP-YYYYMMDD-NNNN)
+export const countersTable = pgTable("counters", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  entityType: text("entity_type").notNull(), // 'inquiry', 'proposal'
+  date: text("date").notNull(), // 'YYYY-MM-DD' format
+  currentValue: integer("current_value").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  uniqueEntityDate: unique("counters_entity_date_unique").on(table.entityType, table.date),
+  entityTypeIdx: index("counters_entity_type_idx").on(table.entityType),
+  dateIdx: index("counters_date_idx").on(table.date),
 }));
 
 // Activity Log

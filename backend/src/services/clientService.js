@@ -1,5 +1,5 @@
 import { db } from "../db/index.js";
-import { clientTable, activityLogTable } from "../db/schema.js";
+import { clientTable, contractsTable, activityLogTable } from "../db/schema.js";
 import { eq, desc } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 
@@ -70,12 +70,19 @@ class ClientService {
    * @returns {Promise<Array>} Array of clients
    */
   async getAllClients() {
-    const clients = await db
-      .select()
+    const rows = await db
+      .select({
+        client: clientTable,
+        contractStatus: contractsTable.status,
+      })
       .from(clientTable)
+      .leftJoin(contractsTable, eq(contractsTable.clientId, clientTable.id))
       .orderBy(desc(clientTable.createdAt));
 
-    return clients;
+    return rows.map((row) => ({
+      ...row.client,
+      contractStatus: row.contractStatus || null,
+    }));
   }
 
   /**
@@ -108,12 +115,12 @@ class ClientService {
    * @throws {AppError} If client not found
    */
   async updateClient(clientId, updateData, userId, metadata = {}) {
-    // Convert date strings to Date objects if present
-    if (updateData.contractStartDate) {
-      updateData.contractStartDate = new Date(updateData.contractStartDate);
+    // Convert date strings to Date objects, or null if empty
+    if ("contractStartDate" in updateData) {
+      updateData.contractStartDate = updateData.contractStartDate ? new Date(updateData.contractStartDate) : null;
     }
-    if (updateData.contractEndDate) {
-      updateData.contractEndDate = new Date(updateData.contractEndDate);
+    if ("contractEndDate" in updateData) {
+      updateData.contractEndDate = updateData.contractEndDate ? new Date(updateData.contractEndDate) : null;
     }
 
     const [client] = await db

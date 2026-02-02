@@ -224,7 +224,7 @@ export function ContractDetailsSection({ contract }) {
               Client provided a custom contract template
             </p>
             <a
-              href={`${(import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "")}${contractData.customTemplateUrl}`}
+              href={`${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/contracts/${contractData.id}/custom-template`}
               download
               className="inline-flex items-center gap-2 text-sm text-purple-700 dark:text-purple-300 hover:underline"
             >

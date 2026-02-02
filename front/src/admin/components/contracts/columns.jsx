@@ -23,9 +23,10 @@ const getStatusBadge = (status) => {
   const statusConfig = {
     pending_request: { label: "Pending Request", variant: "secondary" },
     requested: { label: "Requested", variant: "default" },
-    ready_for_sales: { label: "Ready for Sales", variant: "success" },
     sent_to_sales: { label: "Sent to Sales", variant: "success" },
     sent_to_client: { label: "Sent to Client", variant: "success" },
+    signed: { label: "Signed", variant: "success" },
+    hardbound_received: { label: "Hardbound Received", variant: "success" },
   };
 
   const config = statusConfig[status] || { label: status, variant: "secondary" };
@@ -48,9 +49,9 @@ export const createColumns = ({
   users = [],
   userRole,
   onRequestContract,
-  onUploadContract,
-  onSendToSales,
+  onSubmitContract,
   onSendToClient,
+  onUploadHardbound,
   onViewContract,
   onViewDetails,
 }) => [
@@ -159,6 +160,35 @@ export const createColumns = ({
     },
   },
   {
+    accessorKey: "source",
+    header: "Source",
+    cell: ({ row }) => {
+      const contract = row.original;
+      const hasTemplateId = contract.contract?.templateId;
+      const hasCustomTemplate = contract.contract?.customTemplateUrl;
+
+      if (hasCustomTemplate) {
+        return (
+          <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border-purple-300 dark:border-purple-700">
+            Custom Template
+          </Badge>
+        );
+      } else if (hasTemplateId) {
+        return (
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-300 dark:border-blue-700">
+            System Template
+          </Badge>
+        );
+      } else {
+        return (
+          <Badge variant="outline" className="bg-gray-50 text-gray-600 dark:bg-gray-900 dark:text-gray-400">
+            Manual
+          </Badge>
+        );
+      }
+    },
+  },
+  {
     id: "actions",
     cell: ({ row }) => {
       const contract = row.original;
@@ -179,27 +209,16 @@ export const createColumns = ({
             </Button>
           )}
 
-          {/* Admin: Upload Contract button (requested) */}
-          {userRole === "admin" && status === "requested" && (
+          {/* Admin: Submit Contract button (requested) */}
+          {(userRole === "admin" || userRole === "super_admin") && status === "requested" && (
             <Button
               variant="default"
               size="sm"
-              onClick={() => onUploadContract(contract)}
+              onClick={() => onSubmitContract(contract)}
+              className="bg-blue-600 hover:bg-blue-700"
             >
-              <Upload className="mr-2 h-4 w-4" />
-              Upload Contract
-            </Button>
-          )}
-
-          {/* Admin: Send to Sales button (ready_for_sales) */}
-          {userRole === "admin" && status === "ready_for_sales" && (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => onSendToSales(contract)}
-            >
-              <Send className="mr-2 h-4 w-4" />
-              Send to Sales
+              <FileText className="mr-2 h-4 w-4" />
+              Submit Contract
             </Button>
           )}
 
@@ -212,6 +231,18 @@ export const createColumns = ({
             >
               <Send className="mr-2 h-4 w-4" />
               Send to Client
+            </Button>
+          )}
+
+          {/* Admin: Upload Hardbound button (signed) */}
+          {(userRole === "admin" || userRole === "super_admin") && status === "signed" && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => onUploadHardbound(contract)}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Hardbound
             </Button>
           )}
 
@@ -246,11 +277,11 @@ export const createColumns = ({
                 </>
               )}
 
-              {/* Admin: Re-upload if ready_for_sales or sent_to_sales */}
-              {userRole === "admin" && (status === "ready_for_sales" || status === "sent_to_sales") && (
-                <DropdownMenuItem onClick={() => onUploadContract(contract)}>
+              {/* Admin: Re-submit if sent_to_sales */}
+              {(userRole === "admin" || userRole === "super_admin") && status === "sent_to_sales" && (
+                <DropdownMenuItem onClick={() => onSubmitContract(contract)}>
                   <Upload className="mr-2 h-4 w-4" />
-                  Re-upload Contract
+                  Re-submit Contract
                 </DropdownMenuItem>
               )}
 

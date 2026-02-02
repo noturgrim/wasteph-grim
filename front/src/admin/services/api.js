@@ -251,6 +251,30 @@ class ApiClient {
     return this.request(`/users${queryString ? `?${queryString}` : ""}`);
   }
 
+  async getAllUsers() {
+    return this.request("/users?includeInactive=true");
+  }
+
+  async createUser(data) {
+    return this.request("/users", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUser(id, data) {
+    return this.request(`/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUser(id) {
+    return this.request(`/users/${id}`, {
+      method: "DELETE",
+    });
+  }
+
   // Service endpoints
   async getServices() {
     return this.request("/services");
@@ -509,6 +533,24 @@ class ApiClient {
     return response.json();
   }
 
+  async uploadHardboundContract(id, pdfFile) {
+    const formData = new FormData();
+    formData.append("hardboundContract", pdfFile);
+
+    const response = await fetch(`${this.baseURL}/contracts/${id}/upload-hardbound`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to upload hardbound contract");
+    }
+
+    return response.json();
+  }
+
   async sendContractToSales(id) {
     return this.request(`/contracts/${id}/send-to-sales`, {
       method: "POST",
@@ -529,7 +571,94 @@ class ApiClient {
 
   async previewContractPdf(id) {
     const url = `${this.baseURL}/contracts/${id}/preview-pdf`;
-    window.open(url, "_blank");
+    const response = await fetch(url, { method: "GET", credentials: "include" });
+    if (!response.ok) throw new Error("Failed to fetch contract PDF");
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async generateContractFromTemplate(id, editedData = null, adminNotes = null, editedHtmlContent = null) {
+    return this.request(`/contracts/${id}/generate-from-template`, {
+      method: "POST",
+      body: JSON.stringify({ editedData, adminNotes, editedHtmlContent }),
+    });
+  }
+
+  async previewContractFromTemplate(id, editedData = null) {
+    return this.request(`/contracts/${id}/preview-from-template`, {
+      method: "POST",
+      body: JSON.stringify({ editedData }),
+    });
+  }
+
+  async getRenderedContractHtml(id) {
+    return this.request(`/contracts/${id}/rendered-html`);
+  }
+
+  // Contract Template endpoints
+  async getContractTemplates(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.isActive !== undefined)
+      params.append("isActive", filters.isActive);
+    if (filters.templateType) params.append("templateType", filters.templateType);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+
+    const queryString = params.toString();
+    return this.request(
+      `/contract-templates${queryString ? `?${queryString}` : ""}`,
+    );
+  }
+
+  async getContractTemplateById(id) {
+    return this.request(`/contract-templates/${id}`);
+  }
+
+  async getDefaultContractTemplate() {
+    return this.request("/contract-templates/default");
+  }
+
+  async getContractTemplateByType(type) {
+    return this.request(`/contract-templates/type/${type}`);
+  }
+
+  async createContractTemplate(templateData) {
+    return this.request("/contract-templates", {
+      method: "POST",
+      body: JSON.stringify(templateData),
+    });
+  }
+
+  async updateContractTemplate(id, templateData) {
+    return this.request(`/contract-templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(templateData),
+    });
+  }
+
+  async setDefaultContractTemplate(id) {
+    return this.request(`/contract-templates/${id}/set-default`, {
+      method: "POST",
+    });
+  }
+
+  async deleteContractTemplate(id) {
+    return this.request(`/contract-templates/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async previewContractTemplate(templateHtml, sampleData) {
+    return this.request("/contract-templates/preview", {
+      method: "POST",
+      body: JSON.stringify({ templateHtml, sampleData }),
+    });
   }
 
   // Calendar Event endpoints

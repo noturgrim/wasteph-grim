@@ -6,9 +6,6 @@ import * as controller from "../controllers/contractController.js";
 
 const router = Router();
 
-// All routes require authentication
-router.use(requireAuth);
-
 // Configure multer for PDF uploads (strict - contracts only)
 const uploadPdf = multer({
   storage: multer.memoryStorage(),
@@ -45,6 +42,16 @@ const uploadTemplate = multer({
   },
 });
 
+/**
+ * PUBLIC Routes (no authentication required — token-based)
+ * Accessed from client email links
+ */
+router.get("/public/:id/status", controller.getContractStatusPublic);
+router.post("/public/:id/submit", uploadPdf.single("signedContract"), controller.handleClientSubmission);
+
+// All routes below require authentication
+router.use(requireAuth);
+
 // LIST & RETRIEVE
 router.get("/", controller.getAllContracts);
 router.get("/:id", controller.getContractById);
@@ -64,10 +71,20 @@ router.post(
   uploadPdf.single("contractPdf"),
   controller.uploadContractPdf,
 );
+router.post("/:id/generate-from-template", controller.generateContractFromTemplate);
+router.post("/:id/preview-from-template", controller.previewContractFromTemplate);
+router.get("/:id/rendered-html", controller.getRenderedHtml);
 router.post("/:id/send-to-sales", controller.sendToSales);
 
 // PDF OPERATIONS
 router.get("/:id/contract-pdf", controller.downloadContractPdf);
+router.get("/:id/pdf", controller.downloadContractPdf); // Alias for easier access
 router.get("/:id/preview-pdf", controller.previewContractPdf);
+
+// CUSTOM TEMPLATE DOWNLOAD (proxied from S3)
+router.get("/:id/custom-template", controller.downloadCustomTemplate);
+
+// HARDBOUND CONTRACT UPLOAD (Admin — after client has signed)
+router.post("/:id/upload-hardbound", uploadPdf.single("hardboundContract"), controller.uploadHardboundContract);
 
 export default router;

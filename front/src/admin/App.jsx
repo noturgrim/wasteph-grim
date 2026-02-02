@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import ProposalTemplates from "./pages/ProposalTemplates";
 import Proposals from "./pages/Proposals";
 import ContractRequests from "./pages/ContractRequests";
+import ContractTemplates from "./pages/ContractTemplates";
 import Showcase from "./pages/Showcase";
 import ClientsShowcase from "./pages/ClientsShowcase";
 import InAppBrowserBanner from "../components/common/InAppBrowserBanner";
@@ -48,21 +49,24 @@ const CRMApp = () => {
 
             {/* Tools - Master Sales only */}
             <Route path="proposal-templates" element={<ProposalTemplates />} />
+            <Route path="contract-templates" element={<ContractTemplates />} />
 
-            {/* Admin only routes */}
+            {/* Admin / Super Admin routes */}
             <Route
               path="proposals"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
+                <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
                   <Proposals />
                 </ProtectedRoute>
               }
             />
             <Route path="contract-requests" element={<ContractRequests />} />
+
+            {/* Content routes - Social Media + Super Admin */}
             <Route
               path="blog"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
+                <ProtectedRoute allowedRoles={["super_admin", "social_media"]}>
                   <BlogPosts />
                 </ProtectedRoute>
               }
@@ -70,7 +74,7 @@ const CRMApp = () => {
             <Route
               path="showcase"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
+                <ProtectedRoute allowedRoles={["super_admin", "social_media"]}>
                   <Showcase />
                 </ProtectedRoute>
               }
@@ -78,15 +82,17 @@ const CRMApp = () => {
             <Route
               path="clients-showcase"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
+                <ProtectedRoute allowedRoles={["super_admin", "social_media"]}>
                   <ClientsShowcase />
                 </ProtectedRoute>
               }
             />
+
+            {/* Super Admin only routes */}
             <Route
               path="users"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
+                <ProtectedRoute allowedRoles={["super_admin"]}>
                   <Users />
                 </ProtectedRoute>
               }
@@ -94,7 +100,7 @@ const CRMApp = () => {
             <Route
               path="settings"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
+                <ProtectedRoute allowedRoles={["super_admin"]}>
                   <Settings />
                 </ProtectedRoute>
               }

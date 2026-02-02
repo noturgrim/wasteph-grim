@@ -10,13 +10,12 @@ import { eq, desc, and, or, like, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 import emailService from "./emailService.js";
 import inquiryService from "./inquiryService.js";
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import contractTemplateService from "./contractTemplateService.js";
+import ClientService from "./clientService.js";
+const clientService = new ClientService();
+import pdfService from "./pdfService.js";
+import { uploadObject, getObject } from "./s3Service.js";
+import crypto from "crypto";
 
 /**
  * ContractService - Business logic for contract operations
@@ -222,8 +221,21 @@ class ContractService {
 
     // Save custom template if provided
     let customTemplateUrl = null;
+    let templateId = null;
+
     if (customTemplateBuffer) {
+      // Custom template provided - save it
       customTemplateUrl = await this.saveCustomTemplate(customTemplateBuffer, contractId);
+    } else {
+      // No custom template - use system template
+      const { contractType } = contractDetails;
+      try {
+        const suggestedTemplate = await contractTemplateService.suggestTemplateForContract(contractType);
+        templateId = suggestedTemplate.id;
+      } catch (error) {
+        console.error("Failed to suggest template:", error);
+        // Continue without template - admin can upload PDF manually
+      }
     }
 
     // Extract contract details
@@ -245,6 +257,25 @@ class ContractService {
       clientRequests,
       requestNotes,
     } = contractDetails;
+
+    // Prepare contract data for template rendering (if using template)
+    const contractDataForTemplate = {
+      contractType,
+      clientName,
+      companyName,
+      clientEmailContract,
+      clientAddress,
+      contractDuration,
+      serviceLatitude,
+      serviceLongitude,
+      collectionSchedule,
+      collectionScheduleOther,
+      wasteAllowance,
+      specialClauses,
+      signatories,
+      ratePerKg,
+      clientRequests,
+    };
 
     // Update contract with details
     const [updatedContract] = await db
@@ -271,6 +302,9 @@ class ContractService {
         ratePerKg,
         clientRequests,
         customTemplateUrl,
+        // Template-related fields
+        templateId,
+        contractData: templateId ? JSON.stringify(contractDataForTemplate) : null,
         updatedAt: new Date(),
       })
       .where(eq(contractsTable.id, contractId))
@@ -314,10 +348,10 @@ class ContractService {
     // Validate status
     if (
       contract.status !== "requested" &&
-      contract.status !== "ready_for_sales"
+      contract.status !== "sent_to_sales"
     ) {
       throw new AppError(
-        "Can only upload contract when status is requested or ready_for_sales",
+        "Can only upload contract when status is requested or sent_to_sales",
         400,
       );
     }
@@ -327,9 +361,11 @@ class ContractService {
 
     // Prepare update object
     const updateData = {
-      status: "ready_for_sales",
+      status: "sent_to_sales",
       contractUploadedBy: userId,
       contractUploadedAt: new Date(),
+      sentToSalesBy: userId,
+      sentToSalesAt: new Date(),
       contractPdfUrl: pdfUrl,
       adminNotes,
       updatedAt: new Date(),
@@ -371,6 +407,154 @@ class ContractService {
       entityId: contractId,
       details: { 
         pdfUrl, 
+        adminNotes,
+        dataEdited: editedData ? true : false,
+      },
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
+
+    return updatedContract;
+  }
+
+  /**
+   * Generate contract from template (admin action)
+   * @param {string} contractId - Contract UUID
+   * @param {Object} editedData - Edited contract data (optional)
+   * @param {string} adminNotes - Admin notes (optional)
+   * @param {string} userId - Admin user ID
+   * @param {Object} metadata - Request metadata
+   * @returns {Promise<Object>} Updated contract with PDF
+   */
+  async generateContractFromTemplate(
+    contractId,
+    editedData = null,
+    adminNotes = null,
+    editedHtmlContent = null,
+    userId,
+    metadata = {}
+  ) {
+    // Get contract
+    const contractData = await this.getContractById(contractId);
+    const contract = contractData.contract;
+
+    // Validate status
+    if (
+      contract.status !== "requested" &&
+      contract.status !== "sent_to_sales"
+    ) {
+      throw new AppError(
+        "Can only generate contract when status is requested or sent_to_sales",
+        400
+      );
+    }
+
+    // Validate that contract has a template
+    if (!contract.templateId) {
+      throw new AppError(
+        "Contract does not have a template. Use upload PDF instead.",
+        400
+      );
+    }
+
+    // Get template
+    const template = await contractTemplateService.getTemplateById(
+      contract.templateId
+    );
+
+    // Get contract data - use edited data if provided, otherwise use stored data
+    let contractDataForPdf;
+    if (editedData) {
+      contractDataForPdf = editedData;
+    } else {
+      // Parse stored contract data
+      try {
+        contractDataForPdf = JSON.parse(contract.contractData || "{}");
+      } catch (error) {
+        throw new AppError("Invalid contract data", 400);
+      }
+    }
+
+    // Add contract number if available
+    contractDataForPdf.contractNumber = contractData.proposal.proposalNumber
+      ? contractData.proposal.proposalNumber.replace("PROP-", "CONT-")
+      : "PENDING";
+
+    // Generate PDF from template
+    let pdfBuffer;
+    const htmlToUse = editedHtmlContent || contract.editedHtmlContent;
+    if (htmlToUse) {
+      // Use pre-rendered HTML if available (from request body or previously saved)
+      pdfBuffer = await pdfService.generateContractFromHTML(htmlToUse);
+    } else {
+      // Generate from template
+      pdfBuffer = await pdfService.generateContractPDF(
+        contractDataForPdf,
+        template.htmlTemplate
+      );
+    }
+
+    // Save PDF
+    const pdfUrl = await this.saveContractPdf(pdfBuffer, contractId);
+
+    // Prepare update object
+    const updateData = {
+      status: "sent_to_sales",
+      contractUploadedBy: userId,
+      contractUploadedAt: new Date(),
+      sentToSalesBy: userId,
+      sentToSalesAt: new Date(),
+      contractPdfUrl: pdfUrl,
+      adminNotes,
+      updatedAt: new Date(),
+    };
+
+    // Save edited HTML content if provided
+    if (editedHtmlContent) {
+      updateData.editedHtmlContent = editedHtmlContent;
+    }
+
+    // If admin edited contract data, update it
+    if (editedData) {
+      Object.assign(updateData, {
+        contractType: editedData.contractType,
+        clientName: editedData.clientName,
+        companyName: editedData.companyName,
+        clientEmailContract: editedData.clientEmailContract,
+        clientAddress: editedData.clientAddress,
+        contractDuration: editedData.contractDuration,
+        serviceLatitude: editedData.serviceLatitude,
+        serviceLongitude: editedData.serviceLongitude,
+        collectionSchedule: editedData.collectionSchedule,
+        collectionScheduleOther: editedData.collectionScheduleOther,
+        wasteAllowance: editedData.wasteAllowance,
+        specialClauses: editedData.specialClauses,
+        signatories: editedData.signatories
+          ? JSON.stringify(editedData.signatories)
+          : null,
+        ratePerKg: editedData.ratePerKg,
+        clientRequests: editedData.clientRequests,
+        contractData: JSON.stringify(editedData), // Update stored data
+      });
+    }
+
+    // Update contract
+    const [updatedContract] = await db
+      .update(contractsTable)
+      .set(updateData)
+      .where(eq(contractsTable.id, contractId))
+      .returning();
+
+    // Log activity
+    await this.logActivity({
+      userId,
+      action: "contract_generated_from_template",
+      entityType: "contract",
+      entityId: contractId,
+      details: {
+        templateId: template.id,
+        templateName: template.name,
+        pdfUrl,
         adminNotes,
         dataEdited: editedData ? true : false,
       },
@@ -469,12 +653,17 @@ class ContractService {
         ? JSON.parse(proposal.proposalData)
         : proposal.proposalData;
 
-    // Send email with contract PDF
+    // Generate secure token for client submission link
+    const submissionToken = crypto.randomBytes(32).toString("hex");
+
+    // Send email with contract PDF and submission link
     await emailService.sendContractToClientEmail(
       clientEmail,
       proposalData,
       inquiry,
       pdfBuffer,
+      contractId,
+      submissionToken,
     );
 
     // Update contract
@@ -485,6 +674,7 @@ class ContractService {
         sentToClientBy: userId,
         sentToClientAt: new Date(),
         clientEmail,
+        clientSubmissionToken: submissionToken,
         updatedAt: new Date(),
       })
       .where(eq(contractsTable.id, contractId))
@@ -511,19 +701,11 @@ class ContractService {
    * @returns {Promise<string>} PDF file path
    */
   async saveContractPdf(pdfBuffer, contractId) {
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(__dirname, "../../uploads/contracts");
-    await fs.mkdir(uploadsDir, { recursive: true });
-
-    // Generate filename
     const filename = `contract-${contractId}-${Date.now()}.pdf`;
-    const filepath = path.join(uploadsDir, filename);
-
-    // Write file
-    await fs.writeFile(filepath, pdfBuffer);
-
-    // Return relative path
-    return `/uploads/contracts/${filename}`;
+    const dateFolder = new Date().toISOString().split("T")[0];
+    const key = `contracts/${dateFolder}/${filename}`;
+    await uploadObject(key, pdfBuffer, "application/pdf");
+    return key;
   }
 
   /**
@@ -533,27 +715,22 @@ class ContractService {
    * @returns {Promise<string>} File URL path
    */
   async saveCustomTemplate(fileBuffer, contractId) {
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(__dirname, "../../uploads/contract-templates");
-    await fs.mkdir(uploadsDir, { recursive: true });
-
-    // Determine file extension from buffer (simple check)
-    let ext = ".pdf"; // default
+    let ext = ".pdf";
+    let contentType = "application/pdf";
     if (fileBuffer[0] === 0x50 && fileBuffer[1] === 0x4B) {
-      ext = ".docx"; // ZIP-based format (DOCX)
+      ext = ".docx";
+      contentType =
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     } else if (fileBuffer[0] === 0xD0 && fileBuffer[1] === 0xCF) {
-      ext = ".doc"; // DOC format
+      ext = ".doc";
+      contentType = "application/msword";
     }
 
-    // Generate filename
     const filename = `template-${contractId}-${Date.now()}${ext}`;
-    const filepath = path.join(uploadsDir, filename);
-
-    // Write file
-    await fs.writeFile(filepath, fileBuffer);
-
-    // Return relative path
-    return `/uploads/contract-templates/${filename}`;
+    const dateFolder = new Date().toISOString().split("T")[0];
+    const key = `contract-templates/${dateFolder}/${filename}`;
+    await uploadObject(key, fileBuffer, contentType);
+    return key;
   }
 
   /**
@@ -562,7 +739,6 @@ class ContractService {
    * @returns {Promise<Buffer>} PDF file buffer
    */
   async getContractPdf(contractId) {
-    // Get contract
     const contractData = await this.getContractById(contractId);
     const contract = contractData.contract;
 
@@ -570,15 +746,134 @@ class ContractService {
       throw new AppError("Contract PDF not found", 404);
     }
 
-    // Read PDF file
-    const filepath = path.join(__dirname, "../..", contract.contractPdfUrl);
-
     try {
-      const pdfBuffer = await fs.readFile(filepath);
-      return pdfBuffer;
+      return await getObject(contract.contractPdfUrl);
     } catch (error) {
-      throw new AppError("Failed to read contract PDF file", 500);
+      throw new AppError("Failed to read contract PDF from S3", 500);
     }
+  }
+
+  /**
+   * Validate the client submission token for a contract
+   * @param {string} contractId - Contract UUID
+   * @param {string} token - Token from email link
+   * @returns {Promise<Object>} Contract data
+   */
+  async validateSubmissionToken(contractId, token) {
+    const contractData = await this.getContractById(contractId);
+    const contract = contractData.contract;
+
+    if (!contract.clientSubmissionToken) {
+      throw new AppError("This contract does not have a submission token", 400);
+    }
+
+    if (contract.clientSubmissionToken !== token) {
+      throw new AppError("Invalid submission token", 403);
+    }
+
+    if (contract.status !== "sent_to_client") {
+      throw new AppError(
+        contract.signedAt
+          ? "This contract has already been signed"
+          : "This contract is not available for submission",
+        400,
+      );
+    }
+
+    return contractData;
+  }
+
+  /**
+   * Record client signing — uploads signed contract, transitions to signed, auto-creates client
+   * @param {string} contractId - Contract UUID
+   * @param {string} signedUrl - S3 key of uploaded signed contract
+   * @param {string} ip - Client IP address
+   * @returns {Promise<Object>} Updated contract
+   */
+  async recordClientSigning(contractId, signedUrl, ip) {
+    const contractData = await this.getContractById(contractId);
+    const contract = contractData.contract;
+    const inquiry = contractData.inquiry;
+
+    // Auto-create client record first (if this fails, status stays at sent_to_client so client can retry)
+    const clientData = {
+      companyName: contract.companyName || inquiry?.company || "Unknown",
+      contactPerson: contract.clientName || inquiry?.name || "Unknown",
+      email: contract.clientEmailContract || inquiry?.email || contract.clientEmail,
+      phone: inquiry?.phone || "",
+      address: contract.clientAddress || "",
+      city: "",
+      province: "",
+    };
+
+    const client = await clientService.createClient(clientData, contract.requestedBy || contract.sentToClientBy, {});
+
+    // Update contract status + link client (only after client creation succeeds)
+    const [updatedContract] = await db
+      .update(contractsTable)
+      .set({
+        status: "signed",
+        signedContractUrl: signedUrl,
+        signedAt: new Date(),
+        signedByIp: ip,
+        clientId: client.id,
+        updatedAt: new Date(),
+      })
+      .where(eq(contractsTable.id, contractId))
+      .returning();
+
+    // Log activity
+    await this.logActivity({
+      userId: contract.requestedBy || contract.sentToClientBy,
+      action: "contract_signed_by_client",
+      entityType: "contract",
+      entityId: contractId,
+      details: { clientId: client.id, signedUrl },
+      ipAddress: ip,
+    });
+
+    return updatedContract;
+  }
+
+  /**
+   * Upload hardbound scanned contract (admin)
+   * @param {string} contractId - Contract UUID
+   * @param {string} hardboundUrl - S3 key of uploaded hardbound PDF
+   * @param {string} userId - Admin user ID
+   * @returns {Promise<Object>} Updated contract
+   */
+  async uploadHardboundContract(contractId, hardboundUrl, userId) {
+    const contractData = await this.getContractById(contractId);
+    const contract = contractData.contract;
+
+    if (contract.status !== "signed") {
+      throw new AppError(
+        "Can only upload hardbound contract after client has signed",
+        400,
+      );
+    }
+
+    const [updatedContract] = await db
+      .update(contractsTable)
+      .set({
+        status: "hardbound_received",
+        hardboundContractUrl: hardboundUrl,
+        hardboundUploadedBy: userId,
+        hardboundUploadedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(contractsTable.id, contractId))
+      .returning();
+
+    await this.logActivity({
+      userId,
+      action: "hardbound_contract_uploaded",
+      entityType: "contract",
+      entityId: contractId,
+      details: { hardboundUrl },
+    });
+
+    return updatedContract;
   }
 
   /**

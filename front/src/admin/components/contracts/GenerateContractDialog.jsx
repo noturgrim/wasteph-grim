@@ -1,0 +1,840 @@
+import { useState, useEffect, useRef } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Loader2,
+  FileCheck,
+  Plus,
+  X,
+  Edit,
+  Code2,
+  RefreshCw,
+} from "lucide-react";
+import { api } from "../../services/api";
+import { toast } from "../../utils/toast";
+import ProposalHtmlEditor from "@/components/common/ProposalHtmlEditor";
+import { PDFViewer } from "../PDFViewer";
+
+const CONTRACT_TYPES = [
+  { value: "long_term_variable", label: "LONG TERM GARBAGE VARIABLE CHARGE" },
+  {
+    value: "long_term_fixed",
+    label: "LONG TERM GARBAGE FIXED CHARGE (MORE THAN 50,000 PHP / MONTH)",
+  },
+  { value: "fixed_rate_term", label: "FIXED RATE TERM" },
+  { value: "garbage_bins", label: "GARBAGE BINS" },
+  { value: "garbage_bins_disposal", label: "GARBAGE BINS WITH DISPOSAL" },
+];
+
+const COLLECTION_SCHEDULES = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "bi_weekly", label: "Bi-Weekly" },
+  { value: "other", label: "Others (specify)" },
+];
+
+export function GenerateContractDialog({
+  open,
+  onOpenChange,
+  contract,
+  users,
+  onConfirm,
+}) {
+  const [adminNotes, setAdminNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState("");
+  const [isGenerated, setIsGenerated] = useState(false);
+  const [editedData, setEditedData] = useState({});
+  const [originalData, setOriginalData] = useState({});
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [renderedHtml, setRenderedHtml] = useState("");
+  const [savedHtml, setSavedHtml] = useState("");
+  const [isLoadingHtml, setIsLoadingHtml] = useState(false);
+  const [hasUnsavedHtmlChanges, setHasUnsavedHtmlChanges] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [pendingData, setPendingData] = useState({});
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState("");
+  const templateStructureRef = useRef({ head: "", bodyTag: "", styles: "" });
+
+  // Initialize data when dialog opens
+  useEffect(() => {
+    if (contract && open) {
+      const contractData = contract.contract || {};
+
+      // Parse signatories
+      let signatories = [];
+      if (contractData.signatories) {
+        try {
+          signatories =
+            typeof contractData.signatories === "string"
+              ? JSON.parse(contractData.signatories)
+              : contractData.signatories;
+        } catch (e) {
+          console.error("Failed to parse signatories:", e);
+        }
+      }
+
+      const data = {
+        contractType: contractData.contractType || "",
+        clientName: contractData.clientName || "",
+        companyName: contractData.companyName || "",
+        clientEmailContract: contractData.clientEmailContract || "",
+        clientAddress: contractData.clientAddress || "",
+        contractDuration: contractData.contractDuration || "",
+        serviceLatitude: contractData.serviceLatitude || "",
+        serviceLongitude: contractData.serviceLongitude || "",
+        collectionSchedule: contractData.collectionSchedule || "",
+        collectionScheduleOther: contractData.collectionScheduleOther || "",
+        wasteAllowance: contractData.wasteAllowance || "",
+        specialClauses: contractData.specialClauses || "",
+        signatories:
+          signatories.length > 0 ? signatories : [{ name: "", position: "" }],
+        ratePerKg: contractData.ratePerKg || "",
+        clientRequests: contractData.clientRequests || "",
+      };
+
+      setEditedData(data);
+      setOriginalData(data);
+      setAdminNotes("");
+      setPdfPreviewUrl("");
+      setIsEditing(false);
+      setPendingData({});
+      setIsEditModalOpen(false);
+      setRenderedHtml("");
+      setSavedHtml("");
+      setHasUnsavedHtmlChanges(false);
+
+      // If contract already has a generated PDF, mark as generated and load it
+      if (contractData.contractPdfUrl) {
+        setIsGenerated(true);
+        // Auto-load the existing PDF
+        setTimeout(() => {
+          setIsLoadingPdf(true);
+          const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+          fetch(`${API_BASE_URL}/contracts/${contractData.id}/pdf`, {
+            method: "GET",
+            credentials: "include",
+          })
+            .then((res) => {
+              if (!res.ok) throw new Error("Failed to fetch PDF");
+              return res.blob();
+            })
+            .then((blob) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                setPdfPreviewUrl(reader.result);
+                setIsLoadingPdf(false);
+              };
+              reader.readAsDataURL(blob);
+            })
+            .catch((err) => {
+              console.error("Failed to load existing PDF:", err);
+              setIsLoadingPdf(false);
+            });
+        }, 0);
+      } else {
+        setIsGenerated(false);
+      }
+    }
+  }, [contract, open]);
+
+  const handleFieldChange = (field, value) => {
+    setPendingData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSignatoryChange = (index, field, value) => {
+    const newSignatories = [...pendingData.signatories];
+    newSignatories[index] = { ...newSignatories[index], [field]: value };
+    setPendingData((prev) => ({ ...prev, signatories: newSignatories }));
+  };
+
+  const addSignatory = () => {
+    setPendingData((prev) => ({
+      ...prev,
+      signatories: [...prev.signatories, { name: "", position: "" }],
+    }));
+  };
+
+  const removeSignatory = (index) => {
+    if (pendingData.signatories.length > 1) {
+      setPendingData((prev) => ({
+        ...prev,
+        signatories: prev.signatories.filter((_, i) => i !== index),
+      }));
+    }
+  };
+
+  const handleEditStart = () => {
+    setPendingData({ ...editedData });
+    setIsEditing(true);
+  };
+
+  const handleEditCancel = () => {
+    setPendingData({});
+    setIsEditing(false);
+  };
+
+  const handleEditSave = () => {
+    setEditedData(pendingData);
+    setPendingData({});
+    setIsEditing(false);
+  };
+
+  const handlePreview = async () => {
+    try {
+      setIsPreviewing(true);
+      const response = await api.previewContractFromTemplate(
+        contract.contract.id,
+        editedData
+      );
+
+      if (response.success) {
+        setPreviewPdfUrl(`data:application/pdf;base64,${response.data}`);
+        setShowPdfViewer(true);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to generate preview");
+    } finally {
+      setIsPreviewing(false);
+    }
+  };
+
+  const handlePreviewInPanel = async () => {
+    try {
+      setIsLoadingPdf(true);
+      const response = await api.previewContractFromTemplate(
+        contract.contract.id,
+        editedData
+      );
+
+      if (response.success) {
+        setPdfPreviewUrl(`data:application/pdf;base64,${response.data}`);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to generate preview");
+    } finally {
+      setIsLoadingPdf(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+      await api.generateContractFromTemplate(
+        contract.contract.id,
+        editedData,
+        adminNotes || null
+      );
+
+      toast.success("Contract submitted successfully");
+      setIsGenerated(true);
+
+      // Load the saved PDF
+      await loadGeneratedPdf();
+    } catch (error) {
+      toast.error(error.message || "Failed to submit contract");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const loadGeneratedPdf = async () => {
+    try {
+      setIsLoadingPdf(true);
+      const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+      const response = await fetch(
+        `${API_BASE_URL}/contracts/${contract.contract.id}/pdf`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch PDF");
+
+      const blob = await response.blob();
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPdfPreviewUrl(reader.result);
+        setIsLoadingPdf(false);
+      };
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      console.error("Failed to load PDF:", error);
+      toast.error("Failed to load contract PDF");
+      setIsLoadingPdf(false);
+    }
+  };
+
+  const handleEditContract = async () => {
+    try {
+      setIsLoadingHtml(true);
+      const response = await api.getRenderedContractHtml(contract.contract.id);
+      if (response.success) {
+        const fullHtml = response.data.html;
+
+        // Extract template structure (head, styles, body) for the editor
+        const headMatch = fullHtml.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+        const bodyTagMatch = fullHtml.match(/<body[^>]*>/i);
+        const bodyMatch = fullHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+
+        if (headMatch && bodyMatch) {
+          const styleMatch = headMatch[0].match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+          const inlineStyles = styleMatch
+            ? styleMatch.map((s) => s.replace(/<\/?style[^>]*>/gi, "")).join("\n")
+            : "";
+
+          templateStructureRef.current = {
+            head: headMatch[0],
+            bodyTag: bodyTagMatch ? bodyTagMatch[0] : "<body>",
+            styles: inlineStyles,
+          };
+
+          setRenderedHtml(bodyMatch[1]);
+          setSavedHtml(fullHtml);
+        } else {
+          // Fallback: no head/body structure, use as-is
+          templateStructureRef.current = { head: "", bodyTag: "", styles: "" };
+          setRenderedHtml(fullHtml);
+          setSavedHtml(fullHtml);
+        }
+
+        setIsEditModalOpen(true);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to load contract HTML");
+    } finally {
+      setIsLoadingHtml(false);
+    }
+  };
+
+  const handleEditorSave = ({ html }) => {
+    const { head, bodyTag } = templateStructureRef.current;
+
+    let fullHtml = html;
+    if (head && bodyTag) {
+      fullHtml = `<!DOCTYPE html>\n<html>\n${head}\n${bodyTag}\n  ${html}\n</body>\n</html>`;
+    }
+
+    setSavedHtml(fullHtml);
+  };
+
+  const handleSaveAndRegenerate = async () => {
+    try {
+      setIsSubmitting(true);
+      await api.generateContractFromTemplate(
+        contract.contract.id,
+        editedData,
+        adminNotes || null,
+        savedHtml
+      );
+      toast.success("Contract regenerated successfully");
+      setIsGenerated(true);
+      setHasUnsavedHtmlChanges(false);
+      setIsEditModalOpen(false);
+      await loadGeneratedPdf();
+    } catch (error) {
+      toast.error(error.message || "Failed to regenerate contract");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!contract) return null;
+
+  const salesPerson = users?.find(
+    (u) => u.id === contract.proposal?.requestedBy,
+  );
+  const salesPersonName = salesPerson
+    ? `${salesPerson.firstName} ${salesPerson.lastName}`
+    : "Unknown";
+
+  return (
+    <>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-7xl! w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileCheck className="h-5 w-5 text-green-600" />
+            Generate Contract from Template
+          </DialogTitle>
+          <DialogDescription>
+            Review and edit contract details, then generate the PDF document.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Two Column Layout */}
+        <div
+          className="grid gap-6 overflow-hidden flex-1"
+          style={{ gridTemplateColumns: "2fr 1fr" }}
+        >
+          {/* LEFT COLUMN - Editable Contract Details */}
+          <div className="border-r pr-6 overflow-y-auto">
+            <div className="space-y-4">
+              {/* Header */}
+              <div className="sticky top-0 bg-background pb-3 border-b z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Contract Details
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Sales Person: {salesPersonName}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isGenerated && (
+                      <Badge className="bg-green-600">Generated</Badge>
+                    )}
+                    {!isEditing ? (
+                      <Button type="button" variant="outline" size="sm" onClick={handleEditStart}>
+                        <Edit className="h-3.5 w-3.5 mr-1" />
+                        Edit
+                      </Button>
+                    ) : (
+                      <>
+                        <Button type="button" variant="ghost" size="sm" onClick={handleEditCancel}>
+                          Cancel
+                        </Button>
+                        <Button type="button" size="sm" onClick={handleEditSave} className="bg-blue-600 hover:bg-blue-700">
+                          Save
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Contract Details Fields */}
+              <div className="space-y-4">
+                {(() => {
+                  const d = isEditing ? pendingData : editedData;
+                  return (
+                    <>
+                      {/* Contract Type */}
+                      <div className="space-y-2">
+                        <Label>Contract Type *</Label>
+                        <Select
+                          value={d.contractType}
+                          onValueChange={(value) => handleFieldChange("contractType", value)}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CONTRACT_TYPES.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Client Information */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Client Name *</Label>
+                          <Input
+                            value={d.clientName || ""}
+                            onChange={(e) => handleFieldChange("clientName", e.target.value)}
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Company Name *</Label>
+                          <Input
+                            value={d.companyName || ""}
+                            onChange={(e) => handleFieldChange("companyName", e.target.value)}
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Client Email *</Label>
+                          <Input
+                            type="email"
+                            value={d.clientEmailContract || ""}
+                            onChange={(e) => handleFieldChange("clientEmailContract", e.target.value)}
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Contract Duration *</Label>
+                          <Input
+                            value={d.contractDuration || ""}
+                            onChange={(e) => handleFieldChange("contractDuration", e.target.value)}
+                            placeholder="e.g., 12 months"
+                            disabled={!isEditing}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Client Address *</Label>
+                        <Textarea
+                          value={d.clientAddress || ""}
+                          onChange={(e) => handleFieldChange("clientAddress", e.target.value)}
+                          rows={2}
+                          disabled={!isEditing}
+                        />
+                      </div>
+
+                      {/* Service Details */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Collection Schedule *</Label>
+                          <Select
+                            value={d.collectionSchedule}
+                            onValueChange={(value) => handleFieldChange("collectionSchedule", value)}
+                            disabled={!isEditing}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {COLLECTION_SCHEDULES.map((schedule) => (
+                                <SelectItem key={schedule.value} value={schedule.value}>
+                                  {schedule.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {d.collectionSchedule === "other" && (
+                          <div className="space-y-2">
+                            <Label>Specify Schedule *</Label>
+                            <Input
+                              value={d.collectionScheduleOther || ""}
+                              onChange={(e) => handleFieldChange("collectionScheduleOther", e.target.value)}
+                              disabled={!isEditing}
+                            />
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <Label>Waste Allowance *</Label>
+                          <Input
+                            value={d.wasteAllowance || ""}
+                            onChange={(e) => handleFieldChange("wasteAllowance", e.target.value)}
+                            placeholder="e.g., 500 kg/month"
+                            disabled={!isEditing}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Rate per Kg *</Label>
+                          <Input
+                            value={d.ratePerKg || ""}
+                            onChange={(e) => handleFieldChange("ratePerKg", e.target.value)}
+                            placeholder="e.g., PHP 3.50/kg"
+                            disabled={!isEditing}
+                          />
+                        </div>
+                      </div>
+
+                      {/* GPS Coordinates */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Service Latitude *</Label>
+                          <Input
+                            value={d.serviceLatitude || ""}
+                            onChange={(e) => handleFieldChange("serviceLatitude", e.target.value)}
+                            placeholder="e.g., 14.5995"
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Service Longitude *</Label>
+                          <Input
+                            value={d.serviceLongitude || ""}
+                            onChange={(e) => handleFieldChange("serviceLongitude", e.target.value)}
+                            placeholder="e.g., 120.9842"
+                            disabled={!isEditing}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Special Clauses */}
+                      <div className="space-y-2">
+                        <Label>Special Clauses *</Label>
+                        <Textarea
+                          value={d.specialClauses || ""}
+                          onChange={(e) => handleFieldChange("specialClauses", e.target.value)}
+                          rows={3}
+                          disabled={!isEditing}
+                        />
+                      </div>
+
+                      {/* Client Requests */}
+                      <div className="space-y-2">
+                        <Label>Client Requests *</Label>
+                        <Textarea
+                          value={d.clientRequests || ""}
+                          onChange={(e) => handleFieldChange("clientRequests", e.target.value)}
+                          rows={2}
+                          disabled={!isEditing}
+                        />
+                      </div>
+
+                      {/* Signatories */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label>Signatories *</Label>
+                          {isEditing && (
+                            <Button type="button" variant="outline" size="sm" onClick={addSignatory}>
+                              <Plus className="h-3.5 w-3.5 mr-1" />
+                              Add Signatory
+                            </Button>
+                          )}
+                        </div>
+
+                        {d.signatories?.map((signatory, index) => (
+                          <div key={index} className="flex gap-3 items-start p-3 border rounded-lg">
+                            <div className="flex-1 grid grid-cols-2 gap-3">
+                              <Input
+                                placeholder="Full Name"
+                                value={signatory.name}
+                                onChange={(e) => handleSignatoryChange(index, "name", e.target.value)}
+                                disabled={!isEditing}
+                              />
+                              <Input
+                                placeholder="Position/Title"
+                                value={signatory.position}
+                                onChange={(e) => handleSignatoryChange(index, "position", e.target.value)}
+                                disabled={!isEditing}
+                              />
+                            </div>
+                            {isEditing && d.signatories.length > 1 && (
+                              <Button type="button" variant="ghost" size="sm" onClick={() => removeSignatory(index)}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+
+                {/* Admin Notes — always editable */}
+                <div className="space-y-2">
+                  <Label htmlFor="adminNotes">
+                    Additional Notes for Sales{" "}
+                    <span className="text-muted-foreground">(Optional)</span>
+                  </Label>
+                  <Textarea
+                    id="adminNotes"
+                    value={adminNotes}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Add any notes for sales team..."
+                  />
+                </div>
+
+                {/* Info */}
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                    <strong>Note:</strong> All changes will be tracked and sent to sales automatically.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN - Contract PDF */}
+          <div className="overflow-hidden flex flex-col">
+            <div className="sticky top-0 bg-background pb-2 border-b z-10 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Contract PDF
+              </h3>
+              <div className="flex items-center gap-2">
+                {pdfPreviewUrl && !isGenerated && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviewInPanel}
+                    disabled={isLoadingPdf}
+                  >
+                    {isLoadingPdf ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    Refresh
+                  </Button>
+                )}
+                {isGenerated && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEditContract}
+                    disabled={isLoadingHtml}
+                  >
+                    {isLoadingHtml ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <Code2 className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    Edit Contract
+                  </Button>
+                )}
+                {isGenerated && (
+                  <Badge className="bg-green-600">Submitted</Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 min-h-[500px] border rounded-lg overflow-hidden bg-gray-50 mt-2">
+              {isLoadingPdf ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-10 w-10 animate-spin text-green-600" />
+                    <p className="text-sm font-medium text-gray-600">Loading contract PDF...</p>
+                  </div>
+                </div>
+              ) : pdfPreviewUrl ? (
+                <iframe
+                  src={pdfPreviewUrl}
+                  className="w-full h-full border-0"
+                  title="Contract PDF Preview"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center p-6">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Preview the contract before submitting
+                    </p>
+                    <Button onClick={handlePreviewInPanel} variant="outline">
+                      <FileCheck className="mr-2 h-4 w-4" />
+                      Preview Contract
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || isGenerated}
+            className={isGenerated ? "bg-green-600 hover:bg-green-600" : "bg-blue-600 hover:bg-blue-700"}
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isGenerated ? (
+              <>
+                <FileCheck className="mr-2 h-4 w-4" />
+                Submitted
+              </>
+            ) : isSubmitting ? "Submitting..." : "Submit Contract"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Edit Contract HTML Modal */}
+    <Dialog open={isEditModalOpen} onOpenChange={(val) => {
+      if (!val) {
+        setIsEditModalOpen(false);
+        setHasUnsavedHtmlChanges(false);
+      }
+    }}>
+      <DialogContent className="max-w-4xl! w-full max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Code2 className="h-5 w-5 text-blue-600" />
+            Edit Contract HTML
+          </DialogTitle>
+          <DialogDescription>
+            Edit the contract content directly. Save your changes, then regenerate the PDF.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <ProposalHtmlEditor
+            content={renderedHtml}
+            templateStyles={templateStructureRef.current.styles}
+            onChange={handleEditorSave}
+            onUnsavedChange={setHasUnsavedHtmlChanges}
+          />
+        </div>
+
+        <div className="text-xs text-gray-500 mt-3 px-1">
+          <strong>Save Changes</strong> confirms your edits in the editor above. <strong>Save &amp; Regenerate</strong> then submits the saved content and regenerates the contract PDF.
+        </div>
+
+        <DialogFooter className="gap-2 mt-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsEditModalOpen(false);
+              setHasUnsavedHtmlChanges(false);
+            }}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveAndRegenerate}
+            variant="outline"
+            disabled={isSubmitting || hasUnsavedHtmlChanges || !savedHtml}
+            className="border-green-600 text-green-700 hover:bg-green-50"
+          >
+            {isSubmitting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            Save &amp; Regenerate
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {showPdfViewer && previewPdfUrl && (
+      <PDFViewer
+        fileUrl={previewPdfUrl}
+        fileName={`${editedData.clientName || "Contract"} - Preview.pdf`}
+        title="Contract Preview"
+        onClose={() => setShowPdfViewer(false)}
+        isOpen={showPdfViewer}
+      />
+    )}
+    </>
+  );
+}
