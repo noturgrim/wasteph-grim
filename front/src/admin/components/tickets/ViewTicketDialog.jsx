@@ -45,7 +45,10 @@ const getPriorityBadge = (priority) => {
 const getStatusBadge = (status) => {
   const config = {
     open: { label: "Open", className: "bg-blue-600 text-white" },
-    in_progress: { label: "In Progress", className: "bg-purple-600 text-white" },
+    in_progress: {
+      label: "In Progress",
+      className: "bg-purple-600 text-white",
+    },
     resolved: { label: "Resolved", className: "bg-green-600 text-white" },
     closed: { label: "Closed", className: "bg-gray-500 text-white" },
   };
@@ -66,7 +69,12 @@ const getCategoryLabel = (category) => {
   return labels[category] || category;
 };
 
-export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) => {
+export const ViewTicketDialog = ({
+  open,
+  onOpenChange,
+  ticketId,
+  onRefresh,
+}) => {
   const { user } = useAuth();
   const [ticket, setTicket] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -157,39 +165,45 @@ export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) =>
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Ticket className="h-5 w-5 text-blue-600" />
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Ticket className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
             Ticket Details
           </DialogTitle>
-          <DialogDescription>{ticket.ticketNumber}</DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
+            {ticket.ticketNumber}
+          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="h-[calc(90vh-120px)]">
           <div className="space-y-5 pr-4">
             {/* Ticket Header */}
-            <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 space-y-3">
+            <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3 sm:p-4 space-y-3">
               <div className="flex items-start justify-between">
                 <div className="space-y-1 flex-1">
-                  <h3 className="text-lg font-semibold">{ticket.subject}</h3>
+                  <h3 className="text-base sm:text-lg font-semibold">
+                    {ticket.subject}
+                  </h3>
                   <div className="flex gap-2 flex-wrap">
                     {getPriorityBadge(ticket.priority)}
                     {getStatusBadge(ticket.status)}
-                    <Badge variant="outline">{getCategoryLabel(ticket.category)}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {getCategoryLabel(ticket.category)}
+                    </Badge>
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-muted-foreground">Created</p>
-                  <p className="font-medium">
+                  <p className="text-muted-foreground text-xs">Created</p>
+                  <p className="font-medium text-sm">
                     {format(new Date(ticket.createdAt), "MMM dd, yyyy HH:mm")}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Created By</p>
-                  <p className="font-medium">
+                  <p className="text-muted-foreground text-xs">Created By</p>
+                  <p className="font-medium text-sm">
                     {ticket.creatorFirstName} {ticket.creatorLastName}
                   </p>
                 </div>
@@ -201,7 +215,9 @@ export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) =>
               <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                 Description
               </h4>
-              <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
+              <p className="text-sm whitespace-pre-wrap">
+                {ticket.description}
+              </p>
             </div>
 
             {/* Attachments */}
@@ -218,7 +234,9 @@ export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) =>
                       className="flex items-center justify-between p-2 border rounded-lg"
                     >
                       <div>
-                        <p className="text-sm font-medium">{attachment.fileName}</p>
+                        <p className="text-sm font-medium">
+                          {attachment.fileName}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {(attachment.fileSize / 1024).toFixed(2)} KB
                         </p>
@@ -234,17 +252,18 @@ export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) =>
               <Label htmlFor="file-upload" className="text-sm font-semibold">
                 Upload File
               </Label>
-              <div className="flex gap-2 mt-2">
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
                 <input
                   id="file-upload"
                   type="file"
                   onChange={(e) => setSelectedFile(e.target.files[0])}
-                  className="text-sm"
+                  className="text-sm flex-1"
                 />
                 <Button
                   size="sm"
                   onClick={handleFileUpload}
                   disabled={!selectedFile || isUploadingFile}
+                  className="w-full sm:w-auto"
                 >
                   <Upload className="h-4 w-4 mr-1" />
                   {isUploadingFile ? "Uploading..." : "Upload"}
@@ -263,7 +282,10 @@ export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) =>
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <Label>Status</Label>
-                    <Select value={statusUpdate} onValueChange={setStatusUpdate}>
+                    <Select
+                      value={statusUpdate}
+                      onValueChange={setStatusUpdate}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -275,7 +297,8 @@ export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) =>
                       </SelectContent>
                     </Select>
                   </div>
-                  {(statusUpdate === "resolved" || statusUpdate === "closed") && (
+                  {(statusUpdate === "resolved" ||
+                    statusUpdate === "closed") && (
                     <div className="space-y-2">
                       <Label>Resolution Notes</Label>
                       <Textarea
@@ -288,7 +311,10 @@ export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) =>
                   )}
                   <Button
                     onClick={handleUpdateStatus}
-                    disabled={statusUpdate === ticket.status || isUpdatingStatus}
+                    disabled={
+                      statusUpdate === ticket.status || isUpdatingStatus
+                    }
+                    className="w-full sm:w-auto"
                   >
                     <CheckCircle className="h-4 w-4 mr-1" />
                     {isUpdatingStatus ? "Updating..." : "Update Status"}
@@ -296,7 +322,9 @@ export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) =>
                 </div>
                 {ticket.resolutionNotes && (
                   <div className="mt-3 p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-                    <p className="text-sm font-semibold mb-1">Resolution Notes:</p>
+                    <p className="text-sm font-semibold mb-1">
+                      Resolution Notes:
+                    </p>
                     <p className="text-sm whitespace-pre-wrap">
                       {ticket.resolutionNotes}
                     </p>
@@ -327,14 +355,19 @@ export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) =>
                             {comment.firstName} {comment.lastName}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(comment.createdAt), "MMM dd, yyyy HH:mm")}
+                            {format(
+                              new Date(comment.createdAt),
+                              "MMM dd, yyyy HH:mm"
+                            )}
                           </p>
                         </div>
                         <Badge variant="outline" className="text-xs">
                           {comment.role}
                         </Badge>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {comment.content}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -353,6 +386,7 @@ export const ViewTicketDialog = ({ open, onOpenChange, ticketId, onRefresh }) =>
                   size="sm"
                   onClick={handleAddComment}
                   disabled={!newComment.trim() || isAddingComment}
+                  className="w-full sm:w-auto"
                 >
                   <MessageSquare className="h-4 w-4 mr-1" />
                   {isAddingComment ? "Adding..." : "Add Comment"}

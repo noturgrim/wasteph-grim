@@ -148,81 +148,84 @@ export default function Tickets() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
           <SearchInput
             placeholder="Search by ticket #, subject, or creator..."
             value={searchTerm}
             onChange={setSearchTerm}
+            className="w-full sm:w-auto"
           />
 
-          <FacetedFilter
-            title="Status"
-            options={[
-              { value: "open", label: "Open" },
-              { value: "in_progress", label: "In Progress" },
-              { value: "resolved", label: "Resolved" },
-              { value: "closed", label: "Closed" },
-            ]}
-            selectedValues={statusFilter}
-            onSelectionChange={setStatusFilter}
-            getCount={getStatusCount}
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <FacetedFilter
+              title="Status"
+              options={[
+                { value: "open", label: "Open" },
+                { value: "in_progress", label: "In Progress" },
+                { value: "resolved", label: "Resolved" },
+                { value: "closed", label: "Closed" },
+              ]}
+              selectedValues={statusFilter}
+              onSelectionChange={setStatusFilter}
+              getCount={getStatusCount}
+            />
 
-          <FacetedFilter
-            title="Category"
-            options={[
-              { value: "technical_issue", label: "Technical Issue" },
-              { value: "billing_payment", label: "Billing/Payment" },
-              { value: "feature_request", label: "Feature Request" },
-              { value: "complaint", label: "Complaint" },
-              { value: "feedback", label: "Feedback" },
-              { value: "contract_legal", label: "Contract/Legal" },
-              { value: "other", label: "Other" },
-            ]}
-            selectedValues={categoryFilter}
-            onSelectionChange={setCategoryFilter}
-            getCount={getCategoryCount}
-          />
+            <FacetedFilter
+              title="Category"
+              options={[
+                { value: "technical_issue", label: "Technical Issue" },
+                { value: "billing_payment", label: "Billing/Payment" },
+                { value: "feature_request", label: "Feature Request" },
+                { value: "complaint", label: "Complaint" },
+                { value: "feedback", label: "Feedback" },
+                { value: "contract_legal", label: "Contract/Legal" },
+                { value: "other", label: "Other" },
+              ]}
+              selectedValues={categoryFilter}
+              onSelectionChange={setCategoryFilter}
+              getCount={getCategoryCount}
+            />
 
-          <FacetedFilter
-            title="Priority"
-            options={[
-              { value: "low", label: "Low" },
-              { value: "medium", label: "Medium" },
-              { value: "high", label: "High" },
-              { value: "urgent", label: "Urgent" },
-            ]}
-            selectedValues={priorityFilter}
-            onSelectionChange={setPriorityFilter}
-            getCount={getPriorityCount}
-          />
+            <FacetedFilter
+              title="Priority"
+              options={[
+                { value: "low", label: "Low" },
+                { value: "medium", label: "Medium" },
+                { value: "high", label: "High" },
+                { value: "urgent", label: "Urgent" },
+              ]}
+              selectedValues={priorityFilter}
+              onSelectionChange={setPriorityFilter}
+              getCount={getPriorityCount}
+            />
 
-          {(statusFilter.length > 0 ||
-            categoryFilter.length > 0 ||
-            priorityFilter.length > 0 ||
-            searchTerm) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setStatusFilter([]);
-                setCategoryFilter([]);
-                setPriorityFilter([]);
-                setSearchTerm("");
-              }}
-              className="h-8 px-2 lg:px-3"
-            >
-              Reset
-              <X className="ml-2 h-4 w-4" />
-            </Button>
-          )}
+            {(statusFilter.length > 0 ||
+              categoryFilter.length > 0 ||
+              priorityFilter.length > 0 ||
+              searchTerm) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStatusFilter([]);
+                  setCategoryFilter([]);
+                  setPriorityFilter([]);
+                  setSearchTerm("");
+                }}
+                className="h-8 px-2 lg:px-3"
+              >
+                Reset
+                <X className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <SlidersHorizontal className="mr-2 h-4 w-4" />
                 Columns
               </Button>
@@ -246,7 +249,7 @@ export default function Tickets() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="rounded-lg border p-4">
           <p className="text-sm text-muted-foreground">Open</p>
           <p className="text-2xl font-bold">{getStatusCount("open")}</p>

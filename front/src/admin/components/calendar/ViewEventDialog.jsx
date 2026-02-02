@@ -139,9 +139,9 @@ export function ViewEventDialog({
               <div className="space-y-1">
                 <DialogTitle className="text-2xl">{event.title}</DialogTitle>
                 {event.eventType && (
-                  <p className="text-sm text-muted-foreground">
+                  <DialogDescription className="text-sm">
                     {formatEventType(event.eventType)}
-                  </p>
+                  </DialogDescription>
                 )}
               </div>
               {getStatusBadge(event.status)}
