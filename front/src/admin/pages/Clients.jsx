@@ -239,16 +239,30 @@ export default function Clients() {
             <DropdownMenuContent align="end" className="w-[200px]">
               <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {Object.entries(columnVisibility).map(([key, value]) => (
-                <DropdownMenuCheckboxItem
-                  key={key}
-                  checked={value}
-                  onCheckedChange={() => handleToggleColumn(key)}
-                  className="capitalize"
-                >
-                  {key.replace(/([A-Z])/g, " $1").trim()}
-                </DropdownMenuCheckboxItem>
-              ))}
+              {allColumns
+                .filter((column) => column.accessorKey)
+                .map((column) => {
+                  const columnLabels = {
+                    companyName: "Company",
+                    contactPerson: "Contact",
+                    email: "Email",
+                    phone: "Phone",
+                    industry: "Industry",
+                    status: "Status",
+                    contractStatus: "Contract",
+                    contractDates: "Contract Period",
+                    createdAt: "Created",
+                  };
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.accessorKey}
+                      checked={columnVisibility[column.accessorKey]}
+                      onCheckedChange={() => handleToggleColumn(column.accessorKey)}
+                    >
+                      {columnLabels[column.accessorKey]}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -251,16 +251,29 @@ export default function Tickets() {
             <DropdownMenuContent align="end" className="w-[200px]">
               <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {Object.entries(columnVisibility).map(([key, value]) => (
-                <DropdownMenuCheckboxItem
-                  key={key}
-                  checked={value}
-                  onCheckedChange={() => handleToggleColumn(key)}
-                  className="capitalize"
-                >
-                  {key.replace(/([A-Z])/g, " $1").trim()}
-                </DropdownMenuCheckboxItem>
-              ))}
+              {allColumns
+                .filter((column) => column.accessorKey)
+                .map((column) => {
+                  const columnLabels = {
+                    ticketNumber: "Ticket #",
+                    subject: "Subject",
+                    client: "Client",
+                    category: "Category",
+                    priority: "Priority",
+                    status: "Status",
+                    createdBy: "Created By",
+                    createdAt: "Created",
+                  };
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.accessorKey}
+                      checked={columnVisibility[column.accessorKey]}
+                      onCheckedChange={() => handleToggleColumn(column.accessorKey)}
+                    >
+                      {columnLabels[column.accessorKey]}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

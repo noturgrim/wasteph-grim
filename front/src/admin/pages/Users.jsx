@@ -234,16 +234,26 @@ export default function Users() {
             <DropdownMenuContent align="end" className="w-[200px]">
               <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {Object.entries(columnVisibility).map(([key, value]) => (
-                <DropdownMenuCheckboxItem
-                  key={key}
-                  checked={value}
-                  onCheckedChange={() => handleToggleColumn(key)}
-                  className="capitalize"
-                >
-                  {key.replace(/([A-Z])/g, " $1").trim()}
-                </DropdownMenuCheckboxItem>
-              ))}
+              {allColumns
+                .filter((column) => column.accessorKey)
+                .map((column) => {
+                  const columnLabels = {
+                    name: "Name",
+                    email: "Email",
+                    role: "Role",
+                    isActive: "Status",
+                    createdAt: "Created",
+                  };
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.accessorKey}
+                      checked={columnVisibility[column.accessorKey]}
+                      onCheckedChange={() => handleToggleColumn(column.accessorKey)}
+                    >
+                      {columnLabels[column.accessorKey]}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
