@@ -15,7 +15,9 @@ import {
   ArrowUp,
   ArrowDown,
   Pencil,
-  FileSearch
+  FileSearch,
+  FileText,
+  Send
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +49,7 @@ const getStatusBadge = (status) => {
   );
 };
 
-export const createColumns = ({ users = [], onReview, onDelete }) => [
+export const createColumns = ({ users = [], onReview, onDelete, onRevise, onSendToClient, userRole }) => [
   {
     accessorKey: "inquiryName",
     header: ({ column }) => {
@@ -171,6 +173,32 @@ export const createColumns = ({ users = [], onReview, onDelete }) => [
             >
               <FileSearch className="h-4 w-4 mr-1" />
               Review
+            </Button>
+          )}
+
+          {/* Revise — sales only, disapproved proposals */}
+          {userRole === "sales" && proposal.status === "disapproved" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onRevise(proposal)}
+              className="h-8 px-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Revise
+            </Button>
+          )}
+
+          {/* Send to Client — sales only, approved proposals */}
+          {userRole === "sales" && proposal.status === "approved" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onSendToClient(proposal)}
+              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <Send className="h-4 w-4 mr-1" />
+              Send to Client
             </Button>
           )}
 

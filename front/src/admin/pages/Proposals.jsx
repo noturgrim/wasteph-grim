@@ -21,6 +21,8 @@ import { createColumns } from "../components/proposals/columns";
 import { ReviewProposalDialog } from "../components/proposals/ReviewProposalDialog";
 import { ApproveProposalDialog } from "../components/proposals/ApproveProposalDialog";
 import { RejectProposalDialog } from "../components/proposals/RejectProposalDialog";
+import { RequestProposalDialog } from "../components/inquiries/RequestProposalDialog";
+import { SendProposalDialog } from "../components/inquiries/SendProposalDialog";
 
 export default function Proposals() {
   const { user } = useAuth();
@@ -57,6 +59,9 @@ export default function Proposals() {
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
+  const [isRequestProposalDialogOpen, setIsRequestProposalDialogOpen] = useState(false);
+  const [isSendProposalDialogOpen, setIsSendProposalDialogOpen] = useState(false);
+  const [reviseInquiry, setReviseInquiry] = useState(null);
 
   // Fetch users on mount
   useEffect(() => {
@@ -159,6 +164,29 @@ export default function Proposals() {
     }
   };
 
+  const handleRevise = async (proposal) => {
+    try {
+      const response = await api.getInquiryById(proposal.inquiryId);
+      const inquiry = response.data || response;
+      setReviseInquiry(inquiry);
+      setSelectedProposal(proposal);
+      setIsRequestProposalDialogOpen(true);
+    } catch (error) {
+      toast.error("Failed to load inquiry details for revision");
+    }
+  };
+
+  const handleSendToClient = (proposal) => {
+    setSelectedProposal({
+      ...proposal,
+      proposalId: proposal.id,
+      name: proposal.inquiryName,
+      email: proposal.inquiryEmail,
+      company: proposal.inquiryCompany,
+    });
+    setIsSendProposalDialogOpen(true);
+  };
+
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
     fetchProposals(newPage);
@@ -176,6 +204,9 @@ export default function Proposals() {
     users,
     onReview: handleReview,
     onDelete: handleDelete,
+    onRevise: handleRevise,
+    onSendToClient: handleSendToClient,
+    userRole: user?.role,
   });
 
   // Filter columns based on visibility
@@ -190,7 +221,9 @@ export default function Proposals() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Proposals</h1>
         <p className="text-muted-foreground">
-          Review and manage proposal requests from sales team
+          {user?.role === "sales"
+            ? "Your proposal requests"
+            : "Review and manage proposal requests from sales team"}
         </p>
       </div>
 
@@ -210,8 +243,10 @@ export default function Proposals() {
             options={[
               { value: "pending", label: "Pending Review" },
               { value: "approved", label: "Approved" },
+              { value: "disapproved", label: "Disapproved" },
               { value: "sent", label: "Sent" },
-              { value: "rejected", label: "Rejected" },
+              { value: "accepted", label: "Client Accepted" },
+              { value: "cancelled", label: "Cancelled" },
             ]}
             selectedValues={statusFilter}
             onSelectionChange={setStatusFilter}
@@ -293,6 +328,23 @@ export default function Proposals() {
         onOpenChange={setIsRejectDialogOpen}
         proposal={selectedProposal}
         onConfirm={confirmReject}
+      />
+
+      <RequestProposalDialog
+        open={isRequestProposalDialogOpen}
+        onOpenChange={setIsRequestProposalDialogOpen}
+        inquiry={reviseInquiry}
+        onSuccess={() => {
+          setReviseInquiry(null);
+          fetchProposals();
+        }}
+      />
+
+      <SendProposalDialog
+        open={isSendProposalDialogOpen}
+        onOpenChange={setIsSendProposalDialogOpen}
+        inquiry={selectedProposal}
+        onSuccess={() => fetchProposals()}
       />
     </div>
   );

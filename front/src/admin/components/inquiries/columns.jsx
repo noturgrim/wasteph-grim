@@ -6,12 +6,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, FileText, Send } from "lucide-react";
+import { MoreHorizontal, Eye, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { StatusBadge } from "../StatusBadge";
 import { Badge } from "@/components/ui/badge";
 
-export const createColumns = ({ users = [], onView, onEdit, onDelete, onRequestProposal, onSendToClient, userRole }) => [
+export const createColumns = ({ users = [], onView, onEdit, onDelete, onRequestProposal, userRole }) => [
   {
     accessorKey: "inquiryNumber",
     header: ({ column }) => {
@@ -141,59 +141,6 @@ export const createColumns = ({ users = [], onView, onEdit, onDelete, onRequestP
     },
   },
   {
-    accessorKey: "proposalStatus",
-    header: "Proposal",
-    cell: ({ row }) => {
-      const proposalStatus = row.original.proposalStatus;
-      const proposalNumber = row.original.proposalNumber;
-
-      if (!proposalStatus) {
-        return (
-          <Badge variant="outline" className="bg-gray-50 text-gray-600 dark:bg-gray-900 dark:text-gray-400">
-            No Proposal
-          </Badge>
-        );
-      }
-
-      const statusConfig = {
-        pending: {
-          label: "Pending Review",
-          className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 border-yellow-300"
-        },
-        approved: {
-          label: "Approved",
-          className: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200 border-green-300"
-        },
-        rejected: {
-          label: "Rejected",
-          className: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200 border-red-300"
-        },
-        sent: {
-          label: "Sent",
-          className: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 border-blue-300"
-        },
-      };
-
-      const config = statusConfig[proposalStatus] || {
-        label: proposalStatus,
-        className: "bg-gray-100 text-gray-800"
-      };
-
-      return (
-        <div className="flex flex-col gap-1">
-          <Badge variant="outline" className={config.className}>
-            {config.label}
-          </Badge>
-          {proposalNumber && (
-            <span className="font-mono text-xs text-muted-foreground">
-              {proposalNumber}
-            </span>
-          )}
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: "assignedTo",
     header: "Assigned To",
     cell: ({ row }) => {
@@ -263,32 +210,6 @@ export const createColumns = ({ users = [], onView, onEdit, onDelete, onRequestP
             >
               <FileText className="h-4 w-4 mr-1" />
               Proposal
-            </Button>
-          )}
-
-          {/* Show Proposal button for disapproved proposals - allow resubmission */}
-          {inquiry.proposalStatus === "disapproved" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onRequestProposal(inquiry)}
-              className="h-8 px-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-            >
-              <FileText className="h-4 w-4 mr-1" />
-              Revise Proposal
-            </Button>
-          )}
-
-          {/* Show Send to Client button for approved proposals */}
-          {inquiry.proposalStatus === "approved" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onSendToClient(inquiry)}
-              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-            >
-              <Send className="h-4 w-4 mr-1" />
-              Send to Client
             </Button>
           )}
 

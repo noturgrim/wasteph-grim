@@ -42,7 +42,6 @@ import { AddInquiryDialog } from "../components/inquiries/AddInquiryDialog";
 import { EditInquiryDialog } from "../components/inquiries/EditInquiryDialog";
 import { ViewInquiryDialog } from "../components/inquiries/ViewInquiryDialog";
 import { RequestProposalDialog } from "../components/inquiries/RequestProposalDialog";
-import { SendProposalDialog } from "../components/inquiries/SendProposalDialog";
 import { createColumns } from "../components/inquiries/columns";
 
 // Month names for the picker
@@ -169,7 +168,6 @@ export default function Inquiries() {
     source: true,
     service: true,
     status: true,
-    proposalStatus: true,
     assignedTo: true,
     createdAt: true,
   });
@@ -183,8 +181,6 @@ export default function Inquiries() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isRequestProposalDialogOpen, setIsRequestProposalDialogOpen] =
-    useState(false);
-  const [isSendProposalDialogOpen, setIsSendProposalDialogOpen] =
     useState(false);
   const [selectedInquiry, setSelectedInquiry] = useState(null);
 
@@ -345,10 +341,6 @@ export default function Inquiries() {
       setSelectedInquiry(inquiry);
       setIsRequestProposalDialogOpen(true);
     },
-    onSendToClient: (inquiry) => {
-      setSelectedInquiry(inquiry);
-      setIsSendProposalDialogOpen(true);
-    },
     onDelete: handleDeleteInquiry,
     userRole: user?.role,
   });
@@ -504,7 +496,6 @@ export default function Inquiries() {
                   source: "Source",
                   service: "Service",
                   status: "Status",
-                  proposalStatus: "Proposal",
                   assignedTo: "Assigned To",
                   createdAt: "Date",
                 };
@@ -750,16 +741,6 @@ export default function Inquiries() {
       <RequestProposalDialog
         open={isRequestProposalDialogOpen}
         onOpenChange={setIsRequestProposalDialogOpen}
-        inquiry={selectedInquiry}
-        onSuccess={() => {
-          fetchAllInquiries();
-          fetchInquiries();
-        }}
-      />
-
-      <SendProposalDialog
-        open={isSendProposalDialogOpen}
-        onOpenChange={setIsSendProposalDialogOpen}
         inquiry={selectedInquiry}
         onSuccess={() => {
           fetchAllInquiries();
