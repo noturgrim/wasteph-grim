@@ -219,8 +219,15 @@ class ApiClient {
   }
 
   // Client endpoints
-  async getClients() {
-    return this.request("/clients");
+  async getClients(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append("status", filters.status);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+
+    const queryString = params.toString();
+    return this.request(`/clients${queryString ? `?${queryString}` : ""}`);
   }
 
   async createClient(data) {
@@ -731,6 +738,9 @@ class ApiClient {
     if (filters.category) params.append("category", filters.category);
     if (filters.priority) params.append("priority", filters.priority);
     if (filters.createdBy) params.append("createdBy", filters.createdBy);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
 
     const queryString = params.toString();
     return this.request(`/tickets${queryString ? `?${queryString}` : ""}`);
