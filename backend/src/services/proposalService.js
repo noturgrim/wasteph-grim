@@ -59,6 +59,18 @@ class ProposalService {
       })
       .returning();
 
+    // Update inquiry status to proposal_created (non-critical)
+    try {
+      await inquiryService.updateInquiry(
+        inquiryId,
+        { status: "proposal_created" },
+        userId,
+        metadata
+      );
+    } catch (error) {
+      console.error("Failed to update inquiry status after creating proposal:", error);
+    }
+
     // Log activity
     await this.logActivity({
       userId,
@@ -114,6 +126,7 @@ class ProposalService {
         inquiryEmail: inquiryTable.email,
         inquiryPhone: inquiryTable.phone,
         inquiryCompany: inquiryTable.company,
+        inquiryNumber: inquiryTable.inquiryNumber,
       })
       .from(proposalTable)
       .leftJoin(inquiryTable, eq(proposalTable.inquiryId, inquiryTable.id));

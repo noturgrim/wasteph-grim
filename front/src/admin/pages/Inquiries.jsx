@@ -377,7 +377,8 @@ export default function Inquiries() {
           <FacetedFilter
             title="Status"
             options={[
-              { value: "submitted_proposal", label: "Submitted Proposal" },
+              { value: "proposal_created", label: "Proposal Created" },
+              { value: "submitted_proposal", label: "Proposal Sent" },
               { value: "initial_comms", label: "Initial Comms" },
               { value: "negotiating", label: "Negotiating" },
               { value: "to_call", label: "To Call" },

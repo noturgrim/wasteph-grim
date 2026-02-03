@@ -34,6 +34,8 @@ const defaultColorMap = {
   // HOT - Ready to close (Red)
   negotiating:
     "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
+  proposal_created:
+    "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
   submitted_proposal:
     "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
 
@@ -61,7 +63,8 @@ const defaultColorMap = {
 
 const statusLabels = {
   // Inquiry statuses
-  submitted_proposal: "Submitted Proposal",
+  proposal_created: "Proposal Created",
+  submitted_proposal: "Proposal Sent",
   initial_comms: "Initial Comms",
   negotiating: "Negotiating",
   to_call: "To Call",

@@ -97,26 +97,6 @@ export const createColumns = ({ onView, onEdit, onClaim, onDelete, isMasterSales
     },
   },
   {
-    accessorKey: "company",
-    header: "Company",
-    cell: ({ row }) => row.original.company || "-",
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-    cell: ({ row }) => row.original.email || "-",
-  },
-  {
-    accessorKey: "phone",
-    header: "Phone",
-    cell: ({ row }) => row.original.phone || "-",
-  },
-  {
-    accessorKey: "location",
-    header: "Location",
-    cell: ({ row }) => row.original.location || "-",
-  },
-  {
     accessorKey: "isClaimed",
     header: "Status",
     cell: ({ row }) => {
