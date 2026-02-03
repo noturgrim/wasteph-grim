@@ -15,6 +15,7 @@ import {
   handleClientApproval,
   handleClientRejection,
   getProposalStatusPublic,
+  getProposalPDFPublic,
 } from "../controllers/proposalController.js";
 import {
   validateCreateProposal,
@@ -38,6 +39,9 @@ router.post("/public/:id/reject", handleClientRejection);
 
 // Get proposal status (for displaying on response page)
 router.get("/public/:id/status", getProposalStatusPublic);
+
+// Get proposal PDF (for client viewing from email)
+router.get("/public/:id/pdf", getProposalPDFPublic);
 
 /**
  * Proposal Routes
