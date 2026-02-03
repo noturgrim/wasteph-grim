@@ -69,6 +69,22 @@ const defaultColorMap = {
   active: "bg-green-50 text-green-700 border-green-200",
   inactive: "bg-gray-50 text-gray-700 border-gray-200",
   suspended: "bg-red-50 text-red-700 border-red-200",
+
+  // Proposal statuses
+  pending:
+    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800",
+  approved:
+    "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800",
+  disapproved:
+    "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800",
+  sent:
+    "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300 dark:border-yellow-800",
+  accepted:
+    "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800",
+  rejected:
+    "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
+  expired:
+    "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700",
 };
 
 const statusLabels = {
@@ -95,6 +111,15 @@ const statusLabels = {
   active: "Active",
   inactive: "Inactive",
   suspended: "Suspended",
+
+  // Proposal statuses
+  pending: "Pending Review",
+  approved: "Approved",
+  disapproved: "Disapproved",
+  sent: "Sent to Client",
+  accepted: "Client Accepted",
+  rejected: "Client Rejected",
+  expired: "Expired",
 };
 
 export function StatusBadge({ status, colorMap = {} }) {
