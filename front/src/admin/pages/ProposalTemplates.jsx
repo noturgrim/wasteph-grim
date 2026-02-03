@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Eye, Code, X, SlidersHorizontal, MoreHorizontal } from "lucide-react";
+import { Plus, Eye, Code, X, SlidersHorizontal, MoreHorizontal, Star, Trash2 } from "lucide-react";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
 import { Button } from "@/components/ui/button";
@@ -25,9 +25,11 @@ import { SearchInput } from "../components/SearchInput";
 import { FacetedFilter } from "../components/FacetedFilter";
 import { TemplatePreviewDialog } from "../components/templates/TemplatePreviewDialog";
 import { TemplateEditorDialog } from "../components/templates/TemplateEditorDialog";
+import { DeleteConfirmationModal } from "../components/modals/DeleteConfirmationModal";
 
 // Service type mapping
 const SERVICE_TYPES = {
+  compactor_hauling: "Compactor Hauling",
   fixed_monthly: "Fixed Monthly Rate",
   hazardous_waste: "Hazardous Waste",
   clearing_project: "Clearing Project",
@@ -37,6 +39,7 @@ const SERVICE_TYPES = {
 };
 
 const SERVICE_TYPE_OPTIONS = [
+  { value: "compactor_hauling", label: "Compactor Hauling" },
   { value: "fixed_monthly", label: "Fixed Monthly Rate" },
   { value: "hazardous_waste", label: "Hazardous Waste" },
   { value: "clearing_project", label: "Clearing Project" },
@@ -74,6 +77,8 @@ export default function ProposalTemplates() {
   // Dialog states
   const [previewDialog, setPreviewDialog] = useState({ open: false, template: null });
   const [editorDialog, setEditorDialog] = useState({ open: false, template: null });
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   // Fetch templates, reset to page 1 on filter change
   useEffect(() => {
@@ -143,6 +148,32 @@ export default function ProposalTemplates() {
     }
   };
 
+  const handleSetDefault = async (template) => {
+    try {
+      await api.setDefaultProposalTemplate(template.id);
+      toast.success("Template set as default");
+      fetchTemplates();
+    } catch (error) {
+      toast.error(error.message || "Failed to set default template");
+    }
+  };
+
+  const handleDelete = (template) => {
+    setSelectedTemplate(template);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await api.deleteProposalTemplate(selectedTemplate.id);
+      toast.success("Template deleted successfully");
+      fetchTemplates();
+    } catch (error) {
+      toast.error(error.message || "Failed to delete template");
+      throw error;
+    }
+  };
+
   const getServiceTypeCount = (value) => {
     return templates.filter(t => t.templateType === value).length;
   };
@@ -153,7 +184,12 @@ export default function ProposalTemplates() {
         header: "Template Name",
         cell: ({ row }) => (
           <div>
-            <div className="font-medium">{row.original.name}</div>
+            <div className="font-medium flex items-center gap-2">
+              {row.original.name}
+              {row.original.isDefault && (
+                <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
+              )}
+            </div>
             {row.original.description && (
               <div className="text-sm text-muted-foreground mt-0.5">
                 {row.original.description}
@@ -166,11 +202,13 @@ export default function ProposalTemplates() {
         accessorKey: "serviceType",
         header: "Service Type",
         cell: ({ row }) => {
-          const serviceType = row.original.serviceType || "fixed_monthly";
-          return (
+          const templateType = row.original.templateType;
+          return templateType ? (
             <Badge variant="outline">
-              {SERVICE_TYPES[serviceType] || "Unknown Service"}
+              {SERVICE_TYPES[templateType] || templateType}
             </Badge>
+          ) : (
+            <span className="text-sm text-muted-foreground">General</span>
           );
         },
       },
@@ -215,19 +253,37 @@ export default function ProposalTemplates() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem 
-                onClick={() => handlePreview(row.original)} 
+              <DropdownMenuItem
+                onClick={() => handlePreview(row.original)}
                 className="cursor-pointer"
               >
                 <Eye className="h-4 w-4 mr-2" />
                 <span>Preview</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleEdit(row.original)} 
+              <DropdownMenuItem
+                onClick={() => handleEdit(row.original)}
                 className="cursor-pointer"
               >
                 <Code className="h-4 w-4 mr-2" />
                 <span>Edit</span>
+              </DropdownMenuItem>
+              {!row.original.isDefault && (
+                <DropdownMenuItem
+                  onClick={() => handleSetDefault(row.original)}
+                  className="cursor-pointer"
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  <span>Set as Default</span>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => handleDelete(row.original)}
+                className="cursor-pointer text-red-600 focus:text-red-600"
+                disabled={row.original.isDefault}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                <span>Delete</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -242,7 +298,7 @@ export default function ProposalTemplates() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -290,44 +346,46 @@ export default function ProposalTemplates() {
           )}
         </div>
 
-        {/* View Options */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
-              View
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[180px]">
-            <DropdownMenuLabel className="font-bold">Toggle columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {allColumns
-              .filter((column) => column.accessorKey)
-              .map((column) => {
-                const columnLabels = {
-                  name: "Template Name",
-                  serviceType: "Service Type",
-                  status: "Status",
-                  createdAt: "Created",
-                  updatedAt: "Last Updated",
-                };
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.accessorKey}
-                    checked={columnVisibility[column.accessorKey]}
-                    onCheckedChange={(value) =>
-                      setColumnVisibility({
-                        ...columnVisibility,
-                        [column.accessorKey]: value,
-                      })
-                    }
-                  >
-                    {columnLabels[column.accessorKey]}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Column Visibility */}
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                Columns
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {allColumns
+                .filter((column) => column.accessorKey)
+                .map((column) => {
+                  const columnLabels = {
+                    name: "Template Name",
+                    serviceType: "Service Type",
+                    status: "Status",
+                    createdAt: "Created",
+                    updatedAt: "Last Updated",
+                  };
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.accessorKey}
+                      checked={columnVisibility[column.accessorKey]}
+                      onCheckedChange={(value) =>
+                        setColumnVisibility({
+                          ...columnVisibility,
+                          [column.accessorKey]: value,
+                        })
+                      }
+                    >
+                      {columnLabels[column.accessorKey]}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Data Table */}
@@ -434,6 +492,14 @@ export default function ProposalTemplates() {
         onOpenChange={(open) => setEditorDialog({ open, template: null })}
         template={editorDialog.template}
         onSave={handleSaveTemplate}
+      />
+
+      <DeleteConfirmationModal
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        onConfirm={confirmDelete}
+        itemName={selectedTemplate?.name}
+        itemType="proposal template"
       />
     </div>
   );

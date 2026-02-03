@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Eye, Code, X, SlidersHorizontal, MoreHorizontal, Star } from "lucide-react";
+import { Plus, Eye, Code, X, SlidersHorizontal, MoreHorizontal, Star, Trash2 } from "lucide-react";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { SearchInput } from "../components/SearchInput";
 import { FacetedFilter } from "../components/FacetedFilter";
 import { ContractTemplatePreviewDialog } from "../components/contracts/ContractTemplatePreviewDialog";
 import { ContractTemplateEditorDialog } from "../components/contracts/ContractTemplateEditorDialog";
+import { DeleteConfirmationModal } from "../components/modals/DeleteConfirmationModal";
 
 // Contract type mapping
 const CONTRACT_TYPES = {
@@ -72,6 +73,8 @@ export default function ContractTemplates() {
   // Dialog states
   const [previewDialog, setPreviewDialog] = useState({ open: false, template: null });
   const [editorDialog, setEditorDialog] = useState({ open: false, template: null });
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   // Fetch templates, reset to page 1 on filter change
   useEffect(() => {
@@ -151,17 +154,19 @@ export default function ContractTemplates() {
     }
   };
 
-  const handleDeleteTemplate = async (template) => {
-    if (!confirm(`Are you sure you want to delete "${template.name}"?`)) {
-      return;
-    }
+  const handleDelete = (template) => {
+    setSelectedTemplate(template);
+    setIsDeleteModalOpen(true);
+  };
 
+  const confirmDelete = async () => {
     try {
-      await api.deleteContractTemplate(template.id);
+      await api.deleteContractTemplate(selectedTemplate.id);
       toast.success("Template deleted successfully");
       fetchTemplates();
     } catch (error) {
       toast.error(error.message || "Failed to delete template");
+      throw error;
     }
   };
 
@@ -269,10 +274,11 @@ export default function ContractTemplates() {
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => handleDeleteTemplate(row.original)}
-                className="cursor-pointer text-destructive"
+                onClick={() => handleDelete(row.original)}
+                className="cursor-pointer text-red-600 focus:text-red-600"
                 disabled={row.original.isDefault}
               >
+                <Trash2 className="h-4 w-4 mr-2" />
                 <span>Delete</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -288,7 +294,7 @@ export default function ContractTemplates() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -337,29 +343,42 @@ export default function ContractTemplates() {
         </div>
 
         {/* Column Visibility */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
-              View
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {Object.keys(columnVisibility).map(key => (
-              <DropdownMenuCheckboxItem
-                key={key}
-                checked={columnVisibility[key]}
-                onCheckedChange={(checked) =>
-                  setColumnVisibility(prev => ({ ...prev, [key]: checked }))
-                }
-              >
-                {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                Columns
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {allColumns
+                .filter((column) => column.accessorKey)
+                .map((column) => {
+                  const columnLabels = {
+                    name: "Template Name",
+                    contractType: "Contract Type",
+                    status: "Status",
+                    createdAt: "Created",
+                    updatedAt: "Last Updated",
+                  };
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.accessorKey}
+                      checked={columnVisibility[column.accessorKey]}
+                      onCheckedChange={(checked) =>
+                        setColumnVisibility(prev => ({ ...prev, [column.accessorKey]: checked }))
+                      }
+                    >
+                      {columnLabels[column.accessorKey]}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Data Table */}
@@ -367,6 +386,7 @@ export default function ContractTemplates() {
         columns={columns}
         data={templates}
         isLoading={loading}
+        emptyMessage="No contract templates found. Create your first template to get started."
       />
 
       {/* Pagination */}
@@ -464,6 +484,14 @@ export default function ContractTemplates() {
         onOpenChange={(open) => setEditorDialog({ open, template: null })}
         template={editorDialog.template}
         onSave={handleSaveTemplate}
+      />
+
+      <DeleteConfirmationModal
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        onConfirm={confirmDelete}
+        itemName={selectedTemplate?.name}
+        itemType="contract template"
       />
     </div>
   );
