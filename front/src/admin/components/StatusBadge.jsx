@@ -3,19 +3,25 @@
  * Temperature-based color coding:
  *
  * 🔵 COLD (Blue) - Needs information gathering:
- *    - initial_comms, waiting_for_feedback
+ *    - initial_comms, waiting_for_feedback, submitted_company_profile
  *
  * 🟠 WARM (Orange) - In progress, actively working:
- *    - to_call, submitted_company_profile
+ *    - to_call
  *
- * 🔴 HOT (Red) - Information gathered, ready to close:
- *    - negotiating, submitted_proposal
+ * 🟡 AWAITING RESPONSE (Yellow) - Sent to client, waiting:
+ *    - submitted_proposal
+ *
+ * 🟣 HOT (Purple/Red) - Information gathered, ready to close:
+ *    - negotiating, proposal_created
  *
  * ✅ WON (Green) - Deal closed:
  *    - on_boarded
  *
  * ⚫ NEUTRAL (Gray) - Inactive/Closed:
- *    - na, declined
+ *    - na
+ *
+ * 🔴 LOST (Red) - Explicitly declined / lost:
+ *    - declined
  */
 
 const defaultColorMap = {
@@ -24,20 +30,22 @@ const defaultColorMap = {
     "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800",
   waiting_for_feedback:
     "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800",
+  submitted_company_profile:
+    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800",
 
   // WARM - In progress (Orange)
   to_call:
     "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800",
-  submitted_company_profile:
-    "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800",
 
-  // HOT - Ready to close (Red)
+  // AWAITING RESPONSE (Yellow)
+  submitted_proposal:
+    "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300 dark:border-yellow-800",
+
+  // HOT - Ready to close (Purple/Red)
   negotiating:
     "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
   proposal_created:
-    "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
-  submitted_proposal:
-    "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
+    "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800",
 
   // WON - Deal closed (Green)
   on_boarded:
@@ -45,8 +53,10 @@ const defaultColorMap = {
 
   // NEUTRAL - Inactive/Closed (Gray)
   na: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700",
+
+  // LOST - Explicitly declined (Red)
   declined:
-    "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700",
+    "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
 
   // Lead statuses
   new: "bg-blue-50 text-blue-700 border-blue-200",
