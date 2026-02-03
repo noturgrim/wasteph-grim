@@ -3,6 +3,13 @@ import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
 import { SlidersHorizontal, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +28,8 @@ import { createColumns } from "../components/proposals/columns";
 import { ReviewProposalDialog } from "../components/proposals/ReviewProposalDialog";
 import { ApproveProposalDialog } from "../components/proposals/ApproveProposalDialog";
 import { RejectProposalDialog } from "../components/proposals/RejectProposalDialog";
+import { RequestProposalDialog } from "../components/inquiries/RequestProposalDialog";
+import { SendProposalDialog } from "../components/inquiries/SendProposalDialog";
 
 export default function Proposals() {
   const { user } = useAuth();
@@ -41,10 +50,11 @@ export default function Proposals() {
 
   // Column visibility
   const [columnVisibility, setColumnVisibility] = useState({
+    proposalNumber: true,
+    inquiryNumber: true,
     inquiryName: true,
-    inquiryEmail: true,
     inquiryCompany: true,
-    requestedByName: true,
+    ...(user?.role !== "sales" && { requestedByName: true }),
     status: true,
     createdAt: true,
   });
@@ -57,6 +67,9 @@ export default function Proposals() {
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
+  const [isRequestProposalDialogOpen, setIsRequestProposalDialogOpen] = useState(false);
+  const [isSendProposalDialogOpen, setIsSendProposalDialogOpen] = useState(false);
+  const [reviseInquiry, setReviseInquiry] = useState(null);
 
   // Fetch users on mount
   useEffect(() => {
@@ -79,12 +92,12 @@ export default function Proposals() {
     }
   };
 
-  const fetchProposals = async (page = pagination.page) => {
+  const fetchProposals = async (page = pagination.page, limit = pagination.limit) => {
     setIsLoading(true);
     try {
       const filters = {
         page,
-        limit: pagination.limit,
+        limit,
         ...(statusFilter.length > 0 && { status: statusFilter.join(",") }),
         ...(searchTerm && { search: searchTerm }),
       };
@@ -159,9 +172,27 @@ export default function Proposals() {
     }
   };
 
-  const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-    fetchProposals(newPage);
+  const handleRevise = async (proposal) => {
+    try {
+      const response = await api.getInquiryById(proposal.inquiryId);
+      const inquiry = response.data || response;
+      setReviseInquiry(inquiry);
+      setSelectedProposal(proposal);
+      setIsRequestProposalDialogOpen(true);
+    } catch (error) {
+      toast.error("Failed to load inquiry details for revision");
+    }
+  };
+
+  const handleSendToClient = (proposal) => {
+    setSelectedProposal({
+      ...proposal,
+      proposalId: proposal.id,
+      name: proposal.inquiryName,
+      email: proposal.inquiryEmail,
+      company: proposal.inquiryCompany,
+    });
+    setIsSendProposalDialogOpen(true);
   };
 
   const handleToggleColumn = (columnKey) => {
@@ -176,6 +207,9 @@ export default function Proposals() {
     users,
     onReview: handleReview,
     onDelete: handleDelete,
+    onRevise: handleRevise,
+    onSendToClient: handleSendToClient,
+    userRole: user?.role,
   });
 
   // Filter columns based on visibility
@@ -190,7 +224,9 @@ export default function Proposals() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Proposals</h1>
         <p className="text-muted-foreground">
-          Review and manage proposal requests from sales team
+          {user?.role === "sales"
+            ? "Your proposal requests"
+            : "Review and manage proposal requests from sales team"}
         </p>
       </div>
 
@@ -210,8 +246,10 @@ export default function Proposals() {
             options={[
               { value: "pending", label: "Pending Review" },
               { value: "approved", label: "Approved" },
+              { value: "disapproved", label: "Disapproved" },
               { value: "sent", label: "Sent" },
-              { value: "rejected", label: "Rejected" },
+              { value: "accepted", label: "Client Accepted" },
+              { value: "cancelled", label: "Cancelled" },
             ]}
             selectedValues={statusFilter}
             onSelectionChange={setStatusFilter}
@@ -267,9 +305,93 @@ export default function Proposals() {
         columns={columns}
         data={proposals}
         isLoading={isLoading}
-        pagination={pagination}
-        onPageChange={handlePageChange}
       />
+
+      {/* Pagination */}
+      <div className="flex items-center justify-end gap-8 pt-4">
+        {/* Rows per page */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm whitespace-nowrap">Rows per page</span>
+          <Select
+            value={pagination.limit.toString()}
+            onValueChange={(value) => {
+              const newLimit = parseInt(value);
+              setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+              fetchProposals(1, newLimit);
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start" side="bottom">
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="30">30</SelectItem>
+              <SelectItem value="40">40</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Page info */}
+        <span className="text-sm">
+          Page {pagination.page} of {pagination.totalPages}
+        </span>
+
+        {/* Navigation buttons */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchProposals(1)}
+            disabled={pagination.page === 1 || isLoading}
+          >
+            <span className="sr-only">First page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="11 17 6 12 11 7" />
+              <polyline points="18 17 13 12 18 7" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchProposals(pagination.page - 1)}
+            disabled={pagination.page === 1 || isLoading}
+          >
+            <span className="sr-only">Previous page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchProposals(pagination.page + 1)}
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+          >
+            <span className="sr-only">Next page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchProposals(pagination.totalPages)}
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+          >
+            <span className="sr-only">Last page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="13 17 18 12 13 7" />
+              <polyline points="6 17 11 12 6 7" />
+            </svg>
+          </Button>
+        </div>
+      </div>
 
       {/* Dialogs */}
       <ReviewProposalDialog
@@ -279,6 +401,7 @@ export default function Proposals() {
         users={users}
         onApprove={handleApprove}
         onReject={handleReject}
+        userRole={user?.role}
       />
 
       <ApproveProposalDialog
@@ -293,6 +416,23 @@ export default function Proposals() {
         onOpenChange={setIsRejectDialogOpen}
         proposal={selectedProposal}
         onConfirm={confirmReject}
+      />
+
+      <RequestProposalDialog
+        open={isRequestProposalDialogOpen}
+        onOpenChange={setIsRequestProposalDialogOpen}
+        inquiry={reviseInquiry}
+        onSuccess={() => {
+          setReviseInquiry(null);
+          fetchProposals();
+        }}
+      />
+
+      <SendProposalDialog
+        open={isSendProposalDialogOpen}
+        onOpenChange={setIsSendProposalDialogOpen}
+        inquiry={selectedProposal}
+        onSuccess={() => fetchProposals()}
       />
     </div>
   );

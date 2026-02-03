@@ -60,10 +60,6 @@ export default function Leads() {
 
   const [columnVisibility, setColumnVisibility] = useState({
     clientName: true,
-    company: true,
-    email: true,
-    phone: true,
-    location: true,
     isClaimed: true,
     claimedByUser: true,
     createdAt: true,
@@ -344,10 +340,6 @@ export default function Leads() {
               .map((column) => {
                 const labels = {
                   clientName: "Client Name",
-                  company: "Company",
-                  email: "Email",
-                  phone: "Phone",
-                  location: "Location",
                   isClaimed: "Status",
                   claimedByUser: "Claimed By",
                   createdAt: "Time in Pool",

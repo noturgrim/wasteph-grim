@@ -15,7 +15,9 @@ import {
   ArrowUp,
   ArrowDown,
   Pencil,
-  FileSearch
+  FileSearch,
+  FileText,
+  Send
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -47,16 +49,16 @@ const getStatusBadge = (status) => {
   );
 };
 
-export const createColumns = ({ users = [], onReview, onDelete }) => [
+export const createColumns = ({ users = [], onReview, onDelete, onRevise, onSendToClient, userRole }) => [
   {
-    accessorKey: "inquiryName",
+    accessorKey: "proposalNumber",
     header: ({ column }) => {
       const isSorted = column.getIsSorted();
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
-              Client Name
+              Proposal #
               {isSorted === "asc" ? (
                 <ArrowUp className="ml-2 h-4 w-4" />
               ) : isSorted === "desc" ? (
@@ -84,24 +86,41 @@ export const createColumns = ({ users = [], onReview, onDelete }) => [
       return (
         <button
           onClick={() => onReview(proposal)}
-          className="font-bold underline hover:text-primary cursor-pointer text-left"
+          className="font-mono text-sm italic font-normal text-black dark:text-white hover:underline cursor-pointer"
         >
-          {proposal.inquiryName || "N/A"}
+          {proposal.proposalNumber || "-"}
         </button>
       );
     },
   },
   {
-    accessorKey: "inquiryEmail",
-    header: "Email",
-    cell: ({ row }) => row.original.inquiryEmail || "-",
+    accessorKey: "inquiryNumber",
+    header: "Inquiry #",
+    cell: ({ row }) => (
+      <span className="font-mono text-sm italic font-normal text-black dark:text-white">
+        {row.original.inquiryNumber || "-"}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "inquiryName",
+    header: "Client",
+    cell: ({ row }) => {
+      const proposal = row.original;
+      return (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold">{proposal.inquiryName || "-"}</span>
+          <span className="text-sm text-muted-foreground">{proposal.inquiryEmail || "-"}</span>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "inquiryCompany",
     header: "Company",
     cell: ({ row }) => row.original.inquiryCompany || "-",
   },
-  {
+  ...(userRole !== "sales" ? [{
     accessorKey: "requestedByName",
     header: "Requested By",
     cell: ({ row }) => {
@@ -111,7 +130,7 @@ export const createColumns = ({ users = [], onReview, onDelete }) => [
       const user = users.find(u => u.id === requestedBy);
       return user ? `${user.firstName} ${user.lastName}` : "Unknown User";
     },
-  },
+  }] : []),
   {
     accessorKey: "status",
     header: "Status",
@@ -161,8 +180,8 @@ export const createColumns = ({ users = [], onReview, onDelete }) => [
 
       return (
         <div className="flex items-center gap-2">
-          {/* Review Button - only show for pending proposals */}
-          {proposal.status === "pending" && (
+          {/* Review Button - admin/super_admin only, pending proposals */}
+          {userRole !== "sales" && proposal.status === "pending" && (
             <Button
               variant="ghost"
               size="sm"
@@ -171,6 +190,32 @@ export const createColumns = ({ users = [], onReview, onDelete }) => [
             >
               <FileSearch className="h-4 w-4 mr-1" />
               Review
+            </Button>
+          )}
+
+          {/* Revise — sales only, disapproved proposals */}
+          {userRole === "sales" && proposal.status === "disapproved" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onRevise(proposal)}
+              className="h-8 px-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Revise
+            </Button>
+          )}
+
+          {/* Send to Client — sales only, approved proposals */}
+          {userRole === "sales" && proposal.status === "approved" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onSendToClient(proposal)}
+              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <Send className="h-4 w-4 mr-1" />
+              Send to Client
             </Button>
           )}
 
@@ -183,16 +228,12 @@ export const createColumns = ({ users = [], onReview, onDelete }) => [
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {/* View option for non-pending proposals */}
-              {proposal.status !== "pending" && (
-                <>
-                  <DropdownMenuItem onClick={() => onReview(proposal)} className="cursor-pointer">
-                    <span className="flex-1">View Detail</span>
-                    <Eye className="h-4 w-4" />
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
+              {/* View Detail — always available; for admin it's redundant on pending (they have Review inline) */}
+              <DropdownMenuItem onClick={() => onReview(proposal)} className="cursor-pointer">
+                <span className="flex-1">View Detail</span>
+                <Eye className="h-4 w-4" />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
 
               {/* Delete option */}
               {onDelete && (

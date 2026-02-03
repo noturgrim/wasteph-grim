@@ -42,6 +42,12 @@ const salesPipelineItems = [
     description: "Claimed leads and inquiries",
   },
   {
+    title: "Proposals",
+    url: "/admin/proposals",
+    icon: ScrollText,
+    description: "Your proposal requests",
+  },
+  {
     title: "Clients",
     url: "/admin/clients",
     icon: Users,

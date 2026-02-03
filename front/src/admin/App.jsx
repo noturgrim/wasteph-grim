@@ -59,7 +59,7 @@ const CRMApp = () => {
             <Route
               path="proposals"
               element={
-                <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                <ProtectedRoute allowedRoles={["admin", "super_admin", "sales"]}>
                   <Proposals />
                 </ProtectedRoute>
               }

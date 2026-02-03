@@ -22,6 +22,7 @@ export const inquiryStatusEnum = pgEnum("inquiry_status", [
   "waiting_for_feedback",
   "declined",
   "on_boarded",
+  "proposal_created",
 ]);
 export const leadStatusEnum = pgEnum("lead_status", [
   "new",

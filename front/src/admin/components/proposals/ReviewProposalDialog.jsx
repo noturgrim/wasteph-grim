@@ -44,7 +44,8 @@ export function ReviewProposalDialog({
   proposal,
   users = [],
   onApprove,
-  onReject
+  onReject,
+  userRole,
 }) {
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState("");
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
@@ -145,7 +146,7 @@ export function ReviewProposalDialog({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle>Review Proposal</DialogTitle>
+              <DialogTitle>{userRole === "sales" ? "View Proposal" : "Review Proposal"}</DialogTitle>
               <DialogDescription>
                 Requested by: {requestedByUser
                   ? `${requestedByUser.firstName} ${requestedByUser.lastName}`
@@ -251,7 +252,7 @@ export function ReviewProposalDialog({
             Close
           </Button>
 
-          {proposal.status === "pending" && (
+          {userRole !== "sales" && proposal.status === "pending" && (
             <>
               <Button
                 variant="destructive"
@@ -275,9 +276,8 @@ export function ReviewProposalDialog({
               </Button>
             </>
           )}
-          
-          {/* Info message for admin clarity */}
-          {proposal.status === "pending" && (
+
+          {userRole !== "sales" && proposal.status === "pending" && (
             <div className="flex-1 text-xs text-muted-foreground text-right">
               Note: Approving allows sales to send the proposal
             </div>
