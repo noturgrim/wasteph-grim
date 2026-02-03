@@ -258,13 +258,20 @@ class ApiClient {
   async getUsers(role = "sales") {
     const params = new URLSearchParams();
     if (role) params.append("role", role);
+    params.append("limit", "100");
 
-    const queryString = params.toString();
-    return this.request(`/users${queryString ? `?${queryString}` : ""}`);
+    return this.request(`/users?${params.toString()}`);
   }
 
-  async getAllUsers() {
-    return this.request("/users?includeInactive=true");
+  async getAllUsers(filters = {}) {
+    const params = new URLSearchParams();
+    params.append("includeInactive", "true");
+    if (filters.role) params.append("role", filters.role);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+
+    return this.request(`/users?${params.toString()}`);
   }
 
   async createUser(data) {
@@ -409,6 +416,7 @@ class ApiClient {
     const params = new URLSearchParams();
     if (filters.isActive !== undefined)
       params.append("isActive", filters.isActive);
+    if (filters.templateType) params.append("templateType", filters.templateType);
     if (filters.search) params.append("search", filters.search);
     if (filters.page) params.append("page", filters.page);
     if (filters.limit) params.append("limit", filters.limit);
