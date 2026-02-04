@@ -3,6 +3,7 @@ import { api } from "../services/api";
 import socketService from "../services/socketService";
 import ticketSocketService from "../services/ticketSocketService";
 import proposalSocketService from "../services/proposalSocketService";
+import contractSocketService from "../services/contractSocketService";
 
 const AuthContext = createContext(null);
 
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }) => {
       if (socketService.isSocketConnected()) {
         ticketSocketService.cleanup();
         proposalSocketService.cleanup();
+        contractSocketService.cleanup();
         socketService.disconnect();
       }
     };
@@ -32,6 +34,7 @@ export const AuthProvider = ({ children }) => {
     } else if (!user && socketService.isSocketConnected()) {
       ticketSocketService.cleanup();
       proposalSocketService.cleanup();
+      contractSocketService.cleanup();
       socketService.disconnect();
       setIsSocketConnected(false);
     }
@@ -48,6 +51,7 @@ export const AuthProvider = ({ children }) => {
         // Initialize feature-specific socket services
         ticketSocketService.initialize();
         proposalSocketService.initialize();
+        contractSocketService.initialize();
       });
 
       // Handle connection failure

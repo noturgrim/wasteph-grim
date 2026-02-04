@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useLocation } from "react-router-dom";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
 import { SlidersHorizontal, X } from "lucide-react";
+import contractSocketService from "../services/contractSocketService";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +38,7 @@ import { PDFViewer } from "../components/PDFViewer";
 
 export default function ContractRequests() {
   const { user } = useAuth();
+  const location = useLocation();
   const [contracts, setContracts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -90,6 +93,42 @@ export default function ContractRequests() {
     setPagination((prev) => ({ ...prev, page: 1 })); // Reset to page 1 on filter change
     fetchContracts(1);
   }, [statusFilter, searchTerm]);
+
+  // Listen for contract socket events
+  useEffect(() => {
+    const handleContractEvent = () => {
+      // Refresh the contracts list when any contract event occurs
+      fetchContracts();
+    };
+
+    // Subscribe to all contract events
+    contractSocketService.on("contractRequested", handleContractEvent);
+    contractSocketService.on("contractSentToSales", handleContractEvent);
+    contractSocketService.on("contractSentToClient", handleContractEvent);
+    contractSocketService.on("contractSigned", handleContractEvent);
+
+    // Cleanup
+    return () => {
+      contractSocketService.off("contractRequested", handleContractEvent);
+      contractSocketService.off("contractSentToSales", handleContractEvent);
+      contractSocketService.off("contractSentToClient", handleContractEvent);
+      contractSocketService.off("contractSigned", handleContractEvent);
+    };
+  }, []);
+
+  // Handle opening contract from notification
+  useEffect(() => {
+    if (location.state?.openContractId && contracts.length > 0) {
+      const contract = contracts.find(
+        (c) => c.contract.id === location.state.openContractId
+      );
+      if (contract) {
+        handleViewDetails(contract);
+        // Clear the state to prevent reopening
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, contracts]);
 
   const fetchUsers = async () => {
     try {

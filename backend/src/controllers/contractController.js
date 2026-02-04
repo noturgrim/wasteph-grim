@@ -1,4 +1,4 @@
-import contractService from "../services/contractService.js";
+import contractServiceWithSocket from "../services/contractServiceWithSocket.js";
 import { getObject, uploadObject } from "../services/s3Service.js";
 import { AppError } from "../middleware/errorHandler.js";
 
@@ -15,7 +15,7 @@ export const getAllContracts = async (req, res, next) => {
   try {
     const { status, search, page, limit } = req.query;
 
-    const result = await contractService.getAllContracts(
+    const result = await contractServiceWithSocket.getAllContracts(
       { status, search, page, limit },
       req.user.id,
       req.user.role,
@@ -38,7 +38,7 @@ export const getAllContracts = async (req, res, next) => {
 export const getContractById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const contractData = await contractService.getContractById(id);
+    const contractData = await contractServiceWithSocket.getContractById(id);
 
     // Permission check: sales can only see their own contracts
     if (
@@ -78,7 +78,7 @@ export const requestContract = async (req, res, next) => {
       userAgent: req.get("user-agent"),
     };
 
-    const contract = await contractService.requestContract(
+    const contract = await contractServiceWithSocket.requestContract(
       id,
       contractDetails,
       req.user.id,
@@ -119,7 +119,8 @@ export const uploadContractPdf = async (req, res, next) => {
     let parsedEditedData = null;
     if (editedData) {
       try {
-        parsedEditedData = typeof editedData === 'string' ? JSON.parse(editedData) : editedData;
+        parsedEditedData =
+          typeof editedData === "string" ? JSON.parse(editedData) : editedData;
       } catch (e) {
         console.error("Failed to parse editedData:", e);
       }
@@ -130,7 +131,7 @@ export const uploadContractPdf = async (req, res, next) => {
       userAgent: req.get("user-agent"),
     };
 
-    const contract = await contractService.uploadContractPdf(
+    const contract = await contractServiceWithSocket.uploadContractPdf(
       id,
       req.file.buffer,
       adminNotes,
@@ -167,7 +168,8 @@ export const generateContractFromTemplate = async (req, res, next) => {
     let parsedEditedData = null;
     if (editedData) {
       try {
-        parsedEditedData = typeof editedData === 'string' ? JSON.parse(editedData) : editedData;
+        parsedEditedData =
+          typeof editedData === "string" ? JSON.parse(editedData) : editedData;
       } catch (e) {
         console.error("Failed to parse editedData:", e);
       }
@@ -178,14 +180,15 @@ export const generateContractFromTemplate = async (req, res, next) => {
       userAgent: req.get("user-agent"),
     };
 
-    const contract = await contractService.generateContractFromTemplate(
-      id,
-      parsedEditedData,
-      adminNotes,
-      editedHtmlContent || null,
-      req.user.id,
-      metadata
-    );
+    const contract =
+      await contractServiceWithSocket.generateContractFromTemplate(
+        id,
+        parsedEditedData,
+        adminNotes,
+        editedHtmlContent || null,
+        req.user.id,
+        metadata
+      );
 
     res.status(200).json({
       success: true,
@@ -219,7 +222,7 @@ export const saveEditedHtml = async (req, res, next) => {
       userAgent: req.get("user-agent"),
     };
 
-    const contract = await contractService.saveEditedHtml(
+    const contract = await contractServiceWithSocket.saveEditedHtml(
       id,
       editedHtmlContent,
       req.user.id,
@@ -251,7 +254,7 @@ export const previewContractFromTemplate = async (req, res, next) => {
     }
 
     // Get contract
-    const contractData = await contractService.getContractById(id);
+    const contractData = await contractServiceWithSocket.getContractById(id);
     const contract = contractData.contract;
 
     // Check if contract has a template
@@ -268,12 +271,17 @@ export const previewContractFromTemplate = async (req, res, next) => {
       pdfBuffer = await pdfService.generateContractFromHTML(htmlToUse);
     } else {
       // Get template and render from scratch
-      const contractTemplateService = (await import("../services/contractTemplateService.js")).default;
-      const template = await contractTemplateService.getTemplateById(contract.templateId);
+      const contractTemplateService = (
+        await import("../services/contractTemplateService.js")
+      ).default;
+      const template = await contractTemplateService.getTemplateById(
+        contract.templateId
+      );
 
       let contractDataForPdf;
       if (editedData) {
-        contractDataForPdf = typeof editedData === 'string' ? JSON.parse(editedData) : editedData;
+        contractDataForPdf =
+          typeof editedData === "string" ? JSON.parse(editedData) : editedData;
       } else {
         contractDataForPdf = JSON.parse(contract.contractData || "{}");
       }
@@ -312,7 +320,7 @@ export const getRenderedHtml = async (req, res, next) => {
       throw new AppError("Only admins can access rendered contract HTML", 403);
     }
 
-    const contractData = await contractService.getContractById(id);
+    const contractData = await contractServiceWithSocket.getContractById(id);
     const contract = contractData.contract;
 
     // If previously edited HTML exists, return it directly
@@ -327,8 +335,12 @@ export const getRenderedHtml = async (req, res, next) => {
       throw new AppError("Contract does not have a template", 400);
     }
 
-    const contractTemplateService = (await import("../services/contractTemplateService.js")).default;
-    const template = await contractTemplateService.getTemplateById(contract.templateId);
+    const contractTemplateService = (
+      await import("../services/contractTemplateService.js")
+    ).default;
+    const template = await contractTemplateService.getTemplateById(
+      contract.templateId
+    );
 
     let contractDataForRender;
     try {
@@ -380,7 +392,7 @@ export const sendToClient = async (req, res, next) => {
       userAgent: req.get("user-agent"),
     };
 
-    const contract = await contractService.sendToClient(
+    const contract = await contractServiceWithSocket.sendToClient(
       id,
       clientEmail,
       req.user.id,
@@ -406,7 +418,7 @@ export const downloadContractPdf = async (req, res, next) => {
     const { id } = req.params;
 
     // Get contract to check permissions
-    const contractData = await contractService.getContractById(id);
+    const contractData = await contractServiceWithSocket.getContractById(id);
 
     // Permission check: sales can only download their own contracts
     if (
@@ -418,7 +430,7 @@ export const downloadContractPdf = async (req, res, next) => {
     }
 
     // Get PDF buffer
-    const pdfBuffer = await contractService.getContractPdf(id);
+    const pdfBuffer = await contractServiceWithSocket.getContractPdf(id);
 
     // Set response headers
     res.setHeader("Content-Type", "application/pdf");
@@ -443,7 +455,7 @@ export const previewContractPdf = async (req, res, next) => {
     const { id } = req.params;
 
     // Get contract to check permissions
-    const contractData = await contractService.getContractById(id);
+    const contractData = await contractServiceWithSocket.getContractById(id);
 
     // Permission check: sales can only preview their own contracts
     if (
@@ -455,11 +467,14 @@ export const previewContractPdf = async (req, res, next) => {
     }
 
     // Get PDF buffer
-    const pdfBuffer = await contractService.getContractPdf(id);
+    const pdfBuffer = await contractServiceWithSocket.getContractPdf(id);
 
     // Set response headers for inline display
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="contract-${id}.pdf"`);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="contract-${id}.pdf"`
+    );
 
     // Send PDF
     res.send(pdfBuffer);
@@ -476,7 +491,7 @@ export const downloadCustomTemplate = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const contractData = await contractService.getContractById(id);
+    const contractData = await contractServiceWithSocket.getContractById(id);
 
     // Permission check: sales can only download their own contracts
     if (
@@ -504,10 +519,7 @@ export const downloadCustomTemplate = async (req, res, next) => {
 
     const filename = key.split("/").pop();
     res.setHeader("Content-Type", contentType);
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${filename}"`
-    );
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(buffer);
   } catch (error) {
     next(error);
@@ -527,7 +539,8 @@ export const getContractStatusPublic = async (req, res, next) => {
       throw new AppError("Missing authentication token", 400);
     }
 
-    const contractData = await contractService.validateSubmissionToken(id, token);
+    const contractData =
+      await contractServiceWithSocket.validateSubmissionToken(id, token);
     const contract = contractData.contract;
     const inquiry = contractData.inquiry;
 
@@ -561,7 +574,7 @@ export const handleClientSubmission = async (req, res, next) => {
     }
 
     // Validate token (also checks status is sent_to_client)
-    await contractService.validateSubmissionToken(id, token);
+    await contractServiceWithSocket.validateSubmissionToken(id, token);
 
     // Validate file
     if (!req.file) {
@@ -574,11 +587,12 @@ export const handleClientSubmission = async (req, res, next) => {
     await uploadObject(key, req.file.buffer, "application/pdf");
 
     // Record signing + auto-create client
-    await contractService.recordClientSigning(id, key, req.ip);
+    await contractServiceWithSocket.recordClientSigning(id, key, req.ip);
 
     res.json({
       success: true,
-      message: "Thank you! Your signed contract has been received successfully.",
+      message:
+        "Thank you! Your signed contract has been received successfully.",
       data: {
         contractId: id,
         signedAt: new Date().toISOString(),
@@ -598,7 +612,10 @@ export const uploadHardboundContract = async (req, res, next) => {
     const { id } = req.params;
 
     if (req.user.role !== "admin" && req.user.role !== "super_admin") {
-      throw new AppError("Only admin users can upload hardbound contracts", 403);
+      throw new AppError(
+        "Only admin users can upload hardbound contracts",
+        403
+      );
     }
 
     if (!req.file) {
@@ -611,7 +628,11 @@ export const uploadHardboundContract = async (req, res, next) => {
     await uploadObject(key, req.file.buffer, "application/pdf");
 
     // Update contract status
-    const contract = await contractService.uploadHardboundContract(id, key, req.user.id);
+    const contract = await contractServiceWithSocket.uploadHardboundContract(
+      id,
+      key,
+      req.user.id
+    );
 
     res.json({
       success: true,

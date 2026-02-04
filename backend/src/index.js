@@ -134,6 +134,11 @@ const startServer = async () => {
     proposalService.initializeSocket(socketServer);
     proposalService.setNotificationService(notificationService);
 
+    // Initialize socket events for contract service
+    const contractService = (await import("./services/contractServiceWithSocket.js")).default;
+    contractService.initializeSocket(socketServer);
+    contractService.setNotificationService(notificationService);
+
     httpServer.listen(PORT, () => {
       console.log(`\n🚀 Server is running on port ${PORT}`);
       console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
