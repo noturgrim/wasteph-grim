@@ -76,9 +76,22 @@ class TicketService {
       userAgent: metadata.userAgent,
     });
 
-    // Emit socket event
+    // Emit socket event (get user info for notification)
     if (this.ticketEvents) {
-      this.ticketEvents.emitTicketCreated(ticket, userId);
+      const [user] = await db
+        .select({
+          id: userTable.id,
+          firstName: userTable.firstName,
+          lastName: userTable.lastName,
+          email: userTable.email,
+          role: userTable.role,
+        })
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+
+      if (user) {
+        await this.ticketEvents.emitTicketCreated(ticket, user);
+      }
     }
 
     return ticket;

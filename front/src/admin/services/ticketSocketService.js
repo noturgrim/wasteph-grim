@@ -93,8 +93,12 @@ class TicketSocketService {
   handleTicketCreated(data) {
     console.log("📨 New ticket created:", data.ticket.ticketNumber);
 
-    toast.success(`New ticket created: ${data.ticket.ticketNumber}`, {
-      description: data.ticket.subject,
+    const creatorName = data.createdBy 
+      ? `${data.createdBy.firstName} ${data.createdBy.lastName}`
+      : "Someone";
+    
+    toast.success("New Ticket Created", {
+      description: `${creatorName} created ticket ${data.ticket.ticketNumber}`,
     });
 
     this.notifyHandlers("created", data);
@@ -164,8 +168,12 @@ class TicketSocketService {
   handleCommentAdded(data) {
     console.log(`📨 New comment on ticket: ${data.ticketNumber}`);
 
-    toast.info(`New comment on ticket ${data.ticketNumber}`, {
-      description: `By ${data.comment.firstName} ${data.comment.lastName}`,
+    const commenterName = data.comment 
+      ? `${data.comment.firstName} ${data.comment.lastName}`
+      : "Someone";
+    
+    toast.info("New Comment on Ticket", {
+      description: `${commenterName} commented on ${data.ticketNumber}`,
     });
 
     this.notifyHandlers("commentAdded", data);

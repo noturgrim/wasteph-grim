@@ -88,37 +88,51 @@ class TicketEventEmitter {
   /**
    * Emit ticket created event
    * @param {Object} ticket - Created ticket
-   * @param {string} creatorId - User who created the ticket
+   * @param {Object} user - User object who created the ticket
    */
-  async emitTicketCreated(ticket, creatorId) {
-    // Notify admins and master sales
-    this.socketServer.emitToRoles(
-      ["admin", "super_admin"],
+  async emitTicketCreated(ticket, user) {
+    // Get all admin user IDs
+    const adminIds = await this._getUserIdsByRoles(["admin", "super_admin"]);
+    
+    // Remove the creator from receiving their own notification
+    const recipients = adminIds.filter((id) => id !== user.id);
+    
+    // Notify admins (excluding the creator)
+    this.socketServer.emitToUsers(
+      recipients,
       TICKET_EVENTS.TICKET_CREATED,
       {
         ticket,
-        createdBy: creatorId,
+        createdBy: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+        },
       }
     );
 
-    // Create notifications for admins
+    // Create notifications for admins (excluding the creator)
     if (this.notificationService) {
-      await this._createNotificationsForRoles(
-        ["admin", "super_admin"],
-        {
+      const adminIds = await this._getUserIdsByRoles(["admin", "super_admin"]);
+      const recipients = adminIds.filter((id) => id !== user.id);
+      
+      if (recipients.length > 0) {
+        await this.notificationService.createBulkNotifications(recipients, {
           type: "ticket_created",
           title: "New Ticket Created",
-          message: `New ticket ${ticket.ticketNumber}: ${ticket.subject}`,
+          message: `${user.firstName} ${user.lastName} created ticket ${ticket.ticketNumber}`,
           entityType: "ticket",
           entityId: ticket.id,
           metadata: {
             ticketNumber: ticket.ticketNumber,
             priority: ticket.priority,
             category: ticket.category,
+            creatorName: `${user.firstName} ${user.lastName}`,
           },
-        },
-        creatorId
-      );
+        });
+      }
     }
 
     console.log(`📨 Ticket created event emitted: ${ticket.ticketNumber}`);
@@ -269,49 +283,46 @@ class TicketEventEmitter {
       },
     };
 
-    // Notify ticket participants
+    // Get all admin user IDs
+    const adminIds = await this._getUserIdsByRoles(["admin", "super_admin"]);
+    
+    // Combine recipients and admins, removing duplicates
+    const allRecipients = new Set([...recipients, ...adminIds]);
+    allRecipients.delete(user.id); // Don't notify the commenter
+    
+    // Emit to all unique recipients
     this.socketServer.emitToUsers(
-      recipients,
-      TICKET_EVENTS.COMMENT_ADDED,
-      eventData
-    );
-
-    // Also notify admins (they should see all comments)
-    this.socketServer.emitToRoles(
-      ["admin", "super_admin"],
+      Array.from(allRecipients),
       TICKET_EVENTS.COMMENT_ADDED,
       eventData
     );
 
     // Create notifications
     if (this.notificationService) {
-      // Notify ticket creator if they're not the commenter
-      if (recipients.length > 0) {
-        await this.notificationService.createBulkNotifications(recipients, {
-          type: "ticket_comment_added",
-          title: "New Comment on Ticket",
-          message: `${user.firstName} ${user.lastName} commented on ${ticket.ticketNumber}`,
-          entityType: "ticket",
-          entityId: ticket.id,
-          metadata: {
-            ticketNumber: ticket.ticketNumber,
-            commenterName: `${user.firstName} ${user.lastName}`,
-          },
-        });
+      // Get all recipients (participants + admins, no duplicates)
+      const adminIds = await this._getUserIdsByRoles(["admin", "super_admin"]);
+      const allRecipients = new Set([...recipients, ...adminIds]);
+      
+      // Remove the commenter
+      allRecipients.delete(user.id);
+      
+      // Create notifications for all unique recipients
+      if (allRecipients.size > 0) {
+        await this.notificationService.createBulkNotifications(
+          Array.from(allRecipients),
+          {
+            type: "ticket_comment_added",
+            title: "New Comment on Ticket",
+            message: `${user.firstName} ${user.lastName} commented on ${ticket.ticketNumber}`,
+            entityType: "ticket",
+            entityId: ticket.id,
+            metadata: {
+              ticketNumber: ticket.ticketNumber,
+              commenterName: `${user.firstName} ${user.lastName}`,
+            },
+          }
+        );
       }
-
-      // Notify admins
-      await this._createNotificationsForRoles(["admin", "super_admin"], {
-        type: "ticket_comment_added",
-        title: "New Comment on Ticket",
-        message: `${user.firstName} ${user.lastName} commented on ${ticket.ticketNumber}`,
-        entityType: "ticket",
-        entityId: ticket.id,
-        metadata: {
-          ticketNumber: ticket.ticketNumber,
-          commenterName: `${user.firstName} ${user.lastName}`,
-        },
-      }, user.id);
     }
 
     console.log(`📨 Comment added to ticket: ${ticket.ticketNumber}`);

@@ -74,19 +74,21 @@ export default function AppLayout() {
       markAsRead(notification.id);
     }
 
-    // Navigate to entity if applicable
-    if (notification.entityType && notification.entityId) {
-      const entityRoutes = {
-        ticket: `/admin/tickets`,
-        proposal: `/admin/proposals`,
-        contract: `/admin/contract-requests`,
-        inquiry: `/admin/inquiries`,
-      };
-
-      const route = entityRoutes[notification.entityType];
-      if (route) {
-        navigate(route);
-      }
+    // Navigate based on entity type with specific ID
+    if (notification.entityType === "ticket" && notification.entityId) {
+      navigate(`/admin/tickets/${notification.entityId}`);
+    } else if (
+      notification.entityType === "proposal" &&
+      notification.entityId
+    ) {
+      navigate(`/admin/proposals/${notification.entityId}`);
+    } else if (
+      notification.entityType === "contract" &&
+      notification.entityId
+    ) {
+      navigate(`/admin/contract-requests/${notification.entityId}`);
+    } else if (notification.entityType === "inquiry" && notification.entityId) {
+      navigate(`/admin/inquiries/${notification.entityId}`);
     }
   };
 
