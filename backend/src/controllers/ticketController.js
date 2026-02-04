@@ -1,4 +1,4 @@
-import ticketService from "../services/ticketService.js";
+import ticketService from "../services/ticketServiceWithSocket.js";
 
 /**
  * Controller: Create ticket

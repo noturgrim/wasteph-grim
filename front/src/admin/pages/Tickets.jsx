@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
+import ticketSocketService from "../services/ticketSocketService";
 import { SlidersHorizontal, X, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -117,6 +118,76 @@ export default function Tickets() {
   useEffect(() => {
     fetchClients();
   }, []);
+
+  // Setup real-time socket listeners
+  useEffect(() => {
+    // Register handlers for real-time updates
+    const handleTicketCreated = (data) => {
+      // Refresh ticket list when new ticket is created
+      fetchTickets(pagination.page, pagination.limit);
+    };
+
+    const handleTicketUpdated = (data) => {
+      // Update ticket in list if it's currently displayed
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket.id === data.ticketId
+            ? { ...ticket, ...data.changes, updatedAt: data.timestamp }
+            : ticket
+        )
+      );
+    };
+
+    const handleTicketStatusChanged = (data) => {
+      // Update ticket status in list
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket.id === data.ticketId
+            ? { ...ticket, status: data.newStatus, updatedAt: data.timestamp }
+            : ticket
+        )
+      );
+
+      // Refresh if viewing the updated ticket
+      if (selectedTicketId === data.ticketId && isViewDialogOpen) {
+        // The ViewTicketDialog will handle its own refresh
+      }
+    };
+
+    const handleTicketPriorityChanged = (data) => {
+      // Update ticket priority in list
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket.id === data.ticketId
+            ? { ...ticket, priority: data.newPriority, updatedAt: data.timestamp }
+            : ticket
+        )
+      );
+    };
+
+    const handleCommentAdded = (data) => {
+      // Refresh if viewing the ticket with new comment
+      if (selectedTicketId === data.ticketId && isViewDialogOpen) {
+        // The ViewTicketDialog will handle its own refresh
+      }
+    };
+
+    // Register all handlers
+    ticketSocketService.onTicketEvent("created", handleTicketCreated);
+    ticketSocketService.onTicketEvent("updated", handleTicketUpdated);
+    ticketSocketService.onTicketEvent("statusChanged", handleTicketStatusChanged);
+    ticketSocketService.onTicketEvent("priorityChanged", handleTicketPriorityChanged);
+    ticketSocketService.onTicketEvent("commentAdded", handleCommentAdded);
+
+    // Cleanup on unmount
+    return () => {
+      ticketSocketService.offTicketEvent("created", handleTicketCreated);
+      ticketSocketService.offTicketEvent("updated", handleTicketUpdated);
+      ticketSocketService.offTicketEvent("statusChanged", handleTicketStatusChanged);
+      ticketSocketService.offTicketEvent("priorityChanged", handleTicketPriorityChanged);
+      ticketSocketService.offTicketEvent("commentAdded", handleCommentAdded);
+    };
+  }, [pagination.page, pagination.limit, selectedTicketId, isViewDialogOpen]);
 
   // Fetch tickets, reset to page 1 on filter change
   useEffect(() => {

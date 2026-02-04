@@ -33,6 +33,25 @@ npm run lint             # ESLint (flat config, ESLint 9)
 
 There are no test suites configured. Verify changes by running both `npm run dev` servers and testing manually.
 
+## WebSocket (Real-Time) System
+
+The app uses **Socket.IO** for real-time updates. Currently implemented for:
+
+### Ticket System (Live)
+- Real-time ticket creation notifications (to admins)
+- Live status updates (open → in_progress → resolved → closed)
+- Priority changes (especially urgent tickets)
+- Comment additions
+- Attachment uploads/deletions
+
+**Key Files:**
+- Backend: `src/socket/socketServer.js`, `src/services/ticketServiceWithSocket.js`
+- Frontend: `src/admin/services/socketService.js`, `src/admin/services/ticketSocketService.js`
+
+**Security:** Cookie-based authentication via Lucia session. No tokens in localStorage. Auto-reconnection on disconnect.
+
+**See:** `backend/SOCKET_IMPLEMENTATION.md` for detailed documentation.
+
 ## Environment
 
 - **`backend/.env`** — `DATABASE_URL`, `PORT`, `FRONTEND_URL`, SMTP config, AWS S3 credentials, Facebook API keys

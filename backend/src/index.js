@@ -1,4 +1,5 @@
 import express from "express";
+import { createServer } from "http";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -6,6 +7,7 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { testConnection } from "./db/index.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import socketServer from "./socket/socketServer.js";
 
 // Import routes
 import authRoutes from "./routes/authRoutes.js";
@@ -30,7 +32,11 @@ import clientNotesRoutes from "./routes/clientNotesRoutes.js";
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Initialize Socket.IO
+socketServer.initialize(httpServer);
 
 // Security middleware
 app.use(helmet());
@@ -113,11 +119,16 @@ const startServer = async () => {
       process.exit(1);
     }
 
-    app.listen(PORT, () => {
+    // Initialize socket events for ticket service
+    const ticketService = (await import("./services/ticketServiceWithSocket.js")).default;
+    ticketService.initializeSocketEvents();
+
+    httpServer.listen(PORT, () => {
       console.log(`\n🚀 Server is running on port ${PORT}`);
       console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
-      console.log(`🔗 Health check: ${process.env.FRONTEND_URL}/health`);
-      console.log(`🔗 API Base URL: ${process.env.FRONTEND_URL}/api\n`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
+      console.log(`🔌 WebSocket server ready\n`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
