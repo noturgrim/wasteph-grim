@@ -111,15 +111,15 @@ const ProposalResponse = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-green-50 p-4">
-      {/* WastePH Logo Header */}
-      <div className="absolute top-8 left-8">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-green-50 p-4 pt-24 md:pt-4">
+      {/* WastePH Logo Header - Responsive */}
+      <div className="absolute top-4 left-4 md:top-8 md:left-8">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold tracking-wider text-[#104806]">
+          <h1 className="text-xl md:text-3xl font-bold tracking-wider text-[#104806]">
             WASTE <span className="text-[#104806]">•</span> PH
           </h1>
         </div>
-        <p className="text-xs tracking-widest text-[#2a6b1f] mt-1">
+        <p className="text-[10px] md:text-xs tracking-widest text-[#2a6b1f] mt-1">
           PRIVATE WASTE MANAGEMENT
         </p>
       </div>
@@ -307,86 +307,132 @@ const ProposalResponse = () => {
 
           {/* Success State */}
           {stage === "success" && (
-            <div className="flex flex-col items-center justify-center py-8">
-              <div
-                className={`rounded-full p-6 mb-6 ${
-                  action === "approve"
-                    ? "bg-gradient-to-br from-green-100 to-green-50"
-                    : "bg-gradient-to-br from-orange-100 to-orange-50"
-                }`}
-              >
-                {action === "approve" ? (
-                  <CheckCircle
-                    className="h-24 w-24 text-[#104806]"
-                    strokeWidth={2.5}
-                  />
-                ) : (
-                  <XCircle
-                    className="h-24 w-24 text-orange-600"
-                    strokeWidth={2.5}
-                  />
-                )}
+            <div className="py-8 space-y-8">
+              {/* Success Icon & Header */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`rounded-full p-6 mb-6 ${
+                    action === "approve"
+                      ? "bg-gradient-to-br from-green-100 to-green-50"
+                      : "bg-gradient-to-br from-orange-100 to-orange-50"
+                  }`}
+                >
+                  {action === "approve" ? (
+                    <CheckCircle
+                      className="h-24 w-24 text-[#104806]"
+                      strokeWidth={2.5}
+                    />
+                  ) : (
+                    <XCircle
+                      className="h-24 w-24 text-orange-600"
+                      strokeWidth={2.5}
+                    />
+                  )}
+                </div>
+
+                <h3 className="text-3xl font-bold mb-3 text-center text-[#104806]">
+                  {action === "approve"
+                    ? "Thank You for Your Approval!"
+                    : "Response Received"}
+                </h3>
+
+                <p className="text-gray-700 text-center text-lg max-w-md">
+                  {message}
+                </p>
               </div>
 
-              <h3 className="text-3xl font-bold mb-3 text-center text-[#104806]">
-                {action === "approve"
-                  ? "Thank You for Your Approval!"
-                  : "Response Received"}
-              </h3>
-
-              <p className="text-gray-700 text-center mb-8 text-lg max-w-md">
-                {message}
-              </p>
-
+              {/* 2-Column Grid Layout */}
               {action === "approve" && (
-                <div className="bg-gradient-to-br from-green-50 to-white border-2 border-green-600 rounded-xl p-6 w-full shadow-sm">
-                  <h4 className="font-bold text-[#104806] mb-4 text-lg flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    What Happens Next?
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-[#104806] text-white rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
-                        1
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left: What Happens Next */}
+                  <div className="bg-gradient-to-br from-green-50 to-white border-2 border-green-600 rounded-xl p-6 shadow-sm">
+                    <h4 className="font-bold text-[#104806] mb-5 text-xl flex items-center gap-2">
+                      <CheckCircle className="h-6 w-6" />
+                      What Happens Next?
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="bg-[#104806] text-white rounded-full w-7 h-7 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
+                          1
+                        </div>
+                        <p className="text-sm text-gray-800 leading-relaxed">
+                          Our sales team has been notified and will review your
+                          approval immediately
+                        </p>
                       </div>
-                      <p className="text-sm text-gray-800 leading-relaxed">
-                        Our sales team has been notified and will review your
-                        approval immediately
-                      </p>
+                      <div className="flex items-start gap-3">
+                        <div className="bg-[#104806] text-white rounded-full w-7 h-7 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
+                          2
+                        </div>
+                        <p className="text-sm text-gray-800 leading-relaxed">
+                          We'll finalize the contract details and prepare all
+                          documentation
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="bg-[#104806] text-white rounded-full w-7 h-7 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
+                          3
+                        </div>
+                        <p className="text-sm text-gray-800 leading-relaxed">
+                          You'll receive the final contract document via email
+                          within 1-2 business days
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="bg-[#104806] text-white rounded-full w-7 h-7 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
+                          4
+                        </div>
+                        <p className="text-sm text-gray-800 leading-relaxed">
+                          A dedicated team member will contact you to discuss
+                          service implementation
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <div className="bg-[#104806] text-white rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
-                        2
+                  </div>
+
+                  {/* Right: Need Assistance */}
+                  <div className="bg-gradient-to-br from-green-50 to-white border-2 border-green-600 rounded-xl p-6 shadow-sm">
+                    <h4 className="font-bold text-[#104806] mb-5 text-xl uppercase tracking-wide">
+                      Need Assistance?
+                    </h4>
+                    <div className="space-y-5">
+                      <div>
+                        <p className="text-sm font-semibold text-[#2a6b1f] uppercase tracking-wide mb-2">
+                          Email
+                        </p>
+                        <a
+                          href="mailto:sales@waste.ph"
+                          className="text-lg font-bold text-[#104806] hover:underline block"
+                        >
+                          sales@waste.ph
+                        </a>
                       </div>
-                      <p className="text-sm text-gray-800 leading-relaxed">
-                        We'll finalize the contract details and prepare all
-                        documentation
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="bg-[#104806] text-white rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
-                        3
+                      <div>
+                        <p className="text-sm font-semibold text-[#2a6b1f] uppercase tracking-wide mb-2">
+                          Phone
+                        </p>
+                        <div className="space-y-2">
+                          <a
+                            href="tel:+639562461503"
+                            className="text-lg font-bold text-[#104806] hover:underline block"
+                          >
+                            0956-246-1503
+                          </a>
+                          <a
+                            href="tel:+639277966751"
+                            className="text-lg font-bold text-[#104806] hover:underline block"
+                          >
+                            0927-796-6751
+                          </a>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-800 leading-relaxed">
-                        You'll receive the final contract document via email
-                        within 1-2 business days
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="bg-[#104806] text-white rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
-                        4
-                      </div>
-                      <p className="text-sm text-gray-800 leading-relaxed">
-                        A dedicated team member will contact you to discuss
-                        service implementation
-                      </p>
                     </div>
                   </div>
                 </div>
               )}
 
               {action === "reject" && (
-                <div className="bg-gradient-to-br from-orange-50 to-white border-2 border-orange-400 rounded-xl p-6 w-full shadow-sm">
+                <div className="bg-gradient-to-br from-orange-50 to-white border-2 border-orange-400 rounded-xl p-6 shadow-sm">
                   <h4 className="font-bold text-orange-900 mb-3 text-lg">
                     We Understand
                   </h4>
@@ -400,8 +446,9 @@ const ProposalResponse = () => {
                 </div>
               )}
 
+              {/* Reference Footer */}
               {responseData && (
-                <div className="border-t-2 border-green-100 pt-6 mt-6 w-full">
+                <div className="border-t-2 border-green-100 pt-6">
                   <p className="text-sm text-gray-600 text-center font-medium">
                     Reference:{" "}
                     <span className="font-bold text-[#104806]">
@@ -471,8 +518,8 @@ const ProposalResponse = () => {
             </div>
           )}
 
-          {/* Contact Information */}
-          {(stage === "error" || stage === "success") && (
+          {/* Contact Information - Error State Only (Success has it in grid) */}
+          {stage === "error" && (
             <div className="border-t-2 border-green-100 pt-6 mt-6">
               <h4 className="font-bold text-[#104806] mb-4 text-center text-lg uppercase tracking-wide">
                 Need Assistance?
