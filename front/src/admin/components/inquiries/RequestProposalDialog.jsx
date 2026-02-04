@@ -319,7 +319,7 @@ export function RequestProposalDialog({
           year: "numeric",
           month: "long",
           day: "numeric",
-        },
+        }
       );
 
       const templateData = {
@@ -348,7 +348,7 @@ export function RequestProposalDialog({
       Object.keys(templateData).forEach((key) => {
         const ifRegex = new RegExp(
           `\\{\\{#if ${key}\\}\\}([\\s\\S]*?)\\{\\{/if\\}\\}`,
-          "g",
+          "g"
         );
         if (templateData[key]) {
           rendered = rendered.replace(ifRegex, "$1");
@@ -366,7 +366,7 @@ export function RequestProposalDialog({
       // Handle {{#each services}} blocks - remove for now
       rendered = rendered.replace(
         /\{\{#each\s+[\w.]+\}\}[\s\S]*?\{\{\/each\}\}/g,
-        "",
+        ""
       );
 
       // Strip any remaining Handlebars syntax
@@ -380,7 +380,7 @@ export function RequestProposalDialog({
       if (headMatch && bodyMatch) {
         // Extract inline styles from head
         const styleMatch = headMatch[0].match(
-          /<style[^>]*>([\s\S]*?)<\/style>/gi,
+          /<style[^>]*>([\s\S]*?)<\/style>/gi
         );
         const inlineStyles = styleMatch
           ? styleMatch.map((s) => s.replace(/<\/?style[^>]*>/gi, "")).join("\n")
@@ -571,7 +571,10 @@ ${bodyTag}
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[1000px]! max-w-[95vw]! h-[90vh]! max-h-[90vh]! flex flex-col p-0 gap-0">
+      <DialogContent
+        className="w-[1000px]! max-w-[95vw]! h-[90vh]! max-h-[90vh]! flex flex-col p-0 gap-0"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         {/* Two Column Layout */}
         <div className="flex flex-1 min-h-0">
           {/* Left Sidebar - Progress Steps */}
@@ -600,8 +603,8 @@ ${bodyTag}
                     currentStep === 1
                       ? "bg-[#15803d] text-white shadow-md"
                       : currentStep > 1
-                        ? "bg-white/60 dark:bg-gray-800/60 text-green-700 dark:text-green-400"
-                        : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                      ? "bg-white/60 dark:bg-gray-800/60 text-green-700 dark:text-green-400"
+                      : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                   }`}
                 >
                   <div
@@ -609,8 +612,8 @@ ${bodyTag}
                       currentStep === 1
                         ? "bg-white/20 text-white"
                         : currentStep > 1
-                          ? "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300"
-                          : "bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                        ? "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300"
+                        : "bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                     }`}
                   >
                     {currentStep > 1 ? "✓" : "1"}
@@ -647,8 +650,8 @@ ${bodyTag}
                     currentStep === 2
                       ? "bg-[#15803d] text-white shadow-md"
                       : currentStep > 2
-                        ? "bg-white/60 dark:bg-gray-800/60 text-green-700 dark:text-green-400"
-                        : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                      ? "bg-white/60 dark:bg-gray-800/60 text-green-700 dark:text-green-400"
+                      : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                   }`}
                 >
                   <div
@@ -656,8 +659,8 @@ ${bodyTag}
                       currentStep === 2
                         ? "bg-white/20 text-white"
                         : currentStep > 2
-                          ? "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300"
-                          : "bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                        ? "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300"
+                        : "bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                     }`}
                   >
                     {currentStep > 2 ? "✓" : "2"}
@@ -735,7 +738,11 @@ ${bodyTag}
           <div className="flex-1 flex flex-col min-w-0">
             {/* Content */}
             <div
-              className={`flex-1 px-8 py-6 min-h-0 ${currentStep === 3 ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`}
+              className={`flex-1 px-8 py-6 min-h-0 ${
+                currentStep === 3
+                  ? "flex flex-col overflow-hidden"
+                  : "overflow-y-auto"
+              }`}
             >
               {/* Rejection Banner */}
               {inquiry?.proposalStatus === "disapproved" &&
@@ -807,7 +814,11 @@ ${bodyTag}
                             isSelected
                               ? "border-[#15803d]"
                               : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                          } ${isLoadingTemplate ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                          } ${
+                            isLoadingTemplate
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer"
+                          }`}
                         >
                           {/* Checkbox Circle - Top Right Inside */}
                           <div className="absolute top-3 right-3">
@@ -910,7 +921,7 @@ ${bodyTag}
                             onChange={(e) =>
                               handleInputChange(
                                 "clientPosition",
-                                e.target.value,
+                                e.target.value
                               )
                             }
                             placeholder="Operations Manager"
@@ -994,7 +1005,7 @@ ${bodyTag}
                             onDateChange={(date) =>
                               handleInputChange(
                                 "proposalDate",
-                                date ? format(date, "yyyy-MM-dd") : "",
+                                date ? format(date, "yyyy-MM-dd") : ""
                               )
                             }
                             placeholder="Select proposal date"
@@ -1010,17 +1021,19 @@ ${bodyTag}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="validityDays">
-                            Validity (Days)
+                            Proposal Validity (Days)
                           </Label>
                           <Input
                             id="validityDays"
                             type="number"
-                            min="1"
+                            placeholder="Enter number of days"
                             value={formData.validityDays}
                             onChange={(e) =>
                               handleInputChange(
                                 "validityDays",
-                                parseInt(e.target.value) || 30,
+                                e.target.value
+                                  ? parseInt(e.target.value, 10)
+                                  : ""
                               )
                             }
                           />
@@ -1225,7 +1238,9 @@ ${bodyTag}
                     <Button
                       onClick={handleSubmit}
                       disabled={!canSubmit}
-                      className={`min-w-[140px] ${!canSubmit ? "opacity-50" : ""}`}
+                      className={`min-w-[140px] ${
+                        !canSubmit ? "opacity-50" : ""
+                      }`}
                     >
                       {isSubmitting ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
