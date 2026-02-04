@@ -2,7 +2,7 @@ import { db } from "../db/index.js";
 import { leadTable, activityLogTable, inquiryTable } from "../db/schema.js";
 import { eq, desc, and, or, like, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
-import { generateInquiryNumber } from "../utils/inquiryNumberGenerator.js";
+import counterService from "./counterService.js";
 
 /**
  * LeadService - Business logic layer for lead operations
@@ -17,14 +17,7 @@ class LeadService {
    * @returns {Promise<Object>} Created lead
    */
   async createLead(leadData, userId, metadata = {}) {
-    const {
-      clientName,
-      company,
-      email,
-      phone,
-      location,
-      notes,
-    } = leadData;
+    const { clientName, company, email, phone, location, notes } = leadData;
 
     const [lead] = await db
       .insert(leadTable)
@@ -93,7 +86,9 @@ class LeadService {
 
     // Filter by claimed status
     if (isClaimed !== undefined) {
-      conditions.push(eq(leadTable.isClaimed, isClaimed === 'true' || isClaimed === true));
+      conditions.push(
+        eq(leadTable.isClaimed, isClaimed === "true" || isClaimed === true)
+      );
     }
 
     // Claimed by filter
@@ -216,8 +211,8 @@ class LeadService {
       throw new AppError("Lead has already been claimed", 400);
     }
 
-    // Generate unique inquiry number
-    const inquiryNumber = await generateInquiryNumber();
+    // Generate unique inquiry number using counter service
+    const inquiryNumber = await counterService.getNextInquiryNumber();
 
     // Create inquiry from lead data
     // Use provided source if available, otherwise leave as null (can be set later)
@@ -231,7 +226,8 @@ class LeadService {
         phone: existingLead.phone,
         company: existingLead.company,
         location: existingLead.location || null,
-        message: existingLead.notes || `Lead from pool: ${existingLead.clientName}`,
+        message:
+          existingLead.notes || `Lead from pool: ${existingLead.clientName}`,
         status: "initial_comms",
         source: source || null,
         assignedTo: userId,
@@ -351,9 +347,7 @@ class LeadService {
         }
 
         // Delete the lead
-        await db
-          .delete(leadTable)
-          .where(eq(leadTable.id, leadId));
+        await db.delete(leadTable).where(eq(leadTable.id, leadId));
 
         // Log activity
         await this.logActivity({
@@ -384,8 +378,15 @@ class LeadService {
    * @returns {Promise<void>}
    */
   async logActivity(activityData) {
-    const { userId, action, entityType, entityId, details, ipAddress, userAgent } =
-      activityData;
+    const {
+      userId,
+      action,
+      entityType,
+      entityId,
+      details,
+      ipAddress,
+      userAgent,
+    } = activityData;
 
     await db.insert(activityLogTable).values({
       userId,
