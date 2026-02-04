@@ -134,22 +134,14 @@ export default function AppLayout() {
       <AppSidebar />
       <SidebarInset>
         {/* Header with Breadcrumbs, Notifications, Theme Toggle */}
-        <header
-          className={`flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 ${
-            theme === "dark"
-              ? "border-b border-white/10 bg-black/40 backdrop-blur-xl"
-              : "border-b border-slate-200 bg-white shadow-sm"
-          }`}
-        >
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-black/40 dark:backdrop-blur-xl">
           <div className="flex w-full items-center justify-between gap-2 px-4">
             {/* Left side: Trigger, Separator, Breadcrumbs */}
             <div className="flex items-center gap-2">
               <SidebarTrigger className="-ml-1" />
               <Separator
                 orientation="vertical"
-                className={`mr-2 h-4 ${
-                  theme === "dark" ? "bg-white/10" : "bg-slate-300"
-                }`}
+                className="mr-2 h-4 bg-slate-300 dark:bg-white/10"
               />
               <Breadcrumb>
                 <BreadcrumbList>
@@ -159,11 +151,7 @@ export default function AppLayout() {
                         <BreadcrumbLink asChild>
                           <Link
                             to={currentNav.parent}
-                            className={
-                              theme === "dark"
-                                ? "text-white/60 hover:text-white"
-                                : "text-slate-600 hover:text-slate-900"
-                            }
+                            className="text-slate-600 hover:text-slate-900 dark:text-white/60 dark:hover:text-white"
                           >
                             {navigationMap[currentNav.parent]?.name ||
                               "Dashboard"}
@@ -174,11 +162,7 @@ export default function AppLayout() {
                     </>
                   )}
                   <BreadcrumbItem>
-                    <BreadcrumbPage
-                      className={
-                        theme === "dark" ? "text-white" : "text-slate-900"
-                      }
-                    >
+                    <BreadcrumbPage className="text-slate-900 dark:text-white">
                       {currentNav.name}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
@@ -207,17 +191,11 @@ export default function AppLayout() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className={`w-96 p-0 border-0 rounded-xl shadow-lg overflow-hidden ${
-                    theme === "dark" ? "bg-slate-900" : "bg-gray-50"
-                  }`}
+                  className="w-96 p-0 border-0 rounded-xl shadow-lg overflow-hidden bg-gray-50 dark:bg-slate-900"
                 >
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3">
-                    <h3
-                      className={`font-semibold ${
-                        theme === "dark" ? "text-white" : "text-slate-900"
-                      }`}
-                    >
+                    <h3 className="font-semibold text-slate-900 dark:text-white">
                       Notifications
                     </h3>
                     {unreadCount > 0 && (
@@ -235,20 +213,8 @@ export default function AppLayout() {
                   <div className="max-h-80 overflow-y-auto">
                     {notifications.length === 0 ? (
                       <div className="px-4 py-8 text-center">
-                        <Bell
-                          className={`h-12 w-12 mx-auto mb-2 ${
-                            theme === "dark"
-                              ? "text-slate-600"
-                              : "text-slate-300"
-                          }`}
-                        />
-                        <p
-                          className={`text-sm ${
-                            theme === "dark"
-                              ? "text-slate-400"
-                              : "text-slate-500"
-                          }`}
-                        >
+                        <Bell className="h-12 w-12 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                           No notifications yet
                         </p>
                       </div>
@@ -288,29 +254,15 @@ export default function AppLayout() {
                               className={`text-sm ${
                                 !notif.isRead
                                   ? "font-semibold text-slate-900 dark:text-white"
-                                  : theme === "dark"
-                                  ? "text-slate-200"
-                                  : "text-slate-800"
+                                  : "text-slate-800 dark:text-slate-200"
                               }`}
                             >
                               {notif.title}
                             </p>
-                            <p
-                              className={`text-xs mt-0.5 ${
-                                theme === "dark"
-                                  ? "text-slate-400"
-                                  : "text-slate-600"
-                              }`}
-                            >
+                            <p className="text-xs mt-0.5 text-slate-600 dark:text-slate-400">
                               {notif.message}
                             </p>
-                            <p
-                              className={`text-xs mt-1 ${
-                                theme === "dark"
-                                  ? "text-slate-500"
-                                  : "text-slate-500"
-                              }`}
-                            >
+                            <p className="text-xs mt-1 text-slate-500">
                               {getTimeAgo(notif.createdAt)}
                             </p>
                           </div>
@@ -327,28 +279,17 @@ export default function AppLayout() {
                 size="icon"
                 onClick={toggleTheme}
                 className="h-10 w-10 rounded-xl bg-gray-100 hover:bg-gray-200 border-0 shadow-sm dark:bg-gray-800 dark:hover:bg-gray-700"
-                aria-label={
-                  theme === "dark"
-                    ? "Switch to Light Mode"
-                    : "Switch to Dark Mode"
-                }
+                aria-label="Toggle theme"
               >
-                {theme === "dark" ? (
-                  <Sun className="h-5 w-5 text-green-700 dark:text-green-400" />
-                ) : (
-                  <Moon className="h-5 w-5 text-green-700 dark:text-green-400" />
-                )}
+                <Sun className="h-5 w-5 text-green-700 dark:text-green-400 hidden dark:block" />
+                <Moon className="h-5 w-5 text-green-700 dark:text-green-400 dark:hidden" />
               </Button>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main
-          className={`flex-1 overflow-y-auto p-4 md:p-6 ${
-            theme === "dark" ? "bg-[#0a1f0f]" : "bg-white"
-          }`}
-        >
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-[#0a1f0f]">
           <AnimatePresence mode="wait">
             <PageTransition key={location.pathname}>
               <Outlet />

@@ -18,19 +18,23 @@ export const ThemeProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    // Save theme to localStorage
-    localStorage.setItem("crm-theme", theme);
+    // Use requestAnimationFrame to batch DOM updates
+    requestAnimationFrame(() => {
+      // Save theme to localStorage
+      localStorage.setItem("crm-theme", theme);
 
-    // Apply theme to document
-    document.documentElement.classList.remove("light", "dark");
-    document.documentElement.classList.add(theme);
-
-    // Update body background
-    if (theme === "dark") {
-      document.body.style.backgroundColor = "#0a1f0f";
-    } else {
-      document.body.style.backgroundColor = "#ffffff";
-    }
+      // Apply theme to document (Tailwind's dark mode)
+      const root = document.documentElement;
+      if (theme === "dark") {
+        root.classList.add("dark");
+        root.classList.remove("light");
+        document.body.style.backgroundColor = "#0a1f0f";
+      } else {
+        root.classList.add("light");
+        root.classList.remove("dark");
+        document.body.style.backgroundColor = "#ffffff";
+      }
+    });
   }, [theme]);
 
   const toggleTheme = () => {

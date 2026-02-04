@@ -7,7 +7,6 @@ import {
   Bell,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useTheme } from "../../contexts/ThemeContext";
 import {
   Sidebar,
   SidebarContent,
@@ -34,7 +33,6 @@ import { getNavigationByRole } from "../../config/navigation";
 
 export function AppSidebar() {
   const { user, logout } = useAuth();
-  const { theme } = useTheme();
   const location = useLocation();
 
   // Get navigation items based on user role and master sales status
@@ -43,17 +41,11 @@ export function AppSidebar() {
   return (
     <Sidebar
       collapsible="icon"
-      className={`border-r ${
-        theme === "dark"
-          ? "border-white/10 bg-black/60 backdrop-blur-xl"
-          : "border-slate-200 bg-white"
-      }`}
+      className="border-r border-slate-200 bg-white dark:border-white/10 dark:bg-black/60 dark:backdrop-blur-xl"
     >
       {/* Logo Header */}
       <SidebarHeader
-        className={`border-b ${
-          theme === "dark" ? "border-white/10" : "border-slate-200"
-        }`}
+        className="border-b border-slate-200 dark:border-white/10"
       >
         <SidebarMenu>
           <SidebarMenuItem>
@@ -66,16 +58,12 @@ export function AppSidebar() {
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span
-                  className={`truncate font-black uppercase tracking-tight ${
-                    theme === "dark" ? "text-white" : "text-slate-900"
-                  }`}
+                  className="truncate font-black uppercase tracking-tight text-slate-900 dark:text-white"
                 >
                   WastePH
                 </span>
                 <span
-                  className={`truncate text-xs font-semibold uppercase tracking-wider ${
-                    theme === "dark" ? "text-white/40" : "text-slate-500"
-                  }`}
+                  className="truncate text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-white/40"
                 >
                   CRM System
                 </span>
@@ -90,9 +78,7 @@ export function AppSidebar() {
         {navigation.map((section) => (
           <SidebarGroup key={section.label}>
             <SidebarGroupLabel
-              className={`text-[10px] font-bold uppercase tracking-widest ${
-                theme === "dark" ? "text-white/40" : "text-slate-400"
-              }`}
+              className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/40"
             >
               {section.label}
             </SidebarGroupLabel>
@@ -111,9 +97,7 @@ export function AppSidebar() {
                         className={`group relative overflow-hidden rounded-lg transition-all duration-200 ${
                           isActive
                             ? "bg-gradient-to-r from-[#15803d] to-[#16a34a] text-white shadow-lg"
-                            : theme === "dark"
-                            ? "text-white/60 hover:bg-white/5 hover:text-white"
-                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
                         }`}
                       >
                         <Link to={item.url}>
@@ -132,9 +116,7 @@ export function AppSidebar() {
 
       {/* User Section Footer */}
       <SidebarFooter
-        className={`border-t ${
-          theme === "dark" ? "border-white/10" : "border-slate-200"
-        }`}
+        className="border-t border-slate-200 dark:border-white/10"
       >
         <SidebarMenu>
           <SidebarMenuItem>
@@ -142,9 +124,7 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className={`${
-                    theme === "dark" ? "hover:bg-white/5" : "hover:bg-slate-100"
-                  }`}
+                  className="hover:bg-slate-100 dark:hover:bg-white/5"
                 >
                   <Avatar className="h-8 w-8 border-2 border-[#15803d]">
                     <AvatarFallback className="bg-gradient-to-br from-[#15803d] to-[#16a34a] text-xs font-bold text-white">
@@ -153,16 +133,12 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span
-                      className={`truncate font-bold ${
-                        theme === "dark" ? "text-white" : "text-slate-900"
-                      }`}
+                      className="truncate font-bold text-slate-900 dark:text-white"
                     >
                       {user?.firstName} {user?.lastName}
                     </span>
                     <span
-                      className={`truncate text-xs font-medium capitalize ${
-                        theme === "dark" ? "text-white/50" : "text-slate-500"
-                      }`}
+                      className="truncate text-xs font-medium capitalize text-slate-500 dark:text-white/50"
                     >
                       {user?.role}
                     </span>
@@ -173,56 +149,34 @@ export function AppSidebar() {
               <DropdownMenuContent
                 side="top"
                 align="end"
-                className={`w-56 ${
-                  theme === "dark"
-                    ? "bg-black/95 border-white/10 backdrop-blur-xl"
-                    : "bg-white"
-                }`}
+                className="w-56 bg-white dark:bg-black/95 dark:border-white/10 dark:backdrop-blur-xl"
               >
                 <DropdownMenuLabel
-                  className={
-                    theme === "dark" ? "text-white" : "text-slate-900"
-                  }
+                  className="text-slate-900 dark:text-white"
                 >
                   {user?.email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator
-                  className={
-                    theme === "dark" ? "bg-white/10" : "bg-slate-200"
-                  }
+                  className="bg-slate-200 dark:bg-white/10"
                 />
                 <DropdownMenuItem
-                  className={
-                    theme === "dark"
-                      ? "text-white/80 focus:bg-white/5"
-                      : "text-slate-700"
-                  }
+                  className="text-slate-700 dark:text-white/80 dark:focus:bg-white/5"
                 >
                   <User className="mr-2 h-4 w-4" />
                   <span>Account</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className={
-                    theme === "dark"
-                      ? "text-white/80 focus:bg-white/5"
-                      : "text-slate-700"
-                  }
+                  className="text-slate-700 dark:text-white/80 dark:focus:bg-white/5"
                 >
                   <Bell className="mr-2 h-4 w-4" />
                   <span>Notifications</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator
-                  className={
-                    theme === "dark" ? "bg-white/10" : "bg-slate-200"
-                  }
+                  className="bg-slate-200 dark:bg-white/10"
                 />
                 <DropdownMenuItem
                   onClick={logout}
-                  className={
-                    theme === "dark"
-                      ? "text-red-400 focus:bg-red-500/10 focus:text-red-400"
-                      : "text-red-600 focus:bg-red-50 focus:text-red-600"
-                  }
+                  className="text-red-600 focus:bg-red-50 focus:text-red-600 dark:text-red-400 dark:focus:bg-red-500/10 dark:focus:text-red-400"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>

@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { useTheme } from "../../contexts/ThemeContext";
 
 /**
  * ResponsiveTable - A wrapper that provides different views for mobile and desktop
@@ -26,15 +25,9 @@ const ResponsiveTable = ({ children, mobileCards, className = "" }) => {
  * MobileCard - Reusable card component for mobile table rows
  */
 export const MobileCard = ({ children, onClick, className = "" }) => {
-  const { theme } = useTheme();
-
   return (
     <Card
-      className={`transition-all ${onClick ? "cursor-pointer" : ""} ${
-        theme === "dark"
-          ? "border-white/10 bg-white/5 hover:bg-white/10"
-          : "border-slate-200 bg-white hover:shadow-md"
-      } ${className}`}
+      className={`transition-all border-slate-200 bg-white hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 ${onClick ? "cursor-pointer" : ""} ${className}`}
       onClick={onClick}
     >
       <CardContent className="p-4">{children}</CardContent>
@@ -46,21 +39,15 @@ export const MobileCard = ({ children, onClick, className = "" }) => {
  * MobileCardRow - A single row within a mobile card
  */
 export const MobileCardRow = ({ label, value, className = "" }) => {
-  const { theme } = useTheme();
-
   return (
     <div className={`flex justify-between items-start gap-3 ${className}`}>
       <span
-        className={`text-xs font-medium shrink-0 ${
-          theme === "dark" ? "text-white/60" : "text-slate-600"
-        }`}
+        className="text-xs font-medium shrink-0 text-slate-600 dark:text-white/60"
       >
         {label}:
       </span>
       <span
-        className={`text-sm text-right ${
-          theme === "dark" ? "text-white/90" : "text-slate-900"
-        }`}
+        className="text-sm text-right text-slate-900 dark:text-white/90"
       >
         {value}
       </span>
