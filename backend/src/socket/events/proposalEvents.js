@@ -70,7 +70,7 @@ class ProposalEventEmitter {
 
       // Notify admin and super_admin roles
       const adminRoles = ["admin", "super_admin"];
-      
+
       // Emit socket event to admins
       this.socketServer.emitToRoles(
         adminRoles,
@@ -82,10 +82,10 @@ class ProposalEventEmitter {
       if (this.notificationService) {
         const requesterName = `${user.firstName} ${user.lastName}`;
         const message = `${requesterName} requested proposal ${proposal.proposalNumber}`;
-        
+
         // Get all admin/super_admin users
         const adminIds = await this._getAdminUserIds();
-        
+
         // Create bulk notifications
         await this.notificationService.createBulkNotifications({
           userIds: adminIds,
@@ -105,7 +105,9 @@ class ProposalEventEmitter {
         });
       }
 
-      console.log(`✅ Proposal requested event emitted: ${proposal.proposalNumber}`);
+      console.log(
+        `✅ Proposal requested event emitted: ${proposal.proposalNumber}`
+      );
     } catch (error) {
       console.error("Error emitting proposal requested event:", error);
     }
@@ -161,7 +163,9 @@ class ProposalEventEmitter {
         }
       }
 
-      console.log(`✅ Proposal approved event emitted: ${proposal.proposalNumber}`);
+      console.log(
+        `✅ Proposal approved event emitted: ${proposal.proposalNumber}`
+      );
     } catch (error) {
       console.error("Error emitting proposal approved event:", error);
     }
@@ -217,7 +221,9 @@ class ProposalEventEmitter {
         }
       }
 
-      console.log(`✅ Proposal rejected event emitted: ${proposal.proposalNumber}`);
+      console.log(
+        `✅ Proposal rejected event emitted: ${proposal.proposalNumber}`
+      );
     } catch (error) {
       console.error("Error emitting proposal rejected event:", error);
     }
@@ -255,7 +261,7 @@ class ProposalEventEmitter {
       if (this.notificationService) {
         const senderName = `${user.firstName} ${user.lastName}`;
         const adminIds = await this._getAdminUserIds();
-        
+
         await this.notificationService.createBulkNotifications({
           userIds: adminIds,
           type: "proposal_sent",
@@ -286,13 +292,13 @@ class ProposalEventEmitter {
     try {
       // Import here to avoid circular dependency
       const { db } = await import("../../db/index.js");
-      const { usersTable } = await import("../../db/schema.js");
+      const { userTable } = await import("../../db/schema.js");
       const { inArray } = await import("drizzle-orm");
 
       const admins = await db
-        .select({ id: usersTable.id })
-        .from(usersTable)
-        .where(inArray(usersTable.role, ["admin", "super_admin"]));
+        .select({ id: userTable.id })
+        .from(userTable)
+        .where(inArray(userTable.role, ["admin", "super_admin"]));
 
       return admins.map((admin) => admin.id);
     } catch (error) {
@@ -327,7 +333,9 @@ class ProposalEventEmitter {
     // Unsubscribe from specific proposal
     socket.on(PROPOSAL_EVENTS.UNSUBSCRIBE_PROPOSAL, ({ proposalId }) => {
       socket.leave(`proposal:${proposalId}`);
-      console.log(`User ${socket.userId} unsubscribed from proposal ${proposalId}`);
+      console.log(
+        `User ${socket.userId} unsubscribed from proposal ${proposalId}`
+      );
     });
   }
 }

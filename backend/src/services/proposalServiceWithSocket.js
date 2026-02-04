@@ -50,9 +50,8 @@ class ProposalServiceWithSocket {
       try {
         // Get full proposal with inquiry data for socket emission
         const { db } = await import("../db/index.js");
-        const { proposalTable, inquiryTable, usersTable } = await import(
-          "../db/schema.js"
-        );
+        const schema = await import("../db/schema.js");
+        const { proposalTable, inquiryTable, userTable } = schema;
         const { eq } = await import("drizzle-orm");
 
         console.log(
@@ -92,14 +91,14 @@ class ProposalServiceWithSocket {
 
         const userResult = await db
           .select({
-            id: usersTable.id,
-            firstName: usersTable.firstName,
-            lastName: usersTable.lastName,
-            email: usersTable.email,
-            role: usersTable.role,
+            id: userTable.id,
+            firstName: userTable.firstName,
+            lastName: userTable.lastName,
+            email: userTable.email,
+            role: userTable.role,
           })
-          .from(usersTable)
-          .where(eq(usersTable.id, userId));
+          .from(userTable)
+          .where(eq(userTable.id, userId));
 
         const user = userResult[0];
 
@@ -140,17 +139,17 @@ class ProposalServiceWithSocket {
     if (this.proposalEvents && proposal) {
       try {
         const { db } = await import("../db/index.js");
-        const { usersTable } = await import("../db/schema.js");
+        const { userTable } = await import("../db/schema.js");
         const { eq } = await import("drizzle-orm");
 
         const [user] = await db
           .select({
-            id: usersTable.id,
-            firstName: usersTable.firstName,
-            lastName: usersTable.lastName,
+            id: userTable.id,
+            firstName: userTable.firstName,
+            lastName: userTable.lastName,
           })
-          .from(usersTable)
-          .where(eq(usersTable.id, userId));
+          .from(userTable)
+          .where(eq(userTable.id, userId));
 
         if (user) {
           await this.proposalEvents.emitProposalApproved(proposal, user);
@@ -185,17 +184,17 @@ class ProposalServiceWithSocket {
     if (this.proposalEvents && proposal) {
       try {
         const { db } = await import("../db/index.js");
-        const { usersTable } = await import("../db/schema.js");
+        const { userTable } = await import("../db/schema.js");
         const { eq } = await import("drizzle-orm");
 
         const [user] = await db
           .select({
-            id: usersTable.id,
-            firstName: usersTable.firstName,
-            lastName: usersTable.lastName,
+            id: userTable.id,
+            firstName: userTable.firstName,
+            lastName: userTable.lastName,
           })
-          .from(usersTable)
-          .where(eq(usersTable.id, userId));
+          .from(userTable)
+          .where(eq(userTable.id, userId));
 
         if (user) {
           await this.proposalEvents.emitProposalRejected(proposal, user);
@@ -230,17 +229,17 @@ class ProposalServiceWithSocket {
     if (this.proposalEvents && proposal) {
       try {
         const { db } = await import("../db/index.js");
-        const { usersTable } = await import("../db/schema.js");
+        const { userTable } = await import("../db/schema.js");
         const { eq } = await import("drizzle-orm");
 
         const [user] = await db
           .select({
-            id: usersTable.id,
-            firstName: usersTable.firstName,
-            lastName: usersTable.lastName,
+            id: userTable.id,
+            firstName: userTable.firstName,
+            lastName: userTable.lastName,
           })
-          .from(usersTable)
-          .where(eq(usersTable.id, userId));
+          .from(userTable)
+          .where(eq(userTable.id, userId));
 
         if (user) {
           await this.proposalEvents.emitProposalSent(proposal, user);
