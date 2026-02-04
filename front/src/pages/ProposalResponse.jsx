@@ -1,7 +1,21 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { CheckCircle, XCircle, Loader2, AlertCircle, FileText, AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  CheckCircle,
+  XCircle,
+  Loader2,
+  AlertCircle,
+  FileText,
+  AlertTriangle,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -26,7 +40,9 @@ const ProposalResponse = () => {
       }
 
       try {
-        const response = await fetch(`${API_URL}/proposals/public/${proposalId}/status?token=${token}`);
+        const response = await fetch(
+          `${API_URL}/proposals/public/${proposalId}/status?token=${token}`
+        );
         const data = await response.json();
 
         if (response.ok) {
@@ -34,12 +50,16 @@ const ProposalResponse = () => {
           setStage("confirmation");
         } else {
           setStage("error");
-          setMessage(data.message || data.error || "Failed to load proposal details");
+          setMessage(
+            data.message || data.error || "Failed to load proposal details"
+          );
         }
       } catch (error) {
         console.error("Error loading proposal:", error);
         setStage("error");
-        setMessage("An error occurred while loading the proposal. Please try again or contact us directly.");
+        setMessage(
+          "An error occurred while loading the proposal. Please try again or contact us directly."
+        );
       }
     };
 
@@ -51,9 +71,10 @@ const ProposalResponse = () => {
     setStage("processing");
 
     try {
-      const endpoint = action === "approve" 
-        ? `/proposals/public/${proposalId}/approve`
-        : `/proposals/public/${proposalId}/reject`;
+      const endpoint =
+        action === "approve"
+          ? `/proposals/public/${proposalId}/approve`
+          : `/proposals/public/${proposalId}/reject`;
 
       const response = await fetch(`${API_URL}${endpoint}?token=${token}`, {
         method: "POST",
@@ -66,16 +87,22 @@ const ProposalResponse = () => {
 
       if (response.ok) {
         setStage("success");
-        setMessage(data.message || "Your response has been recorded successfully");
+        setMessage(
+          data.message || "Your response has been recorded successfully"
+        );
         setResponseData(data.data);
       } else {
         setStage("error");
-        setMessage(data.message || data.error || "Failed to record your response");
+        setMessage(
+          data.message || data.error || "Failed to record your response"
+        );
       }
     } catch (error) {
       console.error("Error recording response:", error);
       setStage("error");
-      setMessage("An error occurred while processing your response. Please try again or contact us directly.");
+      setMessage(
+        "An error occurred while processing your response. Please try again or contact us directly."
+      );
     }
   };
 
@@ -84,19 +111,35 @@ const ProposalResponse = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md border-gray-200 shadow-md bg-white">
-        <CardHeader>
-          <CardTitle className="text-2xl text-[#0f4c2c]">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-green-50 p-4">
+      {/* WastePH Logo Header */}
+      <div className="absolute top-8 left-8">
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-wider text-[#104806]">
+            WASTE <span className="text-[#104806]">•</span> PH
+          </h1>
+        </div>
+        <p className="text-xs tracking-widest text-[#2a6b1f] mt-1">
+          PRIVATE WASTE MANAGEMENT
+        </p>
+      </div>
+
+      <Card className="w-full max-w-2xl border-green-200 shadow-2xl bg-white">
+        <CardHeader className="space-y-2 pb-6 border-b border-green-100">
+          <CardTitle className="text-3xl font-bold text-[#104806] tracking-wide">
             {stage === "loading" && "Loading Proposal..."}
-            {stage === "confirmation" && `${action === "approve" ? "Approve" : "Reject"} Proposal`}
+            {stage === "confirmation" &&
+              `${action === "approve" ? "Approve" : "Decline"} Proposal`}
             {stage === "processing" && "Processing Your Response..."}
             {stage === "success" && "Response Recorded"}
             {stage === "error" && "Unable to Process"}
           </CardTitle>
           {stage === "confirmation" && (
-            <CardDescription className="text-[#374151]">
-              Please confirm your decision for Proposal {proposalDetails.proposalNumber || proposalId}
+            <CardDescription className="text-gray-600 text-base">
+              Please confirm your decision for Proposal{" "}
+              <span className="font-semibold text-[#104806]">
+                {proposalDetails.proposalNumber || proposalId}
+              </span>
             </CardDescription>
           )}
         </CardHeader>
@@ -104,83 +147,144 @@ const ProposalResponse = () => {
         <CardContent>
           {/* Loading State */}
           {stage === "loading" && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="h-16 w-16 animate-spin text-blue-600 mb-4" />
-              <p className="text-gray-600">Loading proposal details...</p>
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader2 className="h-20 w-20 animate-spin text-[#104806] mb-6" />
+              <p className="text-gray-600 text-lg font-medium">
+                Loading proposal details...
+              </p>
             </div>
           )}
 
           {/* Confirmation State */}
           {stage === "confirmation" && proposalDetails && (
-            <div className="space-y-4">
-              {/* Proposal Details - Matching Quotation Design */}
-              <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-lg text-[#0f5132]">Proposal Details</h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(`${API_URL}/proposals/public/${proposalId}/pdf?token=${token}`, '_blank')}
-                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 cursor-pointer text-xs"
-                  >
-                    <FileText className="h-3.5 w-3.5 mr-1.5" />
-                    View PDF
-                  </Button>
-                </div>
+            <div className="space-y-6">
+              {/* View PDF Button - Prominent */}
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() =>
+                    window.open(
+                      `${API_URL}/proposals/public/${proposalId}/pdf?token=${token}`,
+                      "_blank"
+                    )
+                  }
+                  className="text-[#104806] hover:text-[#0a3004] hover:bg-green-50 border-[#104806] border-2 cursor-pointer font-semibold"
+                >
+                  <FileText className="h-5 w-5 mr-2" />
+                  View Full Proposal PDF
+                </Button>
+              </div>
 
-                {/* Client Information */}
-                <div>
-                  <h4 className="text-sm font-bold text-[#1f2937]">
-                    Client Information
-                  </h4>
-                  <p className="text-sm text-gray-700 font-medium">
-                    Proposal Number: <span className="font-normal text-gray-600">{proposalDetails.proposalNumber || proposalId}</span>
-                  </p>
-                  <p className="text-sm text-gray-700 font-medium">
-                    Sent Date: <span className="font-normal text-gray-600">{proposalDetails.sentAt ? new Date(proposalDetails.sentAt).toLocaleDateString() : "N/A"}</span>
-                  </p>
-                  <p className="text-sm text-gray-700 font-medium">
-                    Expires: <span className="font-normal text-gray-600">{proposalDetails.expiresAt ? new Date(proposalDetails.expiresAt).toLocaleDateString() : "N/A"}</span>
-                  </p>
-                </div>
+              {/* Proposal Details */}
+              <div className="bg-gradient-to-br from-green-50 to-white border-2 border-[#104806] rounded-lg p-6 space-y-4">
+                <h3 className="font-bold text-xl text-[#104806] border-b-2 border-green-200 pb-2">
+                  Proposal Information
+                </h3>
 
-                {/* Proposal Status */}
-                <div>
-                  <h4 className="text-sm font-bold text-[#1f2937]">
-                    Proposal Status
-                  </h4>
-                  <p className="text-sm">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      proposalDetails.clientResponse === "approved"
-                        ? "bg-green-100 text-green-800"
-                        : proposalDetails.clientResponse === "rejected"
-                        ? "bg-red-100 text-red-800"
-                        : proposalDetails.status === "sent"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}>
-                      {proposalDetails.clientResponse?.toUpperCase() || proposalDetails.status?.toUpperCase() || "PENDING"}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-[#2a6b1f] uppercase tracking-wide">
+                      Proposal Number
+                    </p>
+                    <p className="text-base font-bold text-gray-900">
+                      {proposalDetails.proposalNumber || proposalId}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#2a6b1f] uppercase tracking-wide">
+                      Status
+                    </p>
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                        proposalDetails.clientResponse === "approved"
+                          ? "bg-green-600 text-white"
+                          : proposalDetails.clientResponse === "rejected"
+                          ? "bg-red-600 text-white"
+                          : proposalDetails.status === "sent"
+                          ? "bg-blue-600 text-white"
+                          : "bg-yellow-600 text-white"
+                      }`}
+                    >
+                      {proposalDetails.clientResponse?.toUpperCase() ||
+                        proposalDetails.status?.toUpperCase() ||
+                        "PENDING"}
                     </span>
-                  </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#2a6b1f] uppercase tracking-wide">
+                      Sent Date
+                    </p>
+                    <p className="text-base font-medium text-gray-900">
+                      {proposalDetails.sentAt
+                        ? new Date(proposalDetails.sentAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#2a6b1f] uppercase tracking-wide">
+                      Valid Until
+                    </p>
+                    <p className="text-base font-medium text-gray-900">
+                      {proposalDetails.expiresAt
+                        ? new Date(
+                            proposalDetails.expiresAt
+                          ).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                        : "N/A"}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Warning Banner - Matching Quotation Design */}
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <div className="flex items-start space-x-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-amber-800">
+              {/* Confirmation Warning */}
+              <div
+                className={`border-2 rounded-lg p-6 ${
+                  action === "approve"
+                    ? "bg-green-50 border-green-600"
+                    : "bg-orange-50 border-orange-600"
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <AlertTriangle
+                    className={`h-8 w-8 shrink-0 mt-1 ${
+                      action === "approve"
+                        ? "text-green-700"
+                        : "text-orange-700"
+                    }`}
+                  />
+                  <div className="space-y-2">
+                    <p
+                      className={`text-lg font-bold ${
+                        action === "approve"
+                          ? "text-green-900"
+                          : "text-orange-900"
+                      }`}
+                    >
                       {action === "approve"
-                        ? "You are about to approve this proposal"
-                        : "You are about to decline this proposal"
-                      }
+                        ? "Ready to Accept This Proposal?"
+                        : "Declining This Proposal?"}
                     </p>
-                    <p className="text-sm text-amber-700 mt-1">
+                    <p
+                      className={`text-sm leading-relaxed ${
+                        action === "approve"
+                          ? "text-green-800"
+                          : "text-orange-800"
+                      }`}
+                    >
                       {action === "approve"
-                        ? "By approving, you agree to the terms and conditions outlined in the proposal."
-                        : "If you decline, the proposal will be canceled. You can contact us if you change your mind."
-                      }
+                        ? "By clicking 'Confirm Approval' below, you agree to the terms and conditions outlined in this proposal. Our team will begin preparing your contract immediately."
+                        : "If you decline, this proposal will be marked as rejected. You can still contact us to discuss alternative options or modifications."}
                     </p>
                   </div>
                 </div>
@@ -190,75 +294,133 @@ const ProposalResponse = () => {
 
           {/* Processing State */}
           {stage === "processing" && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="h-16 w-16 animate-spin text-blue-600 mb-4" />
-              <p className="text-gray-600">Processing your response...</p>
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader2 className="h-20 w-20 animate-spin text-[#104806] mb-6" />
+              <p className="text-gray-700 text-lg font-semibold">
+                Processing your response...
+              </p>
+              <p className="text-gray-500 text-sm mt-2">
+                Please wait, do not close this window
+              </p>
             </div>
           )}
 
           {/* Success State */}
           {stage === "success" && (
-            <div className="flex flex-col items-center justify-center py-6">
-              <div className={`rounded-full p-4 mb-4 ${
-                action === "approve" 
-                  ? "bg-green-100" 
-                  : "bg-orange-100"
-              }`}>
+            <div className="flex flex-col items-center justify-center py-8">
+              <div
+                className={`rounded-full p-6 mb-6 ${
+                  action === "approve"
+                    ? "bg-gradient-to-br from-green-100 to-green-50"
+                    : "bg-gradient-to-br from-orange-100 to-orange-50"
+                }`}
+              >
                 {action === "approve" ? (
-                  <CheckCircle className="h-16 w-16 text-green-600" />
+                  <CheckCircle
+                    className="h-24 w-24 text-[#104806]"
+                    strokeWidth={2.5}
+                  />
                 ) : (
-                  <XCircle className="h-16 w-16 text-orange-600" />
+                  <XCircle
+                    className="h-24 w-24 text-orange-600"
+                    strokeWidth={2.5}
+                  />
                 )}
               </div>
-              
-              <h3 className="text-xl font-semibold mb-2 text-center">
-                {action === "approve" ? "Thank You!" : "Response Received"}
+
+              <h3 className="text-3xl font-bold mb-3 text-center text-[#104806]">
+                {action === "approve"
+                  ? "Thank You for Your Approval!"
+                  : "Response Received"}
               </h3>
-              
-              <p className="text-gray-700 text-center mb-6">
+
+              <p className="text-gray-700 text-center mb-8 text-lg max-w-md">
                 {message}
               </p>
 
               {action === "approve" && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-5 w-full">
-                  <h4 className="font-semibold text-green-900 mb-3">What happens next?</h4>
-                  <ul className="text-sm text-green-800 space-y-2">
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      <span>Our sales team has been notified of your approval</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      <span>They will finalize the contract details and pricing</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      <span>You'll receive the final contract document via email</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      <span>A team member will contact you shortly to discuss next steps</span>
-                    </li>
-                  </ul>
+                <div className="bg-gradient-to-br from-green-50 to-white border-2 border-green-600 rounded-xl p-6 w-full shadow-sm">
+                  <h4 className="font-bold text-[#104806] mb-4 text-lg flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    What Happens Next?
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-[#104806] text-white rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
+                        1
+                      </div>
+                      <p className="text-sm text-gray-800 leading-relaxed">
+                        Our sales team has been notified and will review your
+                        approval immediately
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="bg-[#104806] text-white rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
+                        2
+                      </div>
+                      <p className="text-sm text-gray-800 leading-relaxed">
+                        We'll finalize the contract details and prepare all
+                        documentation
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="bg-[#104806] text-white rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
+                        3
+                      </div>
+                      <p className="text-sm text-gray-800 leading-relaxed">
+                        You'll receive the final contract document via email
+                        within 1-2 business days
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="bg-[#104806] text-white rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5 font-bold text-sm">
+                        4
+                      </div>
+                      <p className="text-sm text-gray-800 leading-relaxed">
+                        A dedicated team member will contact you to discuss
+                        service implementation
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {action === "reject" && (
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-5 w-full">
-                  <p className="text-sm text-orange-800">
-                    We appreciate you taking the time to review our proposal. 
-                    If you have any questions or would like to discuss alternative options, 
-                    please don't hesitate to contact us.
+                <div className="bg-gradient-to-br from-orange-50 to-white border-2 border-orange-400 rounded-xl p-6 w-full shadow-sm">
+                  <h4 className="font-bold text-orange-900 mb-3 text-lg">
+                    We Understand
+                  </h4>
+                  <p className="text-sm text-orange-800 leading-relaxed">
+                    We appreciate you taking the time to review our proposal. If
+                    you have any questions or would like to discuss alternative
+                    options, customized solutions, or pricing adjustments,
+                    please don't hesitate to reach out to our team. We're here
+                    to help!
                   </p>
                 </div>
               )}
 
               {responseData && (
-                <div className="border-t pt-4 mt-6 w-full">
-                  <p className="text-xs text-gray-500 text-center">
-                    Proposal: {responseData.proposalNumber || responseData.proposalId}
+                <div className="border-t-2 border-green-100 pt-6 mt-6 w-full">
+                  <p className="text-sm text-gray-600 text-center font-medium">
+                    Reference:{" "}
+                    <span className="font-bold text-[#104806]">
+                      {responseData.proposalNumber || responseData.proposalId}
+                    </span>
                     <br />
-                    Recorded at: {new Date(responseData.respondedAt).toLocaleString()}
+                    <span className="text-xs text-gray-500">
+                      Recorded on{" "}
+                      {new Date(responseData.respondedAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </span>
                   </p>
                 </div>
               )}
@@ -267,27 +429,43 @@ const ProposalResponse = () => {
 
           {/* Error State */}
           {stage === "error" && (
-            <div className="flex flex-col items-center justify-center py-6">
-              <div className="rounded-full bg-red-100 p-4 mb-4">
-                <AlertCircle className="h-16 w-16 text-red-600" />
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="rounded-full bg-gradient-to-br from-red-100 to-red-50 p-6 mb-6 shadow-md">
+                <AlertCircle
+                  className="h-24 w-24 text-red-600"
+                  strokeWidth={2.5}
+                />
               </div>
-              
-              <h3 className="text-xl font-semibold mb-2 text-center text-red-900">
-                Something Went Wrong
+
+              <h3 className="text-3xl font-bold mb-3 text-center text-red-900">
+                Oops! Something Went Wrong
               </h3>
-              
-              <p className="text-gray-700 text-center mb-6">
+
+              <p className="text-gray-700 text-center mb-8 text-lg max-w-md leading-relaxed">
                 {message}
               </p>
 
-              <div className="bg-red-50 border border-red-200 rounded-lg p-5 w-full">
-                <p className="text-sm text-red-800 mb-2 font-medium">
-                  Possible reasons:
+              <div className="bg-gradient-to-br from-red-50 to-white border-2 border-red-300 rounded-xl p-6 w-full shadow-sm">
+                <p className="text-sm text-red-900 mb-3 font-bold uppercase tracking-wide">
+                  Possible Reasons:
                 </p>
-                <ul className="text-sm text-red-700 space-y-1">
-                  <li>• This link has already been used</li>
-                  <li>• The link has expired</li>
-                  <li>• The link is invalid</li>
+                <ul className="text-sm text-red-800 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold">•</span>
+                    <span>
+                      This link has already been used to submit a response
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold">•</span>
+                    <span>The proposal has expired and is no longer valid</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold">•</span>
+                    <span>
+                      The authentication token is invalid or corrupted
+                    </span>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -295,19 +473,46 @@ const ProposalResponse = () => {
 
           {/* Contact Information */}
           {(stage === "error" || stage === "success") && (
-            <div className="border-t pt-6">
-              <h4 className="font-semibold text-gray-900 mb-3 text-center">
+            <div className="border-t-2 border-green-100 pt-6 mt-6">
+              <h4 className="font-bold text-[#104806] mb-4 text-center text-lg uppercase tracking-wide">
                 Need Assistance?
               </h4>
-              <div className="text-sm text-gray-600 space-y-2">
-                <p className="text-center">
-                  <strong className="text-green-700">Email:</strong>{" "}
-                  <span className="text-gray-700">info@wasteph.com</span>
-                </p>
-                <p className="text-center">
-                  <strong className="text-green-700">Phone:</strong>{" "}
-                  <span className="text-gray-700">+63 956 246 1503</span>
-                </p>
+              <div className="bg-gradient-to-br from-green-50 to-white rounded-lg p-5 space-y-3 border border-green-200">
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-[#2a6b1f] uppercase tracking-wide mb-1">
+                    Email
+                  </p>
+                  <a
+                    href="mailto:sales@waste.ph"
+                    className="text-base font-bold text-[#104806] hover:underline"
+                  >
+                    sales@waste.ph
+                  </a>
+                </div>
+                <div className="flex items-center justify-center gap-6">
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-[#2a6b1f] uppercase tracking-wide mb-1">
+                      Phone
+                    </p>
+                    <a
+                      href="tel:+639562461503"
+                      className="text-base font-bold text-[#104806] hover:underline"
+                    >
+                      0956-246-1503
+                    </a>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-[#2a6b1f] uppercase tracking-wide mb-1">
+                      Phone
+                    </p>
+                    <a
+                      href="tel:+639277966751"
+                      className="text-base font-bold text-[#104806] hover:underline"
+                    >
+                      0927-796-6751
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -315,23 +520,27 @@ const ProposalResponse = () => {
 
         {/* Card Footer - Action Buttons for Confirmation */}
         {stage === "confirmation" && proposalDetails && (
-          <CardFooter className="flex justify-between gap-3">
+          <CardFooter className="flex justify-end gap-4 pt-6 border-t-2 border-green-100">
             <Button
               variant="outline"
+              size="lg"
               onClick={handleCancel}
-              className="text-gray-700 hover:bg-gray-100 border-gray-300 cursor-pointer transition-colors"
+              className="text-gray-700 hover:bg-gray-100 border-gray-400 cursor-pointer transition-all font-semibold px-8"
             >
               Cancel
             </Button>
             <Button
+              size="lg"
               onClick={handleConfirm}
               className={
                 action === "approve"
-                  ? "bg-[#16a34a] hover:bg-[#15803d] active:bg-[#166534] text-white transition-colors cursor-pointer"
-                  : "bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-colors cursor-pointer"
+                  ? "bg-[#104806] hover:bg-[#0a3004] active:bg-[#062002] text-white transition-all cursor-pointer font-bold px-10 shadow-lg hover:shadow-xl"
+                  : "bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-all cursor-pointer font-bold px-10 shadow-lg hover:shadow-xl"
               }
             >
-              {action === "approve" ? "Confirm Approval" : "Confirm Decline"}
+              {action === "approve"
+                ? "✓ Confirm Approval"
+                : "✗ Confirm Decline"}
             </Button>
           </CardFooter>
         )}
