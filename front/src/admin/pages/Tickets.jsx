@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
@@ -32,6 +33,7 @@ import { EditTicketDialog } from "../components/tickets/EditTicketDialog";
 
 export default function Tickets() {
   const { user } = useAuth();
+  const location = useLocation();
   const [tickets, setTickets] = useState([]);
   const [clients, setClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,7 +74,10 @@ export default function Tickets() {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [editTicketId, setEditTicketId] = useState(null);
 
-  const canCreateTicket = user?.role === "sales" || user?.role === "admin" || user?.role === "super_admin";
+  const canCreateTicket =
+    user?.role === "sales" ||
+    user?.role === "admin" ||
+    user?.role === "super_admin";
 
   const handleCreateTicket = async (ticketData, attachmentFiles = []) => {
     try {
@@ -85,20 +90,32 @@ export default function Tickets() {
       if (attachmentFiles?.length > 0 && ticketId) {
         for (const file of attachmentFiles) {
           try {
-            const uploadResponse = await api.uploadTicketAttachment(ticketId, file);
+            const uploadResponse = await api.uploadTicketAttachment(
+              ticketId,
+              file
+            );
             if (uploadResponse?.success && uploadResponse?.data?.fileUrl) {
               uploadedCount += 1;
             }
           } catch (uploadError) {
             failedFiles.push(file.name);
-            console.error(`Attachment upload error for ${file.name}:`, uploadError);
+            console.error(
+              `Attachment upload error for ${file.name}:`,
+              uploadError
+            );
           }
         }
 
         if (failedFiles.length > 0) {
-          toast.error(`Ticket created. ${failedFiles.length} attachment(s) failed: ${failedFiles.join(", ")}`);
+          toast.error(
+            `Ticket created. ${
+              failedFiles.length
+            } attachment(s) failed: ${failedFiles.join(", ")}`
+          );
         } else if (uploadedCount > 0) {
-          toast.success(`Ticket created. ${uploadedCount} attachment(s) uploaded to S3.`);
+          toast.success(
+            `Ticket created. ${uploadedCount} attachment(s) uploaded to S3.`
+          );
         }
       } else {
         toast.success("Ticket created successfully");
@@ -159,7 +176,11 @@ export default function Tickets() {
       setTickets((prevTickets) =>
         prevTickets.map((ticket) =>
           ticket.id === data.ticketId
-            ? { ...ticket, priority: data.newPriority, updatedAt: data.timestamp }
+            ? {
+                ...ticket,
+                priority: data.newPriority,
+                updatedAt: data.timestamp,
+              }
             : ticket
         )
       );
@@ -175,16 +196,28 @@ export default function Tickets() {
     // Register all handlers
     ticketSocketService.onTicketEvent("created", handleTicketCreated);
     ticketSocketService.onTicketEvent("updated", handleTicketUpdated);
-    ticketSocketService.onTicketEvent("statusChanged", handleTicketStatusChanged);
-    ticketSocketService.onTicketEvent("priorityChanged", handleTicketPriorityChanged);
+    ticketSocketService.onTicketEvent(
+      "statusChanged",
+      handleTicketStatusChanged
+    );
+    ticketSocketService.onTicketEvent(
+      "priorityChanged",
+      handleTicketPriorityChanged
+    );
     ticketSocketService.onTicketEvent("commentAdded", handleCommentAdded);
 
     // Cleanup on unmount
     return () => {
       ticketSocketService.offTicketEvent("created", handleTicketCreated);
       ticketSocketService.offTicketEvent("updated", handleTicketUpdated);
-      ticketSocketService.offTicketEvent("statusChanged", handleTicketStatusChanged);
-      ticketSocketService.offTicketEvent("priorityChanged", handleTicketPriorityChanged);
+      ticketSocketService.offTicketEvent(
+        "statusChanged",
+        handleTicketStatusChanged
+      );
+      ticketSocketService.offTicketEvent(
+        "priorityChanged",
+        handleTicketPriorityChanged
+      );
       ticketSocketService.offTicketEvent("commentAdded", handleCommentAdded);
     };
   }, [pagination.page, pagination.limit, selectedTicketId, isViewDialogOpen]);
@@ -195,6 +228,16 @@ export default function Tickets() {
     fetchTickets(1);
   }, [statusFilter, categoryFilter, priorityFilter, searchTerm]);
 
+  // Open ticket dialog if navigated from notification
+  useEffect(() => {
+    if (location.state?.openTicketId) {
+      setSelectedTicketId(location.state.openTicketId);
+      setIsViewDialogOpen(true);
+      // Clear the state to prevent reopening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
+
   const fetchClients = async () => {
     try {
       const response = await api.getClients({ limit: 500 });
@@ -204,7 +247,10 @@ export default function Tickets() {
     }
   };
 
-  const fetchTickets = async (page = pagination.page, limit = pagination.limit) => {
+  const fetchTickets = async (
+    page = pagination.page,
+    limit = pagination.limit
+  ) => {
     const currentFetchId = ++fetchIdRef.current;
     setIsLoading(true);
     try {
@@ -212,8 +258,12 @@ export default function Tickets() {
         page,
         limit,
         ...(statusFilter.length > 0 && { status: statusFilter.join(",") }),
-        ...(categoryFilter.length > 0 && { category: categoryFilter.join(",") }),
-        ...(priorityFilter.length > 0 && { priority: priorityFilter.join(",") }),
+        ...(categoryFilter.length > 0 && {
+          category: categoryFilter.join(","),
+        }),
+        ...(priorityFilter.length > 0 && {
+          priority: priorityFilter.join(","),
+        }),
         ...(searchTerm && { search: searchTerm }),
       };
 
@@ -404,7 +454,9 @@ export default function Tickets() {
                     <DropdownMenuCheckboxItem
                       key={column.accessorKey}
                       checked={columnVisibility[column.accessorKey]}
-                      onCheckedChange={() => handleToggleColumn(column.accessorKey)}
+                      onCheckedChange={() =>
+                        handleToggleColumn(column.accessorKey)
+                      }
                     >
                       {columnLabels[column.accessorKey]}
                     </DropdownMenuCheckboxItem>
@@ -481,7 +533,17 @@ export default function Tickets() {
             disabled={pagination.page === 1 || isLoading}
           >
             <span className="sr-only">First page</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="11 17 6 12 11 7" />
               <polyline points="18 17 13 12 18 7" />
             </svg>
@@ -494,7 +556,17 @@ export default function Tickets() {
             disabled={pagination.page === 1 || isLoading}
           >
             <span className="sr-only">Previous page</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </Button>
@@ -502,11 +574,23 @@ export default function Tickets() {
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => fetchTickets(Math.min(pagination.page + 1, pagination.totalPages))}
+            onClick={() =>
+              fetchTickets(Math.min(pagination.page + 1, pagination.totalPages))
+            }
             disabled={pagination.page >= pagination.totalPages || isLoading}
           >
             <span className="sr-only">Next page</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </Button>
@@ -518,7 +602,17 @@ export default function Tickets() {
             disabled={pagination.page >= pagination.totalPages || isLoading}
           >
             <span className="sr-only">Last page</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="13 17 18 12 13 7" />
               <polyline points="6 17 11 12 6 7" />
             </svg>

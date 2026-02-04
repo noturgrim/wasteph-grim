@@ -74,21 +74,30 @@ export default function AppLayout() {
       markAsRead(notification.id);
     }
 
-    // Navigate based on entity type with specific ID
+    // Navigate based on entity type
     if (notification.entityType === "ticket" && notification.entityId) {
-      navigate(`/admin/tickets/${notification.entityId}`);
+      // Navigate to tickets page with ticket ID in URL hash/state
+      navigate(`/admin/tickets`, {
+        state: { openTicketId: notification.entityId },
+      });
     } else if (
       notification.entityType === "proposal" &&
       notification.entityId
     ) {
-      navigate(`/admin/proposals/${notification.entityId}`);
+      navigate(`/admin/proposals`, {
+        state: { openProposalId: notification.entityId },
+      });
     } else if (
       notification.entityType === "contract" &&
       notification.entityId
     ) {
-      navigate(`/admin/contract-requests/${notification.entityId}`);
+      navigate(`/admin/contract-requests`, {
+        state: { openContractId: notification.entityId },
+      });
     } else if (notification.entityType === "inquiry" && notification.entityId) {
-      navigate(`/admin/inquiries/${notification.entityId}`);
+      navigate(`/admin/inquiries`, {
+        state: { openInquiryId: notification.entityId },
+      });
     }
   };
 
