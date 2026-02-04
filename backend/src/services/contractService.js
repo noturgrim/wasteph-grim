@@ -5,6 +5,7 @@ import {
   proposalTable,
   inquiryTable,
   userTable,
+  clientTable,
 } from "../db/schema.js";
 import { eq, desc, and, or, like, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
@@ -128,8 +129,8 @@ class ContractService {
         or(
           like(inquiryTable.name, `%${escaped}%`),
           like(inquiryTable.email, `%${escaped}%`),
-          like(inquiryTable.company, `%${escaped}%`),
-        ),
+          like(inquiryTable.company, `%${escaped}%`)
+        )
       );
     }
 
@@ -215,7 +216,13 @@ class ContractService {
    * @param {Object} metadata - Request metadata
    * @returns {Promise<Object>} Updated contract
    */
-  async requestContract(contractId, contractDetails, userId, customTemplateBuffer = null, metadata = {}) {
+  async requestContract(
+    contractId,
+    contractDetails,
+    userId,
+    customTemplateBuffer = null,
+    metadata = {}
+  ) {
     // Get contract
     const contractData = await this.getContractById(contractId);
     const contract = contractData.contract;
@@ -229,7 +236,7 @@ class ContractService {
     if (contractData.proposal.requestedBy !== userId) {
       throw new AppError(
         "You can only request contracts for your own proposals",
-        403,
+        403
       );
     }
 
@@ -239,12 +246,18 @@ class ContractService {
 
     if (customTemplateBuffer) {
       // Custom template provided - save it
-      customTemplateUrl = await this.saveCustomTemplate(customTemplateBuffer, contractId);
+      customTemplateUrl = await this.saveCustomTemplate(
+        customTemplateBuffer,
+        contractId
+      );
     } else {
       // No custom template - use system template
       const { contractType } = contractDetails;
       try {
-        const suggestedTemplate = await contractTemplateService.suggestTemplateForContract(contractType);
+        const suggestedTemplate =
+          await contractTemplateService.suggestTemplateForContract(
+            contractType
+          );
         templateId = suggestedTemplate.id;
       } catch (error) {
         console.error("Failed to suggest template:", error);
@@ -274,7 +287,10 @@ class ContractService {
     } = contractDetails;
 
     // Derive the display string used by PDF Handlebars templates
-    const contractDuration = formatDateRange(contractStartDate, contractEndDate);
+    const contractDuration = formatDateRange(
+      contractStartDate,
+      contractEndDate
+    );
 
     // Prepare contract data for template rendering (if using template)
     const contractDataForTemplate = {
@@ -324,7 +340,9 @@ class ContractService {
         customTemplateUrl,
         // Template-related fields
         templateId,
-        contractData: templateId ? JSON.stringify(contractDataForTemplate) : null,
+        contractData: templateId
+          ? JSON.stringify(contractDataForTemplate)
+          : null,
         updatedAt: new Date(),
       })
       .where(eq(contractsTable.id, contractId))
@@ -359,7 +377,7 @@ class ContractService {
     adminNotes,
     userId,
     editedData = null,
-    metadata = {},
+    metadata = {}
   ) {
     // Get contract
     const contractData = await this.getContractById(contractId);
@@ -372,7 +390,7 @@ class ContractService {
     ) {
       throw new AppError(
         "Can only upload contract when status is requested or sent_to_sales",
-        400,
+        400
       );
     }
 
@@ -393,17 +411,25 @@ class ContractService {
 
     // If admin edited contract data, include it in the update
     if (editedData) {
-      const derived = editedData.contractStartDate && editedData.contractEndDate
-        ? formatDateRange(editedData.contractStartDate, editedData.contractEndDate)
-        : editedData.contractDuration;
+      const derived =
+        editedData.contractStartDate && editedData.contractEndDate
+          ? formatDateRange(
+              editedData.contractStartDate,
+              editedData.contractEndDate
+            )
+          : editedData.contractDuration;
       Object.assign(updateData, {
         contractType: editedData.contractType,
         clientName: editedData.clientName,
         companyName: editedData.companyName,
         clientEmailContract: editedData.clientEmailContract,
         clientAddress: editedData.clientAddress,
-        contractStartDate: editedData.contractStartDate ? new Date(editedData.contractStartDate) : null,
-        contractEndDate: editedData.contractEndDate ? new Date(editedData.contractEndDate) : null,
+        contractStartDate: editedData.contractStartDate
+          ? new Date(editedData.contractStartDate)
+          : null,
+        contractEndDate: editedData.contractEndDate
+          ? new Date(editedData.contractEndDate)
+          : null,
         contractDuration: derived,
         serviceLatitude: editedData.serviceLatitude,
         serviceLongitude: editedData.serviceLongitude,
@@ -411,7 +437,9 @@ class ContractService {
         collectionScheduleOther: editedData.collectionScheduleOther,
         wasteAllowance: editedData.wasteAllowance,
         specialClauses: editedData.specialClauses,
-        signatories: editedData.signatories ? JSON.stringify(editedData.signatories) : null,
+        signatories: editedData.signatories
+          ? JSON.stringify(editedData.signatories)
+          : null,
         ratePerKg: editedData.ratePerKg,
         clientRequests: editedData.clientRequests,
       });
@@ -430,8 +458,8 @@ class ContractService {
       action: "contract_uploaded",
       entityType: "contract",
       entityId: contractId,
-      details: { 
-        pdfUrl, 
+      details: {
+        pdfUrl,
         adminNotes,
         dataEdited: editedData ? true : false,
       },
@@ -541,9 +569,13 @@ class ContractService {
 
     // If admin edited contract data, update it
     if (editedData) {
-      const derived = editedData.contractStartDate && editedData.contractEndDate
-        ? formatDateRange(editedData.contractStartDate, editedData.contractEndDate)
-        : editedData.contractDuration;
+      const derived =
+        editedData.contractStartDate && editedData.contractEndDate
+          ? formatDateRange(
+              editedData.contractStartDate,
+              editedData.contractEndDate
+            )
+          : editedData.contractDuration;
       // Ensure the stored JSON also carries the derived display string for template re-renders
       const templateData = { ...editedData, contractDuration: derived };
       Object.assign(updateData, {
@@ -552,8 +584,12 @@ class ContractService {
         companyName: editedData.companyName,
         clientEmailContract: editedData.clientEmailContract,
         clientAddress: editedData.clientAddress,
-        contractStartDate: editedData.contractStartDate ? new Date(editedData.contractStartDate) : null,
-        contractEndDate: editedData.contractEndDate ? new Date(editedData.contractEndDate) : null,
+        contractStartDate: editedData.contractStartDate
+          ? new Date(editedData.contractStartDate)
+          : null,
+        contractEndDate: editedData.contractEndDate
+          ? new Date(editedData.contractEndDate)
+          : null,
         contractDuration: derived,
         serviceLatitude: editedData.serviceLatitude,
         serviceLongitude: editedData.serviceLongitude,
@@ -609,7 +645,10 @@ class ContractService {
     const contractData = await this.getContractById(contractId);
     const contract = contractData.contract;
 
-    if (contract.status !== "requested" && contract.status !== "sent_to_sales") {
+    if (
+      contract.status !== "requested" &&
+      contract.status !== "sent_to_sales"
+    ) {
       throw new AppError(
         "Can only edit contract when status is requested or sent_to_sales",
         400
@@ -657,7 +696,7 @@ class ContractService {
     if (contract.status !== "sent_to_sales") {
       throw new AppError(
         "Can only send to client after admin sends to sales",
-        400,
+        400
       );
     }
 
@@ -665,7 +704,7 @@ class ContractService {
     if (proposal.requestedBy !== userId) {
       throw new AppError(
         "You can only send contracts for your own proposals",
-        403,
+        403
       );
     }
 
@@ -693,7 +732,7 @@ class ContractService {
       inquiry,
       pdfBuffer,
       contractId,
-      submissionToken,
+      submissionToken
     );
 
     // Update contract
@@ -747,11 +786,11 @@ class ContractService {
   async saveCustomTemplate(fileBuffer, contractId) {
     let ext = ".pdf";
     let contentType = "application/pdf";
-    if (fileBuffer[0] === 0x50 && fileBuffer[1] === 0x4B) {
+    if (fileBuffer[0] === 0x50 && fileBuffer[1] === 0x4b) {
       ext = ".docx";
       contentType =
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    } else if (fileBuffer[0] === 0xD0 && fileBuffer[1] === 0xCF) {
+    } else if (fileBuffer[0] === 0xd0 && fileBuffer[1] === 0xcf) {
       ext = ".doc";
       contentType = "application/msword";
     }
@@ -811,7 +850,7 @@ class ContractService {
         contract.signedAt
           ? "This contract has already been signed"
           : "This contract is not available for submission",
-        400,
+        400
       );
     }
 
@@ -830,20 +869,43 @@ class ContractService {
     const contract = contractData.contract;
     const inquiry = contractData.inquiry;
 
-    // Auto-create client record first (if this fails, status stays at sent_to_client so client can retry)
-    const clientData = {
-      companyName: contract.companyName || inquiry?.company || "Unknown",
-      contactPerson: contract.clientName || inquiry?.name || "Unknown",
-      email: contract.clientEmailContract || inquiry?.email || contract.clientEmail,
-      phone: inquiry?.phone || "",
-      address: contract.clientAddress || "",
-      city: "",
-      province: "",
-      contractStartDate: contract.contractStartDate || null,
-      contractEndDate: contract.contractEndDate || null,
-    };
+    // Get or create client record
+    const clientEmail =
+      contract.clientEmailContract || inquiry?.email || contract.clientEmail;
 
-    const client = await clientService.createClient(clientData, contract.requestedBy || contract.sentToClientBy, {});
+    // Check if client already exists by email
+    const [existingClient] = await db
+      .select()
+      .from(clientTable)
+      .where(eq(clientTable.email, clientEmail))
+      .limit(1);
+
+    let client;
+    if (existingClient) {
+      // Use existing client
+      client = existingClient;
+      console.log(`✅ Found existing client: ${client.id} (${client.email})`);
+    } else {
+      // Create new client record
+      const clientData = {
+        companyName: contract.companyName || inquiry?.company || "Unknown",
+        contactPerson: contract.clientName || inquiry?.name || "Unknown",
+        email: clientEmail,
+        phone: inquiry?.phone || "",
+        address: contract.clientAddress || "",
+        city: "",
+        province: "",
+        contractStartDate: contract.contractStartDate || null,
+        contractEndDate: contract.contractEndDate || null,
+      };
+
+      client = await clientService.createClient(
+        clientData,
+        contract.requestedBy || contract.sentToClientBy,
+        {}
+      );
+      console.log(`✅ Created new client: ${client.id} (${client.email})`);
+    }
 
     // Update contract status + link client (only after client creation succeeds)
     const [updatedContract] = await db
@@ -886,7 +948,7 @@ class ContractService {
     if (contract.status !== "signed") {
       throw new AppError(
         "Can only upload hardbound contract after client has signed",
-        400,
+        400
       );
     }
 

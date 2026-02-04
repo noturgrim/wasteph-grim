@@ -341,7 +341,122 @@ class ContractServiceWithSocket {
   }
 
   async recordClientSigning(contractId, signedUrl, ip) {
-    return this.contractService.recordClientSigning(contractId, signedUrl, ip);
+    // Call core service
+    const contract = await this.contractService.recordClientSigning(
+      contractId,
+      signedUrl,
+      ip
+    );
+
+    // Emit socket event
+    if (this.contractEvents && contract?.id) {
+      try {
+        const { db } = await import("../db/index.js");
+        const { contractsTable, proposalTable, userTable } = await import(
+          "../db/schema.js"
+        );
+        const { eq, or } = await import("drizzle-orm");
+
+        // Get full contract details
+        const [fullContract] = await db
+          .select({
+            id: contractsTable.id,
+            proposalId: contractsTable.proposalId,
+            status: contractsTable.status,
+            clientName: contractsTable.clientName,
+            companyName: contractsTable.companyName,
+            signedAt: contractsTable.signedAt,
+            clientId: contractsTable.clientId,
+            proposalNumber: proposalTable.proposalNumber,
+            requestedBy: proposalTable.requestedBy,
+            sentToClientBy: contractsTable.sentToClientBy,
+          })
+          .from(contractsTable)
+          .leftJoin(
+            proposalTable,
+            eq(contractsTable.proposalId, proposalTable.id)
+          )
+          .where(eq(contractsTable.id, contract.id))
+          .limit(1);
+
+        if (fullContract) {
+          // Get all admin user IDs
+          const admins = await db
+            .select({ id: userTable.id })
+            .from(userTable)
+            .where(
+              or(eq(userTable.role, "admin"), eq(userTable.role, "super_admin"))
+            );
+
+          const adminIds = admins.map((admin) => admin.id);
+
+          // Also notify the sales user who sent it to client
+          const salesUserId =
+            fullContract.sentToClientBy || fullContract.requestedBy;
+          const notifyUserIds = salesUserId
+            ? [...adminIds, salesUserId]
+            : adminIds;
+
+          // Remove duplicates
+          const uniqueUserIds = [...new Set(notifyUserIds)];
+
+          // Emit socket event to admins and sales user
+          const eventData = {
+            contractId: fullContract.id,
+            proposalId: fullContract.proposalId,
+            proposalNumber: fullContract.proposalNumber,
+            status: fullContract.status,
+            clientName: fullContract.clientName,
+            companyName: fullContract.companyName,
+            signedAt: fullContract.signedAt,
+            clientId: fullContract.clientId,
+          };
+
+          // Emit to all relevant users
+          uniqueUserIds.forEach((userId) => {
+            this.contractEvents.socketServer.emitToUser(
+              userId,
+              "contract:signed",
+              eventData
+            );
+          });
+
+          // Create database notifications for all users
+          await this.contractEvents.notificationService.createBulkNotifications(
+            uniqueUserIds,
+            {
+              type: "contract_signed",
+              title: "Contract Signed",
+              message: `Client has signed the contract for ${
+                fullContract.clientName || fullContract.companyName
+              }`,
+              entityType: "contract",
+              entityId: fullContract.id,
+              metadata: {
+                contractId: fullContract.id,
+                proposalId: fullContract.proposalId,
+                proposalNumber: fullContract.proposalNumber,
+                clientName: fullContract.clientName,
+                companyName: fullContract.companyName,
+                clientId: fullContract.clientId,
+              },
+            }
+          );
+
+          console.log(
+            `✅ Contract signed event emitted for contract ${fullContract.id}`
+          );
+        } else {
+          console.warn(
+            "Could not emit contract signed event: missing contract data"
+          );
+        }
+      } catch (error) {
+        console.error("Error emitting contract signed event:", error);
+      }
+    }
+
+    return contract;
   }
 
   async uploadHardboundContract(contractId, hardboundUrl, userId) {
