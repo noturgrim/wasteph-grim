@@ -65,6 +65,7 @@ const CTASection = () => {
   const [focusedField, setFocusedField] = useState(null);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [errors, setErrors] = useState({});
 
   // Validation functions
@@ -196,7 +197,7 @@ const CTASection = () => {
     // Submit to backend API
     setIsSubmitting(true);
     try {
-      await publicApi.submitLead({
+      const response = await publicApi.submitLead({
         company: formData.company.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
@@ -204,7 +205,8 @@ const CTASection = () => {
         location: formData.location.trim(),
       });
 
-      // Show success message
+      // Show success message from API
+      setSuccessMessage(response.message);
       setSubmitStatus("success");
 
       // Reset form after a delay
@@ -217,6 +219,7 @@ const CTASection = () => {
           location: "",
         });
         setErrors({});
+        setSuccessMessage("");
         setSubmitStatus(null);
       }, 5000);
     } catch (error) {
@@ -287,6 +290,13 @@ const CTASection = () => {
             <div className="pointer-events-none absolute right-0 top-0 h-80 w-80 -translate-y-32 translate-x-32 rounded-full bg-[#15803d]/25 blur-3xl" />
 
             <div className="relative space-y-4">
+              {/* Success message from API */}
+              {submitStatus === "success" && successMessage && (
+                <div className="rounded-lg border-2 border-[#16a34a] bg-[#16a34a]/10 px-4 py-3 text-sm text-[#16a34a] font-medium">
+                  {successMessage}
+                </div>
+              )}
+
               {/* General error message */}
               {errors.general && (
                 <div className="rounded-lg border-2 border-red-500 bg-red-500/10 px-4 py-3 text-sm text-red-400">
@@ -528,18 +538,23 @@ const CTASection = () => {
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
-                          strokeWidth="3"
+                          strokeWidth="2.5"
                         >
                           <circle
-                            className="opacity-25"
                             cx="12"
                             cy="12"
                             r="10"
-                          />
-                          <path
-                            className="opacity-75"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
+                            strokeDasharray="32"
+                            strokeDashoffset="32"
+                            strokeLinecap="round"
+                          >
+                            <animate
+                              attributeName="stroke-dashoffset"
+                              values="32;0"
+                              dur="1.5s"
+                              repeatCount="indefinite"
+                            />
+                          </circle>
                         </svg>
                         Submitting...
                       </>
@@ -593,11 +608,11 @@ const CTASection = () => {
                 </button>
 
                 {/* Note */}
-                <p className="mt-3 text-center text-xs text-white/60 leading-relaxed">
-                  {submitStatus === "success"
-                    ? "Our team will contact you shortly to discuss your waste management needs."
-                    : "After submitting your request, our team will contact you shortly to discuss your waste management needs."}
-                </p>
+                {submitStatus !== "success" && (
+                  <p className="mt-3 text-center text-xs text-white/60 leading-relaxed">
+                    After submitting your request, our team will contact you shortly to discuss your waste management needs.
+                  </p>
+                )}
               </div>
 
               {/* Contact Info */}
