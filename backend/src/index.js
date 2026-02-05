@@ -13,6 +13,7 @@ import socketServer from "./socket/socketServer.js";
 import authRoutes from "./routes/authRoutes.js";
 import inquiryRoutes from "./routes/inquiryRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
+import publicLeadRoutes from "./routes/publicLeadRoutes.js";
 import potentialRoutes from "./routes/potentialRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -82,6 +83,9 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Public routes (no authentication required) - must be defined before protected routes
+app.use("/api/public/leads", publicLeadRoutes);
 
 // API routes
 app.use("/api/auth", authRoutes);

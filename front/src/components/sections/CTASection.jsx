@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import SectionShell from "../common/SectionShell";
 import RevealOnScroll from "../common/RevealOnScroll";
+import { publicApi } from "../../services/publicApi";
 
 const services = [
   {
@@ -63,6 +64,7 @@ const CTASection = () => {
   });
   const [focusedField, setFocusedField] = useState(null);
   const [submitStatus, setSubmitStatus] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
   // Validation functions
@@ -164,7 +166,7 @@ const CTASection = () => {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     // Validate all fields before submission
@@ -191,39 +193,48 @@ const CTASection = () => {
       return;
     }
 
-    // Create email content
-    const subject = encodeURIComponent(
-      `Waste PH Inquiry - ${formData.company}`
-    );
-    const body = encodeURIComponent(
-      `New inquiry from Waste PH website:\n\n` +
-        `Company/Site: ${formData.company}\n` +
-        `Email: ${formData.email}\n` +
-        `Phone: ${formData.phone}\n` +
-        `Waste Type: ${formData.wasteType}\n` +
-        `Location: ${formData.location}\n\n` +
-        `---\n` +
-        `This inquiry was submitted via the Waste PH contact form.`
-    );
-
-    // Open email client with pre-filled content
-    window.location.href = `mailto:sales@waste.ph?subject=${subject}&body=${body}`;
-
-    // Show success message
-    setSubmitStatus("success");
-
-    // Reset form after a delay
-    setTimeout(() => {
-      setFormData({
-        company: "",
-        email: "",
-        phone: "",
-        wasteType: "",
-        location: "",
+    // Submit to backend API
+    setIsSubmitting(true);
+    try {
+      await publicApi.submitLead({
+        company: formData.company.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        wasteType: formData.wasteType.trim(),
+        location: formData.location.trim(),
       });
-      setErrors({});
-      setSubmitStatus(null);
-    }, 3000);
+
+      // Show success message
+      setSubmitStatus("success");
+
+      // Reset form after a delay
+      setTimeout(() => {
+        setFormData({
+          company: "",
+          email: "",
+          phone: "",
+          wasteType: "",
+          location: "",
+        });
+        setErrors({});
+        setSubmitStatus(null);
+      }, 5000);
+    } catch (error) {
+      // Show error message
+      setSubmitStatus("error");
+      
+      // Set a general error message
+      setErrors({
+        general: error.message || "Failed to submit your inquiry. Please try again or contact us directly.",
+      });
+
+      setTimeout(() => {
+        setSubmitStatus(null);
+        setErrors({});
+      }, 5000);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -276,6 +287,12 @@ const CTASection = () => {
             <div className="pointer-events-none absolute right-0 top-0 h-80 w-80 -translate-y-32 translate-x-32 rounded-full bg-[#15803d]/25 blur-3xl" />
 
             <div className="relative space-y-4">
+              {/* General error message */}
+              {errors.general && (
+                <div className="rounded-lg border-2 border-red-500 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {errors.general}
+                </div>
+              )}
               {/* Form fields */}
               <div className="grid gap-4 sm:grid-cols-2">
                 {/* Company Name */}
@@ -492,16 +509,41 @@ const CTASection = () => {
               <div className="pt-2">
                 <button
                   type="submit"
+                  disabled={isSubmitting}
                   className={`group relative w-full overflow-hidden rounded-xl px-8 py-4 text-base font-black uppercase tracking-wide text-white shadow-[0_8px_30px_rgba(21,128,61,0.4)] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                     submitStatus === "success"
                       ? "bg-[#16a34a] focus-visible:ring-[#16a34a]"
                       : submitStatus === "error"
                       ? "bg-red-600 shadow-[0_8px_30px_rgba(239,68,68,0.4)] focus-visible:ring-red-500"
+                      : isSubmitting
+                      ? "bg-[#15803d] opacity-75 cursor-not-allowed"
                       : "bg-linear-to-r from-[#15803d] to-[#16a34a] hover:scale-[1.02] hover:shadow-[0_12px_40px_rgba(21,128,61,0.6)] focus-visible:ring-[#15803d]"
                   }`}
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
-                    {submitStatus === "success" ? (
+                    {isSubmitting ? (
+                      <>
+                        <svg
+                          className="h-5 w-5 animate-spin"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                          />
+                          <path
+                            className="opacity-75"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Submitting...
+                      </>
+                    ) : submitStatus === "success" ? (
                       <>
                         <svg
                           className="h-5 w-5"
@@ -512,7 +554,7 @@ const CTASection = () => {
                         >
                           <path d="M20 6L9 17l-5-5" />
                         </svg>
-                        Email Client Opened
+                        Request Sent Successfully!
                       </>
                     ) : submitStatus === "error" ? (
                       <>
@@ -527,7 +569,7 @@ const CTASection = () => {
                           <line x1="12" y1="8" x2="12" y2="12" />
                           <line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
-                        Please Fix Errors
+                        Submission Failed
                       </>
                     ) : (
                       <>
@@ -545,15 +587,16 @@ const CTASection = () => {
                     )}
                   </span>
                   {/* Shimmer effect */}
-                  {submitStatus !== "success" && submitStatus !== "error" && (
+                  {!isSubmitting && submitStatus !== "success" && submitStatus !== "error" && (
                     <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                   )}
                 </button>
 
                 {/* Note */}
                 <p className="mt-3 text-center text-xs text-white/60 leading-relaxed">
-                  After sending your email, our team will contact you shortly to
-                  discuss your waste management needs.
+                  {submitStatus === "success"
+                    ? "Our team will contact you shortly to discuss your waste management needs."
+                    : "After submitting your request, our team will contact you shortly to discuss your waste management needs."}
                 </p>
               </div>
 

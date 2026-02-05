@@ -46,6 +46,47 @@ class LeadService {
   }
 
   /**
+   * Create a new lead from public landing page submission
+   * @param {Object} leadData - Lead data from landing page
+   * @param {Object} metadata - Request metadata (ip, userAgent)
+   * @returns {Promise<Object>} Created lead
+   */
+  async createPublicLead(leadData, metadata = {}) {
+    const { clientName, company, email, phone, location, notes } = leadData;
+
+    // Validate that at least company is provided (required for public submissions)
+    if (!company?.trim()) {
+      throw new AppError("Company name is required", 400);
+    }
+
+    const [lead] = await db
+      .insert(leadTable)
+      .values({
+        clientName: clientName || company, // Use company as clientName fallback
+        company,
+        email,
+        phone,
+        location,
+        notes,
+        isClaimed: false,
+      })
+      .returning();
+
+    // Log activity without userId for public submissions
+    await this.logActivity({
+      userId: null,
+      action: "lead_created_public",
+      entityType: "lead",
+      entityId: lead.id,
+      details: { source: "landing_page" },
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
+
+    return lead;
+  }
+
+  /**
    * Get all leads with optional filtering, search, and pagination
    * @param {Object} options - Query options { status, assignedTo, search, page, limit }
    * @returns {Promise<Object>} Object with data and pagination info
@@ -389,7 +430,7 @@ class LeadService {
     } = activityData;
 
     await db.insert(activityLogTable).values({
-      userId,
+      userId: userId || null, // Allow null for public/system actions
       action,
       entityType,
       entityId,

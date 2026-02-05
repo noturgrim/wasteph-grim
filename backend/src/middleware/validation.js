@@ -71,6 +71,43 @@ export const leadValidation = [
   }),
 ];
 
+// Public lead validation (from landing page)
+export const publicLeadValidation = [
+  body("company")
+    .trim()
+    .notEmpty()
+    .withMessage("Company/Site name is required")
+    .isLength({ min: 2, max: 255 })
+    .withMessage("Company name must be between 2 and 255 characters"),
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please enter a valid email address"),
+  body("phone")
+    .trim()
+    .notEmpty()
+    .withMessage("Phone number is required")
+    .isLength({ min: 10, max: 20 })
+    .withMessage("Phone number must be between 10 and 20 characters")
+    .matches(/^[\d\s\+\-\(\)]+$/)
+    .withMessage("Phone number can only contain digits, spaces, and +()-"),
+  body("wasteType")
+    .trim()
+    .notEmpty()
+    .withMessage("Waste type is required")
+    .isLength({ max: 500 })
+    .withMessage("Waste type must not exceed 500 characters"),
+  body("location")
+    .trim()
+    .notEmpty()
+    .withMessage("Location is required")
+    .isLength({ max: 500 })
+    .withMessage("Location must not exceed 500 characters"),
+];
+
 // Client validation
 export const clientValidation = [
   body("companyName").trim().notEmpty().withMessage("Company name is required"),
