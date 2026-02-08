@@ -1,6 +1,11 @@
 import { db } from "../db/index.js";
-import { leadTable, activityLogTable, inquiryTable } from "../db/schema.js";
-import { eq, desc, and, or, like, count } from "drizzle-orm";
+import {
+  leadTable,
+  activityLogTable,
+  inquiryTable,
+  userTable,
+} from "../db/schema.js";
+import { eq, desc, and, or, like, count, inArray } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 import counterService from "./counterService.js";
 
@@ -92,52 +97,32 @@ class LeadService {
    * @returns {Promise<Object>} Object with data and pagination info
    */
   async getAllLeads(options = {}) {
-    const { isClaimed, claimedBy, search, page = 1, limit = 10 } = options;
+    const {
+      isClaimed,
+      claimedBy,
+      search,
+      page: rawPage = 1,
+      limit: rawLimit = 10,
+    } = options;
 
-    // Calculate offset
+    // Coerce to numbers to prevent string concatenation bugs
+    const page = Number(rawPage) || 1;
+    const limit = Number(rawLimit) || 10;
     const offset = (page - 1) * limit;
 
-    // Import userTable for join
-    const { userTable } = await import("../db/schema.js");
-
-    // Build base query with user join for claimedBy
-    let query = db
-      .select({
-        id: leadTable.id,
-        clientName: leadTable.clientName,
-        company: leadTable.company,
-        email: leadTable.email,
-        phone: leadTable.phone,
-        location: leadTable.location,
-        notes: leadTable.notes,
-        isClaimed: leadTable.isClaimed,
-        claimedBy: leadTable.claimedBy,
-        claimedAt: leadTable.claimedAt,
-        createdAt: leadTable.createdAt,
-        updatedAt: leadTable.updatedAt,
-        claimedByUser: {
-          firstName: userTable.firstName,
-          lastName: userTable.lastName,
-          email: userTable.email,
-        },
-      })
-      .from(leadTable)
-      .leftJoin(userTable, eq(leadTable.claimedBy, userTable.id));
+    // Build conditions
     const conditions = [];
 
-    // Filter by claimed status
     if (isClaimed !== undefined) {
       conditions.push(
         eq(leadTable.isClaimed, isClaimed === "true" || isClaimed === true)
       );
     }
 
-    // Claimed by filter
     if (claimedBy) {
       conditions.push(eq(leadTable.claimedBy, claimedBy));
     }
 
-    // Search filter (clientName, company, email)
     if (search) {
       const searchTerm = `%${search}%`;
       conditions.push(
@@ -149,23 +134,43 @@ class LeadService {
       );
     }
 
-    // Apply conditions if any
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Get total count for pagination
-    let countQuery = db.select({ value: count() }).from(leadTable);
-    if (conditions.length > 0) {
-      countQuery = countQuery.where(and(...conditions));
-    }
-    const [{ value: total }] = await countQuery;
+    // Run count + data queries in parallel
+    const [countResult, leads] = await Promise.all([
+      db
+        .select({ value: count() })
+        .from(leadTable)
+        .where(whereClause),
+      db
+        .select({
+          id: leadTable.id,
+          clientName: leadTable.clientName,
+          company: leadTable.company,
+          email: leadTable.email,
+          phone: leadTable.phone,
+          location: leadTable.location,
+          notes: leadTable.notes,
+          isClaimed: leadTable.isClaimed,
+          claimedBy: leadTable.claimedBy,
+          claimedAt: leadTable.claimedAt,
+          createdAt: leadTable.createdAt,
+          updatedAt: leadTable.updatedAt,
+          claimedByUser: {
+            firstName: userTable.firstName,
+            lastName: userTable.lastName,
+            email: userTable.email,
+          },
+        })
+        .from(leadTable)
+        .leftJoin(userTable, eq(leadTable.claimedBy, userTable.id))
+        .where(whereClause)
+        .orderBy(desc(leadTable.createdAt))
+        .limit(limit)
+        .offset(offset),
+    ]);
 
-    // Order by creation date and apply pagination
-    const leads = await query
-      .orderBy(desc(leadTable.createdAt))
-      .limit(limit)
-      .offset(offset);
+    const total = countResult[0].value;
 
     return {
       data: leads,
@@ -363,6 +368,7 @@ class LeadService {
 
   /**
    * Bulk delete leads (only unclaimed)
+   * OPTIMIZED: Single query to delete all unclaimed leads instead of N+1
    * @param {Array<string>} leadIds - Array of lead UUIDs to delete
    * @param {string} userId - User performing the deletion
    * @param {Object} metadata - Request metadata (ip, userAgent)
@@ -373,51 +379,43 @@ class LeadService {
       throw new AppError("Lead IDs must be a non-empty array", 400);
     }
 
-    const results = {
-      totalRequested: leadIds.length,
-      deleted: 0,
-      failed: 0,
-      errors: [],
-    };
+    // Single query: delete all requested leads that are unclaimed
+    const deletedLeads = await db
+      .delete(leadTable)
+      .where(
+        and(
+          inArray(leadTable.id, leadIds),
+          eq(leadTable.isClaimed, false)
+        )
+      )
+      .returning({ id: leadTable.id });
 
-    for (const leadId of leadIds) {
-      try {
-        // Check if lead exists and is unclaimed
-        const lead = await this.getLeadById(leadId);
+    const deletedCount = deletedLeads.length;
+    const failedCount = leadIds.length - deletedCount;
 
-        if (lead.isClaimed) {
-          results.failed++;
-          results.errors.push({
-            leadId,
-            reason: "Lead is already claimed and cannot be deleted",
-          });
-          continue;
-        }
+    // Batch log activity for all deleted leads
+    if (deletedCount > 0) {
+      const activityLogs = deletedLeads.map((lead) => ({
+        userId,
+        action: "lead_deleted_bulk",
+        entityType: "lead",
+        entityId: lead.id,
+        details: null,
+        ipAddress: metadata.ipAddress,
+        userAgent: metadata.userAgent,
+      }));
 
-        // Delete the lead
-        await db.delete(leadTable).where(eq(leadTable.id, leadId));
-
-        // Log activity
-        await this.logActivity({
-          userId,
-          action: "lead_deleted_bulk",
-          entityType: "lead",
-          entityId: leadId,
-          ipAddress: metadata.ipAddress,
-          userAgent: metadata.userAgent,
-        });
-
-        results.deleted++;
-      } catch (error) {
-        results.failed++;
-        results.errors.push({
-          leadId,
-          reason: error.message || "Failed to delete lead",
-        });
-      }
+      await db.insert(activityLogTable).values(activityLogs);
     }
 
-    return results;
+    return {
+      totalRequested: leadIds.length,
+      deleted: deletedCount,
+      failed: failedCount,
+      errors: failedCount > 0
+        ? [{ reason: `${failedCount} lead(s) were already claimed or not found` }]
+        : [],
+    };
   }
 
   /**

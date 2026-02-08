@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
+import { useDebounce } from "@/hooks/use-debounce";
 import { leadSocketService } from "../services/leadSocketService";
 import { Plus, SlidersHorizontal, X, Trash2 } from "lucide-react";
 
@@ -46,7 +47,6 @@ export default function Leads() {
   const isMasterSales = user?.isMasterSales || false;
 
   const [leads, setLeads] = useState([]);
-  const [allLeads, setAllLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [pagination, setPagination] = useState({
@@ -57,6 +57,7 @@ export default function Leads() {
   });
 
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 400);
   const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'unclaimed', or 'claimed'
 
   const [columnVisibility, setColumnVisibility] = useState({
@@ -80,9 +81,11 @@ export default function Leads() {
   // Track latest fetch to ignore stale responses
   const fetchIdRef = useRef(0);
 
-  useEffect(() => {
-    fetchAllLeads();
+  // Store latest pagination.page in a ref so socket callbacks always use current value
+  const currentPageRef = useRef(pagination.page);
+  currentPageRef.current = pagination.page;
 
+  useEffect(() => {
     // Subscribe to real-time lead updates with retry logic
     let retryCount = 0;
     const maxRetries = 5;
@@ -92,8 +95,6 @@ export default function Leads() {
       try {
         leadSocketService.subscribeToLeads({
           onLeadCreated: (data) => {
-            console.log("🔔 New lead created:", data);
-            
             // Show toast notification
             if (data.isPublic) {
               toast.success("New lead from landing page!", {
@@ -105,40 +106,30 @@ export default function Leads() {
               });
             }
 
-            // Refresh the current page data
-            fetchLeads(pagination.page);
-            fetchAllLeads();
+            // Refresh only the current page data (single API call)
+            fetchLeads(currentPageRef.current);
           },
           onLeadUpdated: (data) => {
-            console.log("🔔 Lead updated:", data);
-            
-            // Refresh the current page data
-            fetchLeads(pagination.page);
-            fetchAllLeads();
+            // Refresh only the current page data
+            fetchLeads(currentPageRef.current);
           },
           onLeadClaimed: (data) => {
-            console.log("🔔 Lead claimed:", data);
-            
             toast.success("Lead claimed", {
               description: `${data.lead.company || data.lead.clientName} has been claimed`,
             });
 
-            // Refresh the current page data
-            fetchLeads(pagination.page);
-            fetchAllLeads();
+            // Refresh only the current page data
+            fetchLeads(currentPageRef.current);
           },
-          onLeadDeleted: (data) => {
-            console.log("🔔 Lead deleted:", data);
-            
-            // Refresh the current page data
-            fetchLeads(pagination.page);
-            fetchAllLeads();
+          onLeadDeleted: () => {
+            // Refresh only the current page data
+            fetchLeads(currentPageRef.current);
           },
         });
         
         // If subscription succeeded, log success
         if (leadSocketService.isSubscribed()) {
-          console.log("✅ Lead socket subscription successful");
+          console.log("Lead socket subscription successful");
         } else {
           throw new Error("Subscription failed");
         }
@@ -146,13 +137,8 @@ export default function Leads() {
         // Retry with exponential backoff
         if (retryCount < maxRetries) {
           retryCount++;
-          const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000); // Max 5 seconds
-          console.log(
-            `⚠️ Lead socket subscription failed, retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`
-          );
+          const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000);
           subscribeTimeout = setTimeout(attemptSubscribe, delay);
-        } else {
-          console.error("❌ Lead socket subscription failed after max retries");
         }
       }
     };
@@ -171,17 +157,7 @@ export default function Leads() {
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
     fetchLeads(1);
-  }, [searchTerm, statusFilter]);
-
-  const fetchAllLeads = async () => {
-    try {
-      // For counts, we want to fetch unclaimed leads
-      const response = await api.getLeads({ isClaimed: false });
-      setAllLeads(response.data || []);
-    } catch (error) {
-      console.error("Failed to fetch all leads:", error);
-    }
-  };
+  }, [debouncedSearch, statusFilter]);
 
   const fetchLeads = async (
     page = pagination.page,
@@ -191,7 +167,7 @@ export default function Leads() {
     setIsLoading(true);
     try {
       const params = {
-        search: searchTerm || undefined,
+        search: debouncedSearch || undefined,
         page,
         limit,
       };
@@ -225,7 +201,6 @@ export default function Leads() {
       await api.createLead(formData);
       toast.success("Lead added to pool successfully");
       setIsCreateDialogOpen(false);
-      fetchAllLeads();
       fetchLeads();
     } catch (error) {
       toast.error(error.message || "Failed to create lead");
@@ -245,7 +220,6 @@ export default function Leads() {
       await api.updateLead(selectedLead.id, formData);
       toast.success("Lead updated successfully");
       setIsEditDialogOpen(false);
-      fetchAllLeads();
       fetchLeads();
     } catch (error) {
       toast.error(error.message || "Failed to update lead");
@@ -270,7 +244,6 @@ export default function Leads() {
       );
       setIsClaimDialogOpen(false);
       setClaimSource("");
-      fetchAllLeads();
       fetchLeads();
     } catch (error) {
       toast.error(error.message || "Failed to claim lead");
@@ -288,7 +261,6 @@ export default function Leads() {
     try {
       await api.deleteLead(selectedLead.id);
       toast.success("Lead deleted successfully");
-      fetchAllLeads();
       fetchLeads();
     } catch (error) {
       toast.error(error.message || "Failed to delete lead");
@@ -330,7 +302,6 @@ export default function Leads() {
       }
 
       setSelectedLeads([]);
-      fetchAllLeads();
       fetchLeads();
     } catch (error) {
       toast.error(error.message || "Failed to delete leads");

@@ -272,24 +272,40 @@ export const calendarEventTable = pgTable(
   })
 );
 
-export const leadTable = pgTable("lead", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  clientName: text("client_name").notNull(),
-  company: text("company"),
-  email: text("email"),
-  phone: text("phone"),
-  location: text("location"),
-  notes: text("notes"),
-  isClaimed: boolean("is_claimed").notNull().default(false),
-  claimedBy: text("claimed_by").references(() => userTable.id),
-  claimedAt: timestamp("claimed_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const leadTable = pgTable(
+  "lead",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientName: text("client_name").notNull(),
+    company: text("company"),
+    email: text("email"),
+    phone: text("phone"),
+    location: text("location"),
+    notes: text("notes"),
+    isClaimed: boolean("is_claimed").notNull().default(false),
+    claimedBy: text("claimed_by").references(() => userTable.id),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    // Index for filtering by claimed status (most common filter)
+    isClaimedIdx: index("lead_is_claimed_idx").on(table.isClaimed),
+    // Index for ordering by creation date (default sort)
+    createdAtIdx: index("lead_created_at_idx").on(table.createdAt),
+    // Composite index for claimed status + date (common query pattern)
+    claimedCreatedIdx: index("lead_claimed_created_idx").on(
+      table.isClaimed,
+      table.createdAt
+    ),
+    // Index for claimedBy user lookup
+    claimedByIdx: index("lead_claimed_by_idx").on(table.claimedBy),
+  })
+);
 
 export const potentialTable = pgTable("potential", {
   id: uuid("id").primaryKey().defaultRandom(),
