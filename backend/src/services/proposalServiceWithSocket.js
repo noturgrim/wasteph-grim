@@ -224,12 +224,21 @@ class ProposalServiceWithSocket {
     const proposal = await this.proposalService.sendProposal(
       proposalId,
       userId,
-      emailData
+      emailData,
     );
 
-    // Emit socket event
+    // Fire-and-forget: emit socket event
     if (this.proposalEvents && proposal) {
-      try {
+      this._emitSentEvent(proposal, userId);
+    }
+
+    return proposal;
+  }
+
+  /** @private */
+  _emitSentEvent(proposal, userId) {
+    Promise.resolve()
+      .then(async () => {
         const { db } = await import("../db/index.js");
         const { userTable } = await import("../db/schema.js");
         const { eq } = await import("drizzle-orm");
@@ -245,15 +254,9 @@ class ProposalServiceWithSocket {
 
         if (user) {
           await this.proposalEvents.emitProposalSent(proposal, user);
-        } else {
-          console.warn(`User not found for proposal sent emission: ${userId}`);
         }
-      } catch (error) {
-        console.error("Error emitting proposal sent event:", error);
-      }
-    }
-
-    return proposal;
+      })
+      .catch((err) => console.error("Error emitting proposal sent event:", err));
   }
 
   // Proxy all other methods to core service

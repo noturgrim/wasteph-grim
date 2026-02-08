@@ -392,49 +392,72 @@ class ProposalService {
    * @returns {Promise<Object>} Updated proposal
    */
   async sendProposal(proposalId, salesUserId, metadata = {}) {
-    // Step 1: Validate proposal is approved
-    const proposal = await this.getProposalById(proposalId);
+    // Step 1: Validate + set token in a single UPDATE (checks status + ownership)
+    const responseToken = crypto.randomBytes(32).toString("hex");
 
-    if (proposal.status !== "approved") {
-      throw new AppError("Can only send approved proposals", 400);
-    }
-
-    // Step 2: Validate sales user is the one who requested it
-    if (proposal.requestedBy !== salesUserId) {
-      throw new AppError("Only the requesting sales person can send this proposal", 403);
-    }
-
-    // Step 3: Get inquiry
-    const inquiry = await inquiryService.getInquiryById(proposal.inquiryId);
-    const proposalData = JSON.parse(proposal.proposalData);
-
-    // Step 3.5: Generate secure token for client response
-    const responseToken = crypto.randomBytes(32).toString('hex');
-    
-    // Update proposal with response token
-    await db
+    const [proposal] = await db
       .update(proposalTable)
       .set({ clientResponseToken: responseToken })
-      .where(eq(proposalTable.id, proposalId));
+      .where(
+        and(
+          eq(proposalTable.id, proposalId),
+          eq(proposalTable.status, "approved"),
+          eq(proposalTable.requestedBy, salesUserId),
+        ),
+      )
+      .returning();
 
-    // Step 4: Generate PDF
+    if (!proposal) {
+      // Distinguish error reason
+      const [exists] = await db
+        .select({
+          id: proposalTable.id,
+          status: proposalTable.status,
+          requestedBy: proposalTable.requestedBy,
+        })
+        .from(proposalTable)
+        .where(eq(proposalTable.id, proposalId))
+        .limit(1);
+
+      if (!exists) throw new AppError("Proposal not found", 404);
+      if (exists.status !== "approved")
+        throw new AppError("Can only send approved proposals", 400);
+      throw new AppError(
+        "Only the requesting sales person can send this proposal",
+        403,
+      );
+    }
+
+    // Step 2: Fetch inquiry directly (skip proposal sub-query in getInquiryById)
+    const [inquiry] = await db
+      .select()
+      .from(inquiryTable)
+      .where(eq(inquiryTable.id, proposal.inquiryId))
+      .limit(1);
+
+    if (!inquiry) {
+      throw new AppError("Inquiry not found", 404);
+    }
+
+    const proposalData = JSON.parse(proposal.proposalData);
+
+    // Step 3: Generate PDF
     let pdfBuffer, pdfUrl;
     try {
-      // Check if this is the new editable format (has editedHtmlContent)
       if (proposalData.editedHtmlContent) {
         // New format: use the already-rendered HTML directly
         pdfBuffer = await pdfService.generatePDFFromHTML(
-          proposalData.editedHtmlContent
+          proposalData.editedHtmlContent,
         );
       } else {
         // Legacy format: use template rendering
         const template = await proposalTemplateService.getTemplateById(
-          proposal.templateId
+          proposal.templateId,
         );
         pdfBuffer = await pdfService.generateProposalPDF(
           proposalData,
           inquiry,
-          template.htmlTemplate
+          template.htmlTemplate,
         );
       }
       pdfUrl = await this.savePDF(pdfBuffer, proposalId);
@@ -442,14 +465,8 @@ class ProposalService {
       throw new AppError("PDF generation failed: " + error.message, 500);
     }
 
-    // Step 5: Send email to client
-    // Use clientEmail from proposal data if available (new format), otherwise fall back to inquiry email
+    // Step 4: Send email to client
     const recipientEmail = proposalData.clientEmail || inquiry.email;
-
-    console.log("📧 Email recipient debug:");
-    console.log("   proposalData.clientEmail:", proposalData.clientEmail);
-    console.log("   inquiry.email:", inquiry.email);
-    console.log("   Using recipient:", recipientEmail);
 
     try {
       const emailResult = await emailService.sendProposalEmail(
@@ -458,7 +475,7 @@ class ProposalService {
         inquiry,
         pdfBuffer,
         proposalId,
-        responseToken
+        responseToken,
       );
 
       if (!emailResult.success) {
@@ -470,18 +487,18 @@ class ProposalService {
         .update(proposalTable)
         .set({
           emailStatus: "failed",
-          pdfUrl, // Save PDF for retry
+          pdfUrl,
           updatedAt: new Date(),
         })
         .where(eq(proposalTable.id, proposalId));
 
       throw new AppError(
         "Email send failed. PDF saved. Please retry or contact support.",
-        500
+        500,
       );
     }
 
-    // Step 6: Update proposal to sent (with optimistic locking to prevent race conditions)
+    // Step 5: Update proposal to sent (optimistic lock prevents double-send)
     const validityDays = proposalData.terms?.validityDays || 30;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + validityDays);
@@ -501,41 +518,45 @@ class ProposalService {
       .where(
         and(
           eq(proposalTable.id, proposalId),
-          eq(proposalTable.status, "approved") // Ensure still approved (prevents double-send)
-        )
+          eq(proposalTable.status, "approved"),
+        ),
       )
       .returning();
 
-    // If no rows updated, proposal was already sent or status changed
     if (!updatedProposal) {
       throw new AppError("Proposal no longer approved or already sent", 400);
     }
 
-    // Step 7: Update inquiry status (non-critical, log errors but don't fail)
-    try {
-      await inquiryService.updateInquiry(
-        proposal.inquiryId,
-        { status: "submitted_proposal" },
-        salesUserId,
-        metadata
-      );
-    } catch (error) {
-      console.error("Failed to update inquiry status after sending proposal:", error);
-      // Don't throw - proposal is already sent, inquiry update failure shouldn't rollback
-    }
-
-    // Step 8: Log activity
-    await this.logActivity({
+    // Fire-and-forget: inquiry status update + activity log
+    this._updateInquiryStatusInBackground(
+      proposal.inquiryId,
+      "submitted_proposal",
+      salesUserId,
+      metadata,
+    );
+    this._logInBackground({
       userId: salesUserId,
       action: "proposal_sent",
       entityType: "proposal",
       entityId: proposal.id,
-      details: { inquiryId: proposal.inquiryId, clientEmail: inquiry.email },
+      details: { inquiryId: proposal.inquiryId, clientEmail: recipientEmail },
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
 
     return updatedProposal;
+  }
+
+  /**
+   * Fire-and-forget: update inquiry status after proposal action
+   */
+  _updateInquiryStatusInBackground(inquiryId, status, userId, metadata) {
+    db.update(inquiryTable)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(inquiryTable.id, inquiryId))
+      .catch((err) =>
+        console.error("Failed to update inquiry status:", err),
+      );
   }
 
   /**
