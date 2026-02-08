@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -49,17 +49,44 @@ export function ScheduleEventDialog({
 
   const [formErrors, setFormErrors] = useState({});
 
-  // Load inquiries and clients for linking
+  // OPTIMIZATION: Cache inquiries and clients to avoid refetching on every dialog open
+  const dataCache = useRef({ inquiries: null, clients: null, timestamp: 0 });
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  // Load inquiries and clients for linking (with caching)
   useEffect(() => {
     const loadData = async () => {
       if (!open) return;
+
+      const now = Date.now();
+      const cacheValid = now - dataCache.current.timestamp < CACHE_DURATION;
+
+      // Use cached data if valid
+      if (cacheValid && dataCache.current.inquiries && dataCache.current.clients) {
+        setInquiries(dataCache.current.inquiries);
+        setClients(dataCache.current.clients);
+        return;
+      }
+
+      // Fetch fresh data
       try {
         const [inquiriesRes, clientsRes] = await Promise.all([
           api.getInquiries({ limit: 100 }),
           api.getClients({ limit: 100 }),
         ]);
-        setInquiries(inquiriesRes.data || []);
-        setClients(clientsRes.data || []);
+        
+        const fetchedInquiries = inquiriesRes.data || [];
+        const fetchedClients = clientsRes.data || [];
+        
+        setInquiries(fetchedInquiries);
+        setClients(fetchedClients);
+        
+        // Update cache
+        dataCache.current = {
+          inquiries: fetchedInquiries,
+          clients: fetchedClients,
+          timestamp: now,
+        };
       } catch (error) {
         console.error("Failed to load data:", error);
       }

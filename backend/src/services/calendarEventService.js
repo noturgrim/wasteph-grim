@@ -81,6 +81,7 @@ class CalendarEventService {
   /**
    * Get events for a user with optional filters
    * If viewAll is true (Master Sales), return all users' events
+   * OPTIMIZED: Reduced joins, smaller payload
    */
   async getEvents(options = {}) {
     const {
@@ -131,7 +132,8 @@ class CalendarEventService {
       conditions.push(eq(calendarEventTable.clientId, clientId));
     }
 
-    // Build query with joins
+    // OPTIMIZATION: Only join user table (most common need for calendar view)
+    // Inquiry/Client details can be fetched on-demand when viewing event details
     let query = db
       .select({
         id: calendarEventTable.id,
@@ -149,23 +151,12 @@ class CalendarEventService {
         notes: calendarEventTable.notes,
         createdAt: calendarEventTable.createdAt,
         updatedAt: calendarEventTable.updatedAt,
-        // Include user info (flattened)
+        // Only include user info (needed for Master Sales view)
         userFirstName: userTable.firstName,
         userLastName: userTable.lastName,
-        userEmail: userTable.email,
-        // Include inquiry info (flattened)
-        inquiryName: inquiryTable.name,
-        inquiryCompany: inquiryTable.company,
-        inquiryStatus: inquiryTable.status,
-        // Include client info (flattened)
-        clientCompanyName: clientTable.companyName,
-        clientContactPerson: clientTable.contactPerson,
-        clientStatus: clientTable.status,
       })
       .from(calendarEventTable)
-      .leftJoin(userTable, eq(calendarEventTable.userId, userTable.id))
-      .leftJoin(inquiryTable, eq(calendarEventTable.inquiryId, inquiryTable.id))
-      .leftJoin(clientTable, eq(calendarEventTable.clientId, clientTable.id));
+      .leftJoin(userTable, eq(calendarEventTable.userId, userTable.id));
 
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
@@ -187,7 +178,7 @@ class CalendarEventService {
       .limit(limit)
       .offset(offset);
 
-    // Transform flattened results with both nested and flat structures
+    // OPTIMIZATION: Simplified transformation - only nest user data
     const events = results.map((event) => ({
       id: event.id,
       userId: event.userId,
@@ -204,35 +195,10 @@ class CalendarEventService {
       notes: event.notes,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
-      // Flattened fields for direct access
-      inquiryName: event.inquiryName,
-      inquiryCompany: event.inquiryCompany,
-      inquiryStatus: event.inquiryStatus,
-      clientCompanyName: event.clientCompanyName,
-      clientContactPerson: event.clientContactPerson,
-      clientStatus: event.clientStatus,
-      // Nested structures for backward compatibility
+      // Only include user object (for Master Sales to see who owns the event)
       user: event.userFirstName
         ? {
-            id: event.userId,
             name: `${event.userFirstName} ${event.userLastName}`,
-            email: event.userEmail,
-          }
-        : null,
-      inquiry: event.inquiryId
-        ? {
-            id: event.inquiryId,
-            name: event.inquiryName,
-            company: event.inquiryCompany,
-            status: event.inquiryStatus,
-          }
-        : null,
-      client: event.clientId
-        ? {
-            id: event.clientId,
-            companyName: event.clientCompanyName,
-            contactPerson: event.clientContactPerson,
-            status: event.clientStatus,
           }
         : null,
     }));
@@ -250,6 +216,7 @@ class CalendarEventService {
 
   /**
    * Get event by ID
+   * OPTIMIZATION: Keep full joins for detail view (ViewEventDialog needs this data)
    */
   async getEventById(eventId) {
     const [result] = await db
@@ -269,15 +236,15 @@ class CalendarEventService {
         notes: calendarEventTable.notes,
         createdAt: calendarEventTable.createdAt,
         updatedAt: calendarEventTable.updatedAt,
-        // Flattened user info
+        // User info (for ownership)
         userFirstName: userTable.firstName,
         userLastName: userTable.lastName,
         userEmail: userTable.email,
-        // Flattened inquiry info
+        // Inquiry info (for detail view)
         inquiryName: inquiryTable.name,
         inquiryCompany: inquiryTable.company,
         inquiryStatus: inquiryTable.status,
-        // Flattened client info
+        // Client info (for detail view)
         clientCompanyName: clientTable.companyName,
         clientContactPerson: clientTable.contactPerson,
         clientStatus: clientTable.status,
@@ -293,7 +260,7 @@ class CalendarEventService {
       throw new AppError("Event not found", 404);
     }
 
-    // Transform to flattened structure (keep both nested and flat for compatibility)
+    // Transform with flattened fields
     const event = {
       id: result.id,
       userId: result.userId,
@@ -310,35 +277,19 @@ class CalendarEventService {
       notes: result.notes,
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
-      // Flattened fields for direct access
+      // Flattened fields for ViewEventDialog
       inquiryName: result.inquiryName,
       inquiryCompany: result.inquiryCompany,
       inquiryStatus: result.inquiryStatus,
       clientCompanyName: result.clientCompanyName,
       clientContactPerson: result.clientContactPerson,
       clientStatus: result.clientStatus,
-      // Nested structures for backward compatibility
+      // User object
       user: result.userFirstName
         ? {
             id: result.userId,
             name: `${result.userFirstName} ${result.userLastName}`,
             email: result.userEmail,
-          }
-        : null,
-      inquiry: result.inquiryId
-        ? {
-            id: result.inquiryId,
-            name: result.inquiryName,
-            company: result.inquiryCompany,
-            status: result.inquiryStatus,
-          }
-        : null,
-      client: result.clientId
-        ? {
-            id: result.clientId,
-            companyName: result.clientCompanyName,
-            contactPerson: result.clientContactPerson,
-            status: result.clientStatus,
           }
         : null,
     };

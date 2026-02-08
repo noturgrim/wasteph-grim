@@ -262,6 +262,13 @@ export const calendarEventTable = pgTable(
     ),
     inquiryIdIdx: index("calendar_event_inquiry_id_idx").on(table.inquiryId),
     clientIdIdx: index("calendar_event_client_id_idx").on(table.clientId),
+    // OPTIMIZATION: Composite index for common query pattern (user + date range)
+    userDateIdx: index("calendar_event_user_date_idx").on(
+      table.userId,
+      table.scheduledDate
+    ),
+    // OPTIMIZATION: Index for status filtering (for completed/cancelled views)
+    statusIdx: index("calendar_event_status_idx").on(table.status),
   })
 );
 

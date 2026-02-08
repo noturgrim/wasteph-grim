@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useLocation } from "react-router-dom";
 import { api } from "../services/api";
@@ -44,6 +44,9 @@ export default function Calendar() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
+  // OPTIMIZATION: Cache events by month to avoid refetching when navigating back
+  const eventsCache = useRef(new Map());
+
   useEffect(() => {
     fetchEvents();
   }, [currentDate]);
@@ -60,11 +63,22 @@ export default function Calendar() {
     }
   }, [location.state, events]);
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (skipCache = false) => {
     try {
       setIsLoading(true);
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);
+
+      // OPTIMIZATION: Create cache key based on month and viewAll setting
+      const cacheKey = `${format(currentDate, "yyyy-MM")}-${isMasterSales}`;
+
+      // Check cache first (unless explicitly skipping)
+      if (!skipCache && eventsCache.current.has(cacheKey)) {
+        const cachedEvents = eventsCache.current.get(cacheKey);
+        setEvents(cachedEvents);
+        setIsLoading(false);
+        return;
+      }
 
       const response = await api.getCalendarEvents({
         startDate: monthStart.toISOString(),
@@ -72,7 +86,17 @@ export default function Calendar() {
         viewAll: isMasterSales, // Master Sales sees all events
       });
 
-      setEvents(response.data || []);
+      const fetchedEvents = response.data || [];
+      setEvents(fetchedEvents);
+
+      // Cache the results
+      eventsCache.current.set(cacheKey, fetchedEvents);
+
+      // OPTIMIZATION: Limit cache size to 6 months (prevent memory leak)
+      if (eventsCache.current.size > 6) {
+        const firstKey = eventsCache.current.keys().next().value;
+        eventsCache.current.delete(firstKey);
+      }
     } catch (error) {
       toast.error(error.message || "Failed to fetch events");
     } finally {
@@ -98,16 +122,22 @@ export default function Calendar() {
   };
 
   const handleEventCreated = () => {
-    fetchEvents();
+    // OPTIMIZATION: Clear cache and refetch to get fresh data
+    eventsCache.current.clear();
+    fetchEvents(true); // Skip cache
   };
 
   const handleEventUpdated = () => {
-    fetchEvents();
+    // OPTIMIZATION: Clear cache and refetch to get fresh data
+    eventsCache.current.clear();
+    fetchEvents(true); // Skip cache
     setIsViewDialogOpen(false);
   };
 
   const handleEventDeleted = () => {
-    fetchEvents();
+    // OPTIMIZATION: Clear cache and refetch to get fresh data
+    eventsCache.current.clear();
+    fetchEvents(true); // Skip cache
     setIsViewDialogOpen(false);
   };
 
@@ -134,15 +164,17 @@ export default function Calendar() {
     day = addDays(day, 1);
   }
 
-  // Group events by date
-  const eventsByDate = events.reduce((acc, event) => {
-    const dateKey = format(parseISO(event.scheduledDate), "yyyy-MM-dd");
-    if (!acc[dateKey]) {
-      acc[dateKey] = [];
-    }
-    acc[dateKey].push(event);
-    return acc;
-  }, {});
+  // OPTIMIZATION: Memoize events grouping to avoid recalculating on every render
+  const eventsByDate = useMemo(() => {
+    return events.reduce((acc, event) => {
+      const dateKey = format(parseISO(event.scheduledDate), "yyyy-MM-dd");
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(event);
+      return acc;
+    }, {});
+  }, [events]);
 
   const getStatusColor = (status) => {
     switch (status) {
