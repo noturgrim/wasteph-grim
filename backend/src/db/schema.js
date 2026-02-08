@@ -548,9 +548,14 @@ export const proposalTable = pgTable(
     reviewedByIdx: index("proposal_reviewed_by_idx").on(table.reviewedBy),
     statusRequestedByIdx: index("proposal_status_requested_by_idx").on(
       table.status,
-      table.requestedBy
+      table.requestedBy,
     ),
-  })
+    createdAtIdx: index("proposal_created_at_idx").on(table.createdAt),
+    requestedByCreatedAtIdx: index("proposal_requested_by_created_at_idx").on(
+      table.requestedBy,
+      table.createdAt,
+    ),
+  }),
 );
 
 // Contracts - Contract requests from approved proposals

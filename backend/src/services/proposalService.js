@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { proposalTable, activityLogTable, inquiryTable, userTable } from "../db/schema.js";
-import { eq, desc, and, or, like, inArray, count } from "drizzle-orm";
+import { eq, desc, and, or, like, inArray, count, sql } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 import inquiryService from "./inquiryService.js";
 import proposalTemplateService from "./proposalTemplateService.js";
@@ -146,7 +146,29 @@ class ProposalService {
     const limit = Number(rawLimit) || 10;
     const offset = (page - 1) * limit;
 
-    // Select proposal data with joined inquiry details
+    const conditions = [];
+
+    // Permission check: Regular sales see only their proposals
+    if (userRole === "sales" && !isMasterSales) {
+      conditions.push(eq(proposalTable.requestedBy, userId));
+    }
+
+    // Status filter - support multiple statuses
+    if (status) {
+      const statuses = status.split(",").map((s) => s.trim());
+      if (statuses.length === 1) {
+        conditions.push(eq(proposalTable.status, statuses[0]));
+      } else {
+        conditions.push(inArray(proposalTable.status, statuses));
+      }
+    }
+
+    // Inquiry filter
+    if (inquiryId) {
+      conditions.push(eq(proposalTable.inquiryId, inquiryId));
+    }
+
+    // Single query: data + count via window function
     let query = db
       .select({
         id: proposalTable.id,
@@ -171,49 +193,25 @@ class ProposalService {
         inquiryPhone: inquiryTable.phone,
         inquiryCompany: inquiryTable.company,
         inquiryNumber: inquiryTable.inquiryNumber,
+        // Total count via window function
+        totalCount: sql`(count(*) over())::int`,
       })
       .from(proposalTable)
       .leftJoin(inquiryTable, eq(proposalTable.inquiryId, inquiryTable.id));
 
-    const conditions = [];
-
-    // Permission check: Regular sales see only their proposals
-    if (userRole === "sales" && !isMasterSales) {
-      conditions.push(eq(proposalTable.requestedBy, userId));
-    }
-
-    // Status filter - support multiple statuses
-    if (status) {
-      const statuses = status.split(",").map((s) => s.trim());
-      if (statuses.length === 1) {
-        conditions.push(eq(proposalTable.status, statuses[0]));
-      } else {
-        conditions.push(inArray(proposalTable.status, statuses));
-      }
-    }
-
-    // Inquiry filter
-    if (inquiryId) {
-      conditions.push(eq(proposalTable.inquiryId, inquiryId));
-    }
-
-    // Apply conditions
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
 
-    // Get total count
-    let countQuery = db.select({ value: count() }).from(proposalTable);
-    if (conditions.length > 0) {
-      countQuery = countQuery.where(and(...conditions));
-    }
-    const [{ value: total }] = await countQuery;
-
-    // Get proposals with pagination
-    const proposals = await query
+    const rows = await query
       .orderBy(desc(proposalTable.createdAt))
       .limit(limit)
       .offset(offset);
+
+    const total = rows.length > 0 ? rows[0].totalCount : 0;
+
+    // Strip totalCount from each row
+    const proposals = rows.map(({ totalCount, ...rest }) => rest);
 
     return {
       data: proposals,
