@@ -1,5 +1,5 @@
 import { db } from "../db/index.js";
-import { proposalTable, activityLogTable, inquiryTable } from "../db/schema.js";
+import { proposalTable, activityLogTable, inquiryTable, userTable } from "../db/schema.js";
 import { eq, desc, and, or, like, inArray, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 import inquiryService from "./inquiryService.js";
@@ -311,14 +311,7 @@ class ProposalService {
    * @returns {Promise<Object>} Updated proposal
    */
   async approveProposal(proposalId, adminId, adminNotes, metadata = {}) {
-    // Step 1: Validate proposal is pending
-    const proposal = await this.getProposalById(proposalId);
-
-    if (proposal.status !== "pending") {
-      throw new AppError("Proposal already reviewed", 400);
-    }
-
-    // Step 2: Update proposal to approved (NO email sending, NO PDF generation)
+    // Single query: validate status + update in one shot
     const [updatedProposal] = await db
       .update(proposalTable)
       .set({
@@ -328,43 +321,69 @@ class ProposalService {
         adminNotes,
         updatedAt: new Date(),
       })
-      .where(eq(proposalTable.id, proposalId))
+      .where(
+        and(
+          eq(proposalTable.id, proposalId),
+          eq(proposalTable.status, "pending"),
+        ),
+      )
       .returning();
 
-    // Step 3: Notify sales person that proposal is approved (non-critical)
-    try {
-      const { userTable } = await import("../db/schema.js");
-      const [salesUser] = await db
-        .select()
-        .from(userTable)
-        .where(eq(userTable.id, proposal.requestedBy))
+    if (!updatedProposal) {
+      // Distinguish not found vs already reviewed
+      const [exists] = await db
+        .select({ id: proposalTable.id, status: proposalTable.status })
+        .from(proposalTable)
+        .where(eq(proposalTable.id, proposalId))
         .limit(1);
 
-      if (salesUser) {
-        const inquiry = await inquiryService.getInquiryById(proposal.inquiryId);
-        await emailService.sendNotificationEmail(
-          salesUser.email,
-          "Proposal Approved - Ready to Send",
-          `Your proposal for ${inquiry.name} has been approved. You can now send it to the client.`
-        );
-      }
-    } catch (error) {
-      console.error("Failed to notify sales:", error);
-      // Don't throw - notification failure shouldn't fail approval
+      throw new AppError(
+        exists ? "Proposal already reviewed" : "Proposal not found",
+        exists ? 400 : 404,
+      );
     }
 
-    // Step 4: Log activity
-    await this.logActivity({
+    // Fire-and-forget: notify sales + log activity
+    this._notifySalesApproval(updatedProposal, metadata);
+    this._logInBackground({
       userId: adminId,
       action: "proposal_approved",
       entityType: "proposal",
-      entityId: proposal.id,
-      details: { inquiryId: proposal.inquiryId },
+      entityId: updatedProposal.id,
+      details: { inquiryId: updatedProposal.inquiryId },
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
 
     return updatedProposal;
+  }
+
+  /**
+   * Fire-and-forget: notify sales person that proposal was approved
+   */
+  _notifySalesApproval(proposal, metadata) {
+    Promise.all([
+      db
+        .select({ email: userTable.email })
+        .from(userTable)
+        .where(eq(userTable.id, proposal.requestedBy))
+        .limit(1),
+      db
+        .select({ name: inquiryTable.name })
+        .from(inquiryTable)
+        .where(eq(inquiryTable.id, proposal.inquiryId))
+        .limit(1),
+    ])
+      .then(([[salesUser], [inquiry]]) => {
+        if (salesUser) {
+          return emailService.sendNotificationEmail(
+            salesUser.email,
+            "Proposal Approved - Ready to Send",
+            `Your proposal for ${inquiry?.name || "a client"} has been approved. You can now send it to the client.`,
+          );
+        }
+      })
+      .catch((err) => console.error("Failed to notify sales:", err));
   }
 
   /**
@@ -719,33 +738,30 @@ class ProposalService {
    * @param {string} proposalId - Proposal UUID
    * @returns {Promise<Buffer>} PDF buffer
    */
-  async generatePreviewPDF(proposalId) {
-    const proposal = await this.getProposalById(proposalId);
+  async generatePreviewPDF(proposalOrId) {
+    const proposal =
+      typeof proposalOrId === "string"
+        ? await this.getProposalById(proposalOrId)
+        : proposalOrId;
+
     const proposalData = JSON.parse(proposal.proposalData);
 
-    // Check if this is the new editable format (has editedHtmlContent)
+    // New format: use the already-rendered HTML directly
     if (proposalData.editedHtmlContent) {
-      // New format: use the already-rendered HTML directly
-      const pdfBuffer = await pdfService.generatePDFFromHTML(
-        proposalData.editedHtmlContent
-      );
-      return pdfBuffer;
+      return pdfService.generatePDFFromHTML(proposalData.editedHtmlContent);
     }
 
-    // Legacy format: use template rendering
-    const inquiry = await inquiryService.getInquiryById(proposal.inquiryId);
-    const template = await proposalTemplateService.getTemplateById(
-      proposal.templateId
-    );
+    // Legacy format: fetch inquiry + template in parallel, then render
+    const [inquiry, template] = await Promise.all([
+      inquiryService.getInquiryById(proposal.inquiryId),
+      proposalTemplateService.getTemplateById(proposal.templateId),
+    ]);
 
-    // Generate PDF (don't save)
-    const pdfBuffer = await pdfService.generateProposalPDF(
+    return pdfService.generateProposalPDF(
       proposalData,
       inquiry,
-      template.htmlTemplate
+      template.htmlTemplate,
     );
-
-    return pdfBuffer;
   }
 
   /**

@@ -343,8 +343,8 @@ export const previewProposalPDF = async (req, res, next) => {
       throw new AppError("Access denied", 403);
     }
 
-    // Generate PDF on-the-fly (don't save)
-    const pdfBuffer = await proposalServiceWithSocket.generatePreviewPDF(id);
+    // Generate PDF on-the-fly (pass proposal to avoid re-fetching)
+    const pdfBuffer = await proposalServiceWithSocket.generatePreviewPDF(proposal);
 
     // Return PDF as base64 for frontend display
     const base64PDF = pdfBuffer.toString("base64");

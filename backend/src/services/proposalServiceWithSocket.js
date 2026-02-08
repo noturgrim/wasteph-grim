@@ -128,16 +128,26 @@ class ProposalServiceWithSocket {
    * @param {string} adminNotes - Admin notes
    * @returns {Promise<Object>} Updated proposal
    */
-  async approveProposal(proposalId, userId, adminNotes = "") {
+  async approveProposal(proposalId, userId, adminNotes = "", metadata = {}) {
     const proposal = await this.proposalService.approveProposal(
       proposalId,
       userId,
-      adminNotes
+      adminNotes,
+      metadata,
     );
 
-    // Emit socket event
+    // Fire-and-forget: emit socket event
     if (this.proposalEvents && proposal) {
-      try {
+      this._emitApprovalEvent(proposal, userId);
+    }
+
+    return proposal;
+  }
+
+  /** @private */
+  _emitApprovalEvent(proposal, userId) {
+    Promise.resolve()
+      .then(async () => {
         const { db } = await import("../db/index.js");
         const { userTable } = await import("../db/schema.js");
         const { eq } = await import("drizzle-orm");
@@ -153,17 +163,9 @@ class ProposalServiceWithSocket {
 
         if (user) {
           await this.proposalEvents.emitProposalApproved(proposal, user);
-        } else {
-          console.warn(
-            `User not found for proposal approval emission: ${userId}`
-          );
         }
-      } catch (error) {
-        console.error("Error emitting proposal approved event:", error);
-      }
-    }
-
-    return proposal;
+      })
+      .catch((err) => console.error("Error emitting proposal approved event:", err));
   }
 
   /**
@@ -412,8 +414,8 @@ class ProposalServiceWithSocket {
     return this.proposalService.readPDF(pdfUrl);
   }
 
-  async generatePreviewPDF(proposalId) {
-    return this.proposalService.generatePreviewPDF(proposalId);
+  async generatePreviewPDF(proposalOrId) {
+    return this.proposalService.generatePreviewPDF(proposalOrId);
   }
 }
 
