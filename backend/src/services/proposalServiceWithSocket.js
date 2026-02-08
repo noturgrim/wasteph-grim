@@ -303,60 +303,35 @@ class ProposalServiceWithSocket {
   async recordClientApproval(proposalId, ipAddress) {
     const proposal = await this.proposalService.recordClientApproval(
       proposalId,
-      ipAddress
+      ipAddress,
     );
 
-    // Emit socket event
+    // Fire-and-forget: emit socket event
     if (this.proposalEvents && proposal) {
-      try {
-        // Get full proposal with inquiry data
-        const { db } = await import("../db/index.js");
-        const { proposalTable, inquiryTable } = await import("../db/schema.js");
-        const { eq } = await import("drizzle-orm");
-
-        const [fullProposal] = await db
-          .select({
-            id: proposalTable.id,
-            proposalNumber: proposalTable.proposalNumber,
-            status: proposalTable.status,
-            requestedBy: proposalTable.requestedBy,
-            clientResponseAt: proposalTable.clientResponseAt,
-            // Inquiry details
-            inquiryName: inquiryTable.name,
-            inquiryCompany: inquiryTable.company,
-          })
-          .from(proposalTable)
-          .leftJoin(inquiryTable, eq(proposalTable.inquiryId, inquiryTable.id))
-          .where(eq(proposalTable.id, proposal.id))
-          .limit(1);
-
-        if (fullProposal) {
-          await this.proposalEvents.emitProposalAccepted(fullProposal);
-        }
-      } catch (error) {
-        console.error("Error emitting proposal accepted event:", error);
-      }
+      this._emitClientResponseEvent(proposal, "accepted");
     }
 
     return proposal;
   }
 
-  /**
-   * Record client rejection with socket emission
-   * @param {string} proposalId - Proposal ID
-   * @param {string} ipAddress - Client IP address
-   * @returns {Promise<Object>} Updated proposal
-   */
   async recordClientRejection(proposalId, ipAddress) {
     const proposal = await this.proposalService.recordClientRejection(
       proposalId,
-      ipAddress
+      ipAddress,
     );
 
-    // Emit socket event
+    // Fire-and-forget: emit socket event
     if (this.proposalEvents && proposal) {
-      try {
-        // Get full proposal with inquiry data
+      this._emitClientResponseEvent(proposal, "declined");
+    }
+
+    return proposal;
+  }
+
+  /** @private Fire-and-forget socket emission for client responses */
+  _emitClientResponseEvent(proposal, type) {
+    Promise.resolve()
+      .then(async () => {
         const { db } = await import("../db/index.js");
         const { proposalTable, inquiryTable } = await import("../db/schema.js");
         const { eq } = await import("drizzle-orm");
@@ -368,7 +343,6 @@ class ProposalServiceWithSocket {
             status: proposalTable.status,
             requestedBy: proposalTable.requestedBy,
             clientResponseAt: proposalTable.clientResponseAt,
-            // Inquiry details
             inquiryName: inquiryTable.name,
             inquiryCompany: inquiryTable.company,
           })
@@ -378,14 +352,16 @@ class ProposalServiceWithSocket {
           .limit(1);
 
         if (fullProposal) {
-          await this.proposalEvents.emitProposalDeclined(fullProposal);
+          if (type === "accepted") {
+            await this.proposalEvents.emitProposalAccepted(fullProposal);
+          } else {
+            await this.proposalEvents.emitProposalDeclined(fullProposal);
+          }
         }
-      } catch (error) {
-        console.error("Error emitting proposal declined event:", error);
-      }
-    }
-
-    return proposal;
+      })
+      .catch((err) =>
+        console.error(`Error emitting proposal ${type} event:`, err),
+      );
   }
 
   async uploadRevisions(proposalId, file, userId, metadata = {}) {

@@ -22,26 +22,57 @@ import {
   validateUpdateProposal,
   validateApproveProposal,
   validateRejectProposal,
+  validatePublicProposalParams,
 } from "../middleware/proposalValidation.js";
+import { publicProposalRateLimiter } from "../middleware/rateLimiter.js";
 
 const router = Router();
 
 /**
  * PUBLIC Routes (no authentication required - token-based)
  * These routes are accessed from client email links
+ * Protected by: rate limiting + param/token format validation
  */
 
 // Client approval from email
-router.post("/public/:id/approve", handleClientApproval);
+router.post(
+  "/public/:id/approve",
+  publicProposalRateLimiter,
+  validatePublicProposalParams,
+  handleClientApproval,
+);
 
 // Client rejection from email
-router.post("/public/:id/reject", handleClientRejection);
+router.post(
+  "/public/:id/reject",
+  publicProposalRateLimiter,
+  validatePublicProposalParams,
+  handleClientRejection,
+);
 
 // Get proposal status (for displaying on response page)
-router.get("/public/:id/status", getProposalStatusPublic);
+router.get(
+  "/public/:id/status",
+  publicProposalRateLimiter,
+  validatePublicProposalParams,
+  getProposalStatusPublic,
+);
 
 // Get proposal PDF (for client viewing from email)
-router.get("/public/:id/pdf", getProposalPDFPublic);
+router.get(
+  "/public/:id/pdf",
+  publicProposalRateLimiter,
+  validatePublicProposalParams,
+  getProposalPDFPublic,
+);
+
+// Catch-all for any other /public routes — return 404 (prevents falling through to /:id)
+router.all("/public", (req, res) => {
+  res.status(404).json({ success: false, message: "Not found" });
+});
+router.all("/public/*", (req, res) => {
+  res.status(404).json({ success: false, message: "Not found" });
+});
 
 /**
  * Proposal Routes

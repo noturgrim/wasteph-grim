@@ -1,8 +1,14 @@
 export const errorHandler = (err, req, res, next) => {
   console.error("Error:", err);
 
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
+  let statusCode = err.statusCode || 500;
+  let message = err.message || "Internal Server Error";
+
+  // Sanitize database errors — never leak internal DB details to clients
+  if (err.constructor?.name === "PostgresError" || err.code?.startsWith?.("2")) {
+    statusCode = 400;
+    message = "Invalid request";
+  }
 
   res.status(statusCode).json({
     success: false,

@@ -49,3 +49,12 @@ export const authRateLimiter = rateLimiter({
     "Too many login attempts from this IP. Please try again after 15 minutes.",
   skipSuccessfulRequests: true, // Don't count successful logins
 });
+
+// Public proposal rate limiter (20 requests per 15 minutes per IP)
+// Allows normal usage (page load + PDF view + approve/reject) but blocks abuse
+export const publicProposalRateLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message:
+    "Too many requests. Please try again later or contact us directly.",
+});

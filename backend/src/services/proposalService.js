@@ -791,43 +791,85 @@ class ProposalService {
    * @throws {AppError} If token is invalid or proposal not found
    */
   async validateResponseToken(proposalId, token) {
-    const proposal = await this.getProposalById(proposalId);
+    if (!token) {
+      throw new AppError("Missing response token", 400);
+    }
+
+    // Fetch only the fields we need
+    const [proposal] = await db
+      .select({
+        id: proposalTable.id,
+        proposalNumber: proposalTable.proposalNumber,
+        status: proposalTable.status,
+        requestedBy: proposalTable.requestedBy,
+        inquiryId: proposalTable.inquiryId,
+        clientResponseToken: proposalTable.clientResponseToken,
+        clientResponse: proposalTable.clientResponse,
+        clientResponseAt: proposalTable.clientResponseAt,
+        sentAt: proposalTable.sentAt,
+        expiresAt: proposalTable.expiresAt,
+      })
+      .from(proposalTable)
+      .where(eq(proposalTable.id, proposalId))
+      .limit(1);
+
+    if (!proposal) {
+      throw new AppError("Proposal not found", 404);
+    }
 
     if (!proposal.clientResponseToken) {
       throw new AppError("This proposal does not have a response token", 400);
     }
 
-    if (proposal.clientResponseToken !== token) {
+    // Timing-safe token comparison to prevent timing attacks
+    const tokenBuffer = Buffer.from(token, "utf8");
+    const storedBuffer = Buffer.from(proposal.clientResponseToken, "utf8");
+
+    if (
+      tokenBuffer.length !== storedBuffer.length ||
+      !crypto.timingSafeEqual(tokenBuffer, storedBuffer)
+    ) {
       throw new AppError("Invalid response token", 403);
     }
 
     // Check if already responded
     if (proposal.clientResponse) {
-      throw new AppError(`This proposal has already been ${proposal.clientResponse}`, 400);
+      throw new AppError(
+        `This proposal has already been ${proposal.clientResponse}`,
+        400,
+      );
     }
 
     // Check if proposal has expired
     if (proposal.expiresAt && new Date() > new Date(proposal.expiresAt)) {
       if (proposal.status === "sent") {
-        await db
-          .update(proposalTable)
+        db.update(proposalTable)
           .set({ status: "expired", updatedAt: new Date() })
-          .where(and(eq(proposalTable.id, proposalId), eq(proposalTable.status, "sent")));
+          .where(
+            and(
+              eq(proposalTable.id, proposalId),
+              eq(proposalTable.status, "sent"),
+            ),
+          )
+          .catch((err) => console.error("Failed to mark proposal expired:", err));
       }
-      throw new AppError("This proposal has expired. Please contact us for an updated quote.", 410);
+      throw new AppError(
+        "This proposal has expired. Please contact us for an updated quote.",
+        410,
+      );
     }
 
     return proposal;
   }
 
   /**
-   * Record client approval via email
+   * Record client approval via email (atomic: validates status in WHERE clause)
    * @param {string} proposalId - Proposal UUID
    * @param {string} ipAddress - Client IP address
    * @returns {Promise<Object>} Updated proposal
    */
   async recordClientApproval(proposalId, ipAddress) {
-    // Update proposal status to accepted
+    // Atomic update: WHERE ensures proposal is still in "sent" state with no prior response
     const [updatedProposal] = await db
       .update(proposalTable)
       .set({
@@ -837,12 +879,21 @@ class ProposalService {
         clientResponseIp: ipAddress,
         updatedAt: new Date(),
       })
-      .where(eq(proposalTable.id, proposalId))
+      .where(
+        and(
+          eq(proposalTable.id, proposalId),
+          eq(proposalTable.status, "sent"),
+        ),
+      )
       .returning();
 
-    // Log activity
-    await this.logActivity({
-      userId: updatedProposal.requestedBy, // Log under sales person who created it
+    if (!updatedProposal) {
+      throw new AppError("This proposal has already been responded to or is no longer available", 400);
+    }
+
+    // Fire-and-forget: log activity + auto-create contract
+    this._logInBackground({
+      userId: updatedProposal.requestedBy,
       action: "proposal_client_approved",
       entityType: "proposal",
       entityId: proposalId,
@@ -851,25 +902,33 @@ class ProposalService {
       userAgent: null,
     });
 
-    // Auto-create contract record with pending_request status
-    const contractService = (await import("./contractService.js")).default;
-    await contractService.createContract(
-      proposalId,
-      updatedProposal.requestedBy, // Sales user who created proposal
-      { ipAddress, userAgent: null }
-    );
+    this._createContractInBackground(proposalId, updatedProposal.requestedBy, ipAddress);
 
     return updatedProposal;
   }
 
   /**
-   * Record client rejection via email
+   * Fire-and-forget: auto-create contract after client approval
+   */
+  _createContractInBackground(proposalId, salesUserId, ipAddress) {
+    import("./contractService.js")
+      .then(({ default: contractService }) =>
+        contractService.createContract(proposalId, salesUserId, {
+          ipAddress,
+          userAgent: null,
+        }),
+      )
+      .catch((err) => console.error("Failed to auto-create contract:", err));
+  }
+
+  /**
+   * Record client rejection via email (atomic: validates status in WHERE clause)
    * @param {string} proposalId - Proposal UUID
    * @param {string} ipAddress - Client IP address
    * @returns {Promise<Object>} Updated proposal
    */
   async recordClientRejection(proposalId, ipAddress) {
-    // Update proposal status to rejected
+    // Atomic update: WHERE ensures proposal is still in "sent" state
     const [updatedProposal] = await db
       .update(proposalTable)
       .set({
@@ -879,12 +938,21 @@ class ProposalService {
         clientResponseIp: ipAddress,
         updatedAt: new Date(),
       })
-      .where(eq(proposalTable.id, proposalId))
+      .where(
+        and(
+          eq(proposalTable.id, proposalId),
+          eq(proposalTable.status, "sent"),
+        ),
+      )
       .returning();
 
-    // Log activity
-    await this.logActivity({
-      userId: updatedProposal.requestedBy, // Log under sales person who created it
+    if (!updatedProposal) {
+      throw new AppError("This proposal has already been responded to or is no longer available", 400);
+    }
+
+    // Fire-and-forget: log activity
+    this._logInBackground({
+      userId: updatedProposal.requestedBy,
       action: "proposal_client_rejected",
       entityType: "proposal",
       entityId: proposalId,

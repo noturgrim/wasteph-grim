@@ -476,7 +476,7 @@ export const getProposalPDFPublic = async (req, res, next) => {
       token
     );
 
-    // Generate PDF
+    // Generate PDF (fetches full proposal with proposalData internally)
     const pdfBuffer = await proposalServiceWithSocket.generatePreviewPDF(id);
 
     // Set headers for PDF response

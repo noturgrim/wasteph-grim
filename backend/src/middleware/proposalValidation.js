@@ -117,6 +117,32 @@ const previewTemplateSchema = z.object({
 
 // ===== MIDDLEWARE FUNCTIONS =====
 
+// UUID v4 format regex
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Token format: 64 hex characters (32 bytes)
+const TOKEN_REGEX = /^[0-9a-f]{64}$/i;
+
+/**
+ * Validate public proposal request params (id + token)
+ * Rejects obviously invalid/tampered inputs before they hit the DB
+ */
+export const validatePublicProposalParams = (req, res, next) => {
+  const { id } = req.params;
+  const token = req.query.token;
+
+  if (!id || !UUID_REGEX.test(id)) {
+    return next(new AppError("Invalid proposal ID format", 400));
+  }
+
+  if (!token || !TOKEN_REGEX.test(token)) {
+    return next(new AppError("Invalid or missing token", 400));
+  }
+
+  next();
+};
+
 /**
  * Validate create proposal request
  */
