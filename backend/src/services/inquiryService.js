@@ -531,6 +531,7 @@ class InquiryService {
         source,
         serviceType,
         assignedTo: userId,
+        isInformationComplete: false,
       })
       .returning();
 
